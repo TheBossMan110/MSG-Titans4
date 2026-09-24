@@ -1,0 +1,135 @@
+# Zenithra — Delivery and Shipment Policy, version 2.1 (ACTIVE)
+# Rendered to BOTH mandatory formats so the PDF and DOCX parsers can be proven
+# against byte-for-byte identical content.
+formats: [pdf, docx]
+
+metadata:
+  doc_ref: DEL-POL-04
+  title: Delivery and Shipment Policy
+  version: "2.1"
+  doc_type: POLICY
+  department: Logistics
+  category: POLICY
+  effective_date: "2026-04-01"
+  expiry_date: "2027-03-31"
+  owner: Head of Logistics
+
+sections:
+  - ref: "1"
+    heading: Purpose and Scope
+    body:
+      - >-
+        This policy governs how Zenithra despatches, tracks and delivers customer
+        orders across India, the United Arab Emirates and the United Kingdom. It
+        applies to all orders fulfilled by Zenithra-operated warehouses and to
+        orders fulfilled by contracted last-mile partners.
+      - >-
+        This version supersedes Delivery and Shipment Policy version 1.4 in its
+        entirety. Where any Standard Operating Procedure or customer-facing FAQ
+        conflicts with this document, this document prevails.
+
+  - ref: "2"
+    heading: Delivery Commitments
+    body:
+      - >-
+        Standard delivery is committed at three to five business days from the
+        date of despatch for metropolitan service areas, and five to eight
+        business days for all other serviceable pin codes.
+      - >-
+        Express delivery, where purchased, is committed at one to two business
+        days from despatch. Express delivery is not available for large
+        appliances requiring two-person handling.
+      - >-
+        Delivery commitments are measured from despatch, not from order
+        placement. Agents must not quote a delivery date that has not been
+        confirmed by the Logistics tracking system.
+
+  - ref: "3"
+    heading: Delayed Delivery
+    body:
+      - >-
+        A delivery is classified as delayed once it has exceeded its committed
+        window by more than twenty-four hours. Delay complaints are routed to
+        Logistics Support.
+      - >-
+        For a first delay on an order, the agent must verify shipment status in
+        the tracking system, confirm the revised delivery date with the
+        last-mile partner, and communicate that revised date to the customer.
+      - >-
+        Agents must not offer compensation for a delayed delivery unless the
+        conditions in section 5 are met and have been verified. An apology and a
+        confirmed revised date are the permitted response for a first delay.
+
+  - ref: "4"
+    heading: Lost and Undelivered Shipments
+    page_break: true
+    body:
+      - >-
+        A shipment marked delivered by the last-mile partner but not received by
+        the customer must be raised as a delivery investigation within one
+        business day of the customer reporting it.
+      - >-
+        Investigations are completed within five business days. Where an
+        investigation confirms non-delivery, a replacement is despatched at no
+        cost to the customer, or a full refund is issued where the item is no
+        longer available.
+      - >-
+        Replacement or refund under this section requires confirmation from the
+        investigation. An agent must not commit to either outcome before the
+        investigation concludes.
+
+  - ref: "5"
+    heading: Delivery Compensation Eligibility
+    body:
+      - >-
+        Compensation for delivery failure is available only where all of the
+        following conditions are met: the delay exceeds the committed window by
+        more than seven calendar days; the customer has contacted Zenithra about
+        the same order on at least two prior occasions; and the delay is not
+        attributable to an incorrect or incomplete delivery address supplied by
+        the customer.
+      - >-
+        Where eligible, compensation is limited to delivery-charge waiver plus a
+        store credit not exceeding five hundred rupees or the local currency
+        equivalent. Any amount above this limit requires Department Manager
+        approval.
+      - >-
+        Compensation is never available for delays caused by declared force
+        majeure events, customs holds, or customer unavailability at the
+        delivery address across three attempted deliveries.
+
+  - ref: "6"
+    heading: Damaged on Arrival
+    body:
+      - >-
+        Items reported damaged on arrival must be reported within forty-eight
+        hours of delivery. Photographic evidence of the damage and the outer
+        packaging is required before a replacement is authorised.
+      - >-
+        Damage reports involving any sign of overheating, burning, scorching or
+        electrical fault are not handled under this policy. They are safety
+        incidents and must be escalated under the Product Safety Policy
+        immediately, irrespective of the value of the item or the tone of the
+        customer's report.
+
+  - ref: "7"
+    heading: Escalation Triggers
+    body:
+      - >-
+        A delivery complaint must be escalated to Supervisor Review where the
+        same order has been the subject of three or more customer contacts
+        without resolution.
+      - >-
+        A delivery complaint must be escalated to Compliance Review where the
+        customer references legal action, a consumer forum, or a regulator.
+      - >-
+        Escalation under this section is mandatory and is not at the agent's
+        discretion.
+
+  - ref: "8"
+    heading: Related Documents
+    body:
+      - >-
+        Refund and Cancellation Policy REF-POL-02. Escalation Procedure
+        ESC-SOP-01. Product Safety Policy SAF-POL-02. Service Level Agreement
+        SLA-RULES-01.

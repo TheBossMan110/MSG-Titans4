@@ -1,0 +1,50 @@
+# RaftarXpress Logistics (Pvt) Ltd - Tariff, Billing and Invoicing Policy, version 1.3 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-013
+  title: Tariff, Billing and Invoicing Policy
+  version: "1.3"
+  doc_type: POLICY
+  category: Billing Policy
+  family: FAM-BILLING-POLICY
+  status: ACTIVE
+  effective_date: "2024-05-10"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-013 v1.3 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-013-S1
+    heading: Volumetric and Dead Weight Calculation
+    page: 1
+    body:
+      - >-
+        Freight charges are billed based on the higher of dead weight or
+        volumetric weight calculated using the standard formula: (Length x Width x
+        Height in cm) / 5000.
+
+  - ref: "2"
+    source_id: DOC-013-S2
+    heading: Fuel Surcharge and Tax Invoicing
+    page: 1
+    body:
+      - >-
+        All corporate invoices include the prevailing monthly variable fuel
+        surcharge and applicable provincial sales tax (PST/GST) in full compliance
+        with FBR regulations.
+
+  - ref: "3"
+    source_id: DOC-013-S3
+    heading: Billing Dispute Resolution Period
+    page: 2
+    body:
+      - >-
+        Clients must register invoice weight or tariff disputes within fifteen
+        (15) days of monthly invoice generation. Uncontested invoices become final
+        and payable upon expiration.

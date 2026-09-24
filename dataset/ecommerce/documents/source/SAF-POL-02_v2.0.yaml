@@ -1,0 +1,93 @@
+# Zenithra — Product Safety and Incident Policy, version 2.0 (ACTIVE)
+#
+# This is the document behind the Sentiment-Urgency Trap (SRS 1.8 #6): it makes
+# explicit, in the source material itself, that a safety report is critical
+# regardless of how calmly it is written. Pipeline 2 enforces it from the rule
+# matrix; this document is what that rule cites.
+formats: [pdf, docx]
+
+metadata:
+  doc_ref: SAF-POL-02
+  title: Product Safety and Incident Policy
+  version: "2.0"
+  doc_type: POLICY
+  department: Product Safety
+  category: COMPLIANCE
+  effective_date: "2026-01-15"
+  owner: Head of Product Safety
+
+sections:
+  - ref: "1"
+    heading: Purpose
+    body:
+      - >-
+        This policy defines how Zenithra identifies, escalates and records
+        product safety incidents. It applies to every channel through which a
+        customer may report a hazard, including web forms, email, chat and
+        telephone.
+
+  - ref: "2"
+    heading: What Constitutes a Safety Incident
+    body:
+      - >-
+        A safety incident is any report describing or implying a risk of fire,
+        smoke, burning smell, scorching, melting, sparking, electric shock,
+        explosion, short circuit, or any injury or property damage caused by a
+        Zenithra product.
+      - >-
+        A report is a safety incident on the basis of what it describes, not on
+        the basis of how it is written. A calmly worded report of a burning
+        smell is a safety incident. An angrily worded complaint about a late
+        delivery is not.
+      - >-
+        Agents must not downgrade, defer or close a safety report because the
+        customer appears unconcerned, because the order value is low, or because
+        the customer has not asked for any specific action.
+
+  - ref: "3"
+    heading: Mandatory Escalation
+    body:
+      - >-
+        Every safety incident is assigned Critical urgency and priority P0 at
+        the point of identification. This assignment is mandatory and is not
+        subject to agent discretion or supervisor override.
+      - >-
+        Every safety incident is escalated to Critical Management Escalation and
+        routed to the Product Safety department. The Product Safety team must be
+        notified within one hour of the report being received.
+      - >-
+        Where an injury is reported, the incident is additionally referred to
+        Compliance Review within the same hour.
+
+  - ref: "4"
+    heading: Prohibited Actions
+    body:
+      - >-
+        Agents must not promise a refund, replacement, repair or compensation in
+        response to a safety report before the Product Safety team has assessed
+        the incident.
+      - >-
+        Agents must not advise a customer to continue using, repair, disassemble
+        or test the product. The required advice is to stop using the product
+        immediately and disconnect it from power where it is safe to do so.
+      - >-
+        Agents must not close a safety incident. Closure requires Product Safety
+        sign-off recorded against the incident.
+
+  - ref: "5"
+    heading: Required Actions
+    body:
+      - >-
+        Acknowledge the report and confirm the customer's immediate safety.
+        Advise the customer to stop using the product and disconnect it from
+        power where safe. Record the product, model, serial number and date of
+        purchase. Log the safety incident. Notify the Product Safety team within
+        one hour. Confirm to the customer that a specialist will make contact.
+
+  - ref: "6"
+    heading: Recall Handling
+    body:
+      - >-
+        Where a reported hazard matches an active recall notice, the agent must
+        reference the recall identifier in the incident record and follow the
+        recall-specific instructions issued by Product Safety.

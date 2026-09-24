@@ -1,0 +1,60 @@
+# RaftarXpress Logistics (Pvt) Ltd - Enterprise Customer Complaint Policy, version 1.5 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-009
+  title: Enterprise Customer Complaint Policy
+  version: "1.5"
+  doc_type: POLICY
+  category: Complaint Policy
+  family: FAM-COMPLAINT-POLICY
+  status: ACTIVE
+  effective_date: "2024-03-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-009 v1.5 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-009-S1
+    heading: Customer Right to Grievance Redressal
+    page: 1
+    body:
+      - >-
+        Every customer, merchant, and corporate client has the right to log formal
+        complaints regarding service lapses, rider misconduct, delivery delays,
+        and tariff disputes via the SupportNova platform.
+
+  - ref: "2"
+    source_id: DOC-009-S2
+    heading: Ticket Categorization and Acknowledgement
+    page: 1
+    body:
+      - >-
+        All incoming tickets must be categorized under approved taxonomy codes and
+        acknowledged via automated SMS and email within one (1) business hour of
+        submission.
+
+  - ref: "3"
+    source_id: DOC-009-S3
+    heading: Single-Point-of-Contact Ownership
+    page: 2
+    body:
+      - >-
+        Once assigned, the designated support agent retains ownership of the
+        complaint until full resolution, ensuring seamless cross-department
+        coordination without customer bounce.
+
+  - ref: "4"
+    source_id: DOC-009-S4
+    heading: Zero Cash Settlement Protocol
+    page: 2
+    body:
+      - >-
+        Zero cash settlements are permitted at agent level. All financial
+        compensations and fee adjustments must be formally routed through Billing
+        & Accounts (DEPT-02) and credited via IBFT only.

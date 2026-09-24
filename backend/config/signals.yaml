@@ -1,0 +1,2351 @@
+# ========================================================================
+# SupportNova - signals, lexicon and patterns
+#
+# GENERATED for RaftarXpress Logistics (Pvt) Ltd by
+# scripts/convert_raftarxpress.py. Edit the dataset and re-run.
+#
+# The lexicon is DERIVED, and only from authored configuration: the
+# subcategory names and the rule condition prose. It is never derived from
+# the complaint corpus. Fitting the rule engine to the complaints it is
+# scored against would make Pipeline 2's accuracy a measure of how well the
+# extractor memorised the test set.
+#
+# Generated terms are a starting point, not a finished lexicon. Tune them
+# against the benchmark's per-field accuracy, or live through the admin API
+# at /api/admin/lexicon, which needs no redeploy.
+# ========================================================================
+
+lexicon:
+  delayed_delivery_terms:
+    description: "DELAYED_DELIVERY. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: late, m: WORD }
+      - { t: delay, m: WORD }
+      - { t: delayed, m: WORD }
+      - { t: overdue, m: WORD }
+      - { t: not arrived, m: PHRASE }
+      - { t: hasn't arrived, m: PHRASE }
+      - { t: has not arrived, m: PHRASE }
+      - { t: still in transit, m: PHRASE }
+      - { t: stuck in transit, m: PHRASE }
+      - { t: stuck at, m: PHRASE }
+      - { t: past the promised, m: PHRASE }
+      - { t: promised delivery, m: PHRASE }
+      - { t: taking too long, m: PHRASE }
+      - { t: no movement, m: PHRASE }
+      - { t: linehaul, m: WORD }
+
+  missed_delivery_attempt_terms:
+    description: "MISSED_DELIVERY_ATTEMPT. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: missed delivery, m: PHRASE }
+      - { t: delivery attempt, m: PHRASE }
+      - { t: attempted delivery, m: PHRASE }
+      - { t: no one came, m: PHRASE }
+      - { t: nobody came, m: PHRASE }
+      - { t: did not attempt, m: PHRASE }
+      - { t: never knocked, m: PHRASE }
+      - { t: did not call, m: PHRASE }
+      - { t: was at home, m: PHRASE }
+      - { t: i was in all day, m: PHRASE }
+      - { t: reattempt, m: WORD }
+      - { t: redelivery, m: WORD }
+      - { t: failed attempt, m: PHRASE }
+
+  package_left_unattended_terms:
+    description: "PACKAGE_LEFT_UNATTENDED. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: left outside, m: PHRASE }
+      - { t: left at the gate, m: PHRASE }
+      - { t: left at the door, m: PHRASE }
+      - { t: left on the doorstep, m: PHRASE }
+      - { t: left unattended, m: PHRASE }
+      - { t: without my permission, m: PHRASE }
+      - { t: without signature, m: PHRASE }
+      - { t: no signature, m: PHRASE }
+      - { t: in the rain, m: PHRASE }
+      - { t: on the street, m: PHRASE }
+      - { t: with a neighbour, m: PHRASE }
+      - { t: with the guard, m: PHRASE }
+
+  wrong_route_dispatch_terms:
+    description: "WRONG_ROUTE_DISPATCH. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: wrong city, m: PHRASE }
+      - { t: wrong address, m: PHRASE }
+      - { t: wrong hub, m: PHRASE }
+      - { t: wrong branch, m: PHRASE }
+      - { t: misrouted, m: WORD }
+      - { t: mis-routed, m: PHRASE }
+      - { t: sent to the wrong, m: PHRASE }
+      - { t: dispatched to, m: PHRASE }
+      - { t: wrong province, m: PHRASE }
+      - { t: wrong route, m: PHRASE }
+      - { t: routing error, m: PHRASE }
+
+  lost_parcel_terms:
+    description: "LOST_PARCEL. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: lost, m: WORD }
+      - { t: missing, m: WORD }
+      - { t: disappeared, m: WORD }
+      - { t: untraceable, m: WORD }
+      - { t: cannot be traced, m: PHRASE }
+      - { t: no trace, m: PHRASE }
+      - { t: vanished, m: WORD }
+      - { t: never received, m: PHRASE }
+      - { t: declared lost, m: PHRASE }
+      - { t: write off, m: PHRASE }
+      - { t: whole parcel, m: PHRASE }
+
+  partial_shipment_missing_terms:
+    description: "PARTIAL_SHIPMENT_MISSING. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: partial, m: WORD }
+      - { t: part of the, m: PHRASE }
+      - { t: some items missing, m: PHRASE }
+      - { t: items missing, m: PHRASE }
+      - { t: one box, m: PHRASE }
+      - { t: only received, m: PHRASE }
+      - { t: short delivery, m: PHRASE }
+      - { t: short shipped, m: PHRASE }
+      - { t: incomplete, m: WORD }
+      - { t: pieces, m: WORD }
+      - { t: "out of \\d+ (boxes|items|cartons)", m: REGEX }
+
+  damaged_parcel_terms:
+    description: "DAMAGED_PARCEL. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: damaged, m: WORD }
+      - { t: broken, m: WORD }
+      - { t: crushed, m: WORD }
+      - { t: dented, m: WORD }
+      - { t: smashed, m: WORD }
+      - { t: cracked, m: WORD }
+      - { t: torn, m: WORD }
+      - { t: wet, m: WORD }
+      - { t: soaked, m: WORD }
+      - { t: spoiled, m: WORD }
+      - { t: shattered, m: WORD }
+      - { t: in pieces, m: PHRASE }
+
+  wrong_item_delivered_terms:
+    description: "WRONG_ITEM_DELIVERED. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: wrong item, m: PHRASE }
+      - { t: wrong product, m: PHRASE }
+      - { t: wrong order, m: PHRASE }
+      - { t: not what i ordered, m: PHRASE }
+      - { t: different item, m: PHRASE }
+      - { t: someone else's, m: PHRASE }
+      - { t: incorrect item, m: PHRASE }
+      - { t: mixed up, m: PHRASE }
+      - { t: swapped, m: WORD }
+
+  tampered_packaging_terms:
+    description: "TAMPERED_PACKAGING. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: tampered, m: WORD }
+      - { t: opened, m: WORD }
+      - { t: reopened, m: WORD }
+      - { t: resealed, m: WORD }
+      - { t: seal broken, m: PHRASE }
+      - { t: broken seal, m: PHRASE }
+      - { t: tape was cut, m: PHRASE }
+      - { t: pilferage, m: WORD }
+      - { t: pilfered, m: WORD }
+      - { t: stolen from, m: PHRASE }
+      - { t: contents removed, m: PHRASE }
+
+  cod_amount_mismatch_terms:
+    description: "COD_AMOUNT_MISMATCH. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: cod, m: WORD }
+      - { t: cash on delivery, m: PHRASE }
+      - { t: charged more, m: PHRASE }
+      - { t: collected more, m: PHRASE }
+      - { t: amount mismatch, m: PHRASE }
+      - { t: wrong amount, m: PHRASE }
+      - { t: asked for more, m: PHRASE }
+      - { t: overcharged, m: WORD }
+      - { t: did not give change, m: PHRASE }
+      - { t: no change, m: PHRASE }
+
+  duplicate_charge_terms:
+    description: "DUPLICATE_CHARGE. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: charged twice, m: PHRASE }
+      - { t: double charge, m: PHRASE }
+      - { t: double charged, m: PHRASE }
+      - { t: duplicate charge, m: PHRASE }
+      - { t: duplicate, m: WORD }
+      - { t: twice, m: WORD }
+      - { t: two identical, m: PHRASE }
+      - { t: same invoice twice, m: PHRASE }
+      - { t: billed again, m: PHRASE }
+      - { t: deducted twice, m: PHRASE }
+
+  incorrect_charge_terms:
+    description: "INCORRECT_CHARGE. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: incorrect charge, m: PHRASE }
+      - { t: wrong charge, m: PHRASE }
+      - { t: overbilled, m: WORD }
+      - { t: tariff, m: WORD }
+      - { t: rate card, m: PHRASE }
+      - { t: surcharge, m: WORD }
+      - { t: fuel charge, m: PHRASE }
+      - { t: volumetric, m: WORD }
+      - { t: weight was wrong, m: PHRASE }
+      - { t: should have been, m: PHRASE }
+      - { t: invoice is wrong, m: PHRASE }
+      - { t: demurrage, m: WORD }
+      - { t: detention charge, m: PHRASE }
+
+  cod_remittance_delay_terms:
+    description: "COD_REMITTANCE_DELAY. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: remittance, m: WORD }
+      - { t: not been paid, m: PHRASE }
+      - { t: not received my payment, m: PHRASE }
+      - { t: payout, m: WORD }
+      - { t: settlement, m: WORD }
+      - { t: disbursement, m: WORD }
+      - { t: cod payment, m: PHRASE }
+      - { t: merchant payment, m: PHRASE }
+      - { t: still not credited, m: PHRASE }
+      - { t: not credited, m: PHRASE }
+
+  refund_not_processed_terms:
+    description: "REFUND_NOT_PROCESSED. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: refund, m: WORD }
+      - { t: not been refunded, m: PHRASE }
+      - { t: no refund, m: PHRASE }
+      - { t: refund was refused, m: PHRASE }
+      - { t: refused my refund, m: PHRASE }
+      - { t: money back, m: PHRASE }
+      - { t: reimburse, m: WORD }
+      - { t: reimbursement, m: WORD }
+      - { t: never processed, m: PHRASE }
+
+  refund_delay_terms:
+    description: "REFUND_DELAY. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: refund is taking, m: PHRASE }
+      - { t: waiting for my refund, m: PHRASE }
+      - { t: refund delay, m: PHRASE }
+      - { t: refund still, m: PHRASE }
+      - { t: promised a refund, m: PHRASE }
+      - { t: weeks for the refund, m: PHRASE }
+      - { t: refund pending, m: PHRASE }
+
+  rto_processing_delay_terms:
+    description: "RTO_PROCESSING_DELAY. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: rto, m: WORD }
+      - { t: return to origin, m: PHRASE }
+      - { t: returned to origin, m: PHRASE }
+      - { t: return shipment, m: PHRASE }
+      - { t: reverse pickup, m: PHRASE }
+      - { t: sent back, m: PHRASE }
+      - { t: not returned to me, m: PHRASE }
+      - { t: return is stuck, m: PHRASE }
+
+  account_locked_terms:
+    description: "ACCOUNT_LOCKED. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: locked out, m: PHRASE }
+      - { t: account locked, m: PHRASE }
+      - { t: cannot log in, m: PHRASE }
+      - { t: can't log in, m: PHRASE }
+      - { t: unable to log in, m: PHRASE }
+      - { t: password reset, m: PHRASE }
+      - { t: otp, m: WORD }
+      - { t: suspended, m: WORD }
+      - { t: disabled, m: WORD }
+      - { t: access denied, m: PHRASE }
+
+  unauthorized_account_access_terms:
+    description: "UNAUTHORIZED_ACCOUNT_ACCESS. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: unauthorized, m: WORD }
+      - { t: unauthorised, m: WORD }
+      - { t: hacked, m: WORD }
+      - { t: someone else logged in, m: PHRASE }
+      - { t: suspicious login, m: PHRASE }
+      - { t: did not recognise, m: PHRASE }
+      - { t: not me, m: PHRASE }
+      - { t: fraudulent, m: WORD }
+      - { t: compromised, m: WORD }
+      - { t: phishing, m: WORD }
+      - { t: credentials, m: WORD }
+
+  merchant_profile_update_terms:
+    description: "MERCHANT_PROFILE_UPDATE. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: update my profile, m: PHRASE }
+      - { t: change my address, m: PHRASE }
+      - { t: change bank, m: PHRASE }
+      - { t: update bank, m: PHRASE }
+      - { t: business details, m: PHRASE }
+      - { t: pickup address, m: PHRASE }
+      - { t: profile update, m: PHRASE }
+      - { t: contact details, m: PHRASE }
+
+  tracking_not_updating_terms:
+    description: "TRACKING_NOT_UPDATING. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: tracking, m: WORD }
+      - { t: not updating, m: PHRASE }
+      - { t: no update, m: PHRASE }
+      - { t: status has not changed, m: PHRASE }
+      - { t: same status, m: PHRASE }
+      - { t: tracking page, m: PHRASE }
+      - { t: tracking number, m: PHRASE }
+      - { t: shows nothing, m: PHRASE }
+      - { t: stuck on, m: PHRASE }
+
+  app_crash_terms:
+    description: "APP_CRASH. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: app crash, m: PHRASE }
+      - { t: crashes, m: WORD }
+      - { t: crashing, m: WORD }
+      - { t: freezes, m: WORD }
+      - { t: won't open, m: PHRASE }
+      - { t: will not open, m: PHRASE }
+      - { t: keeps closing, m: PHRASE }
+      - { t: error message, m: PHRASE }
+      - { t: website is down, m: PHRASE }
+      - { t: portal, m: WORD }
+
+  api_webhook_failure_terms:
+    description: "API_WEBHOOK_FAILURE. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: api, m: WORD }
+      - { t: webhook, m: WORD }
+      - { t: integration, m: WORD }
+      - { t: endpoint, m: WORD }
+      - { t: token, m: WORD }
+      - { t: sandbox, m: WORD }
+      - { t: timing out, m: PHRASE }
+      - { t: 500 error, m: PHRASE }
+      - { t: manifest upload, m: PHRASE }
+      - { t: csv upload, m: PHRASE }
+
+  rude_rider_driver_behavior_terms:
+    description: "RUDE_RIDER_DRIVER_BEHAVIOR. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: rude, m: WORD }
+      - { t: abusive, m: WORD }
+      - { t: shouted, m: WORD }
+      - { t: shouting, m: WORD }
+      - { t: swore, m: WORD }
+      - { t: threatened, m: WORD }
+      - { t: aggressive, m: WORD }
+      - { t: disrespectful, m: WORD }
+      - { t: misbehaved, m: WORD }
+      - { t: unprofessional, m: WORD }
+      - { t: argued, m: WORD }
+
+  rider_demanding_cash_tip_terms:
+    description: "RIDER_DEMANDING_CASH_TIP. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: asked for a tip, m: PHRASE }
+      - { t: demanded a tip, m: PHRASE }
+      - { t: extra money, m: PHRASE }
+      - { t: extra cash, m: PHRASE }
+      - { t: bribe, m: WORD }
+      - { t: refused to hand over, m: PHRASE }
+      - { t: would not give me, m: PHRASE }
+      - { t: asked for more money, m: PHRASE }
+      - { t: gratuity, m: WORD }
+
+  warranty_claim_denied_terms:
+    description: "WARRANTY_CLAIM_DENIED. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: claim denied, m: PHRASE }
+      - { t: claim rejected, m: PHRASE }
+      - { t: rejected my claim, m: PHRASE }
+      - { t: refused my claim, m: PHRASE }
+      - { t: claim was closed, m: PHRASE }
+      - { t: no compensation, m: PHRASE }
+      - { t: declined, m: WORD }
+      - { t: claim, m: WORD }
+
+  insurance_payout_delay_terms:
+    description: "INSURANCE_PAYOUT_DELAY. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: insurance, m: WORD }
+      - { t: insured, m: WORD }
+      - { t: payout, m: WORD }
+      - { t: assessor, m: WORD }
+      - { t: claim is pending, m: PHRASE }
+      - { t: waiting for the claim, m: PHRASE }
+      - { t: declared value, m: PHRASE }
+      - { t: cargo insurance, m: PHRASE }
+
+  data_privacy_breach_terms:
+    description: "DATA_PRIVACY_BREACH. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: personal data, m: PHRASE }
+      - { t: my details were, m: PHRASE }
+      - { t: shared my, m: PHRASE }
+      - { t: gave out my, m: PHRASE }
+      - { t: privacy, m: WORD }
+      - { t: confidential, m: WORD }
+      - { t: data breach, m: PHRASE }
+      - { t: leaked, m: WORD }
+      - { t: another customer's, m: PHRASE }
+      - { t: phone number was given, m: PHRASE }
+
+  unsolicited_marketing_sms_terms:
+    description: "UNSOLICITED_MARKETING_SMS. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: marketing, m: WORD }
+      - { t: promotional, m: WORD }
+      - { t: spam, m: WORD }
+      - { t: unsubscribe, m: WORD }
+      - { t: stop sending, m: PHRASE }
+      - { t: did not sign up, m: PHRASE }
+      - { t: keep texting, m: PHRASE }
+      - { t: sms, m: WORD }
+
+  reckless_driving_safety_risk_terms:
+    description: "RECKLESS_DRIVING_SAFETY_RISK. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: reckless, m: WORD }
+      - { t: dangerous driving, m: PHRASE }
+      - { t: speeding, m: WORD }
+      - { t: nearly hit, m: PHRASE }
+      - { t: almost hit, m: PHRASE }
+      - { t: knocked over, m: PHRASE }
+      - { t: ran a red light, m: PHRASE }
+      - { t: wrong way, m: PHRASE }
+      - { t: on the pavement, m: PHRASE }
+      - { t: hit my car, m: PHRASE }
+      - { t: accident, m: WORD }
+      - { t: collision, m: WORD }
+
+  hazardous_material_mishandling_terms:
+    description: "HAZARDOUS_MATERIAL_MISHANDLING. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: undeclared, m: WORD }
+      - { t: chemical, m: WORD }
+      - { t: acid, m: WORD }
+      - { t: battery, m: WORD }
+      - { t: batteries, m: WORD }
+      - { t: cylinder, m: WORD }
+      - { t: aerosol, m: WORD }
+      - { t: dry ice, m: PHRASE }
+      - { t: fumes, m: WORD }
+      - { t: spill, m: WORD }
+      - { t: leaking, m: WORD }
+
+  missing_customs_documents_terms:
+    description: "MISSING_CUSTOMS_DOCUMENTS. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: customs document, m: PHRASE }
+      - { t: commercial invoice, m: PHRASE }
+      - { t: declaration, m: WORD }
+      - { t: clearance, m: WORD }
+      - { t: paperwork, m: WORD }
+      - { t: import documents, m: PHRASE }
+      - { t: export documents, m: PHRASE }
+      - { t: hs code, m: PHRASE }
+      - { t: held at customs, m: PHRASE }
+
+  regulatory_impoundment_hold_terms:
+    description: "REGULATORY_IMPOUNDMENT_HOLD. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: impounded, m: WORD }
+      - { t: detained, m: WORD }
+      - { t: seized, m: WORD }
+      - { t: prohibited item, m: PHRASE }
+      - { t: restricted item, m: PHRASE }
+      - { t: regulatory hold, m: PHRASE }
+      - { t: quarantine, m: WORD }
+      - { t: inspection, m: WORD }
+
+  subscription_contract_renewal_terms:
+    description: "SUBSCRIPTION_CONTRACT_RENEWAL. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: contract, m: WORD }
+      - { t: renewal, m: WORD }
+      - { t: renew, m: WORD }
+      - { t: subscription, m: WORD }
+      - { t: terminate, m: WORD }
+      - { t: cancel my contract, m: PHRASE }
+      - { t: rate revision, m: PHRASE }
+      - { t: agreement expires, m: PHRASE }
+
+  executive_sla_breach_terms:
+    description: "EXECUTIVE_SLA_BREACH. Authored topic terms."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: sla breach, m: PHRASE }
+      - { t: service level agreement, m: PHRASE }
+      - { t: systemic, m: WORD }
+      - { t: across all our, m: PHRASE }
+      - { t: every shipment, m: PHRASE }
+      - { t: entire batch, m: PHRASE }
+      - { t: all our consignments, m: PHRASE }
+      - { t: escalate to management, m: PHRASE }
+      - { t: senior management, m: PHRASE }
+      - { t: board level, m: PHRASE }
+
+  rule_001_evidence:
+    description: "Separates RULE-001 from the other rules in DELAYED_DELIVERY: Standard domestic transit delay under 24 hours without perishable contents"
+    weight: 2.0
+    source_id: RULE-001
+    terms:
+      - { t: domestic, m: WORD }
+      - { t: perishable, m: WORD }
+      - { t: domestic transit, m: PHRASE }
+      - { t: standard domestic, m: PHRASE }
+      - { t: perishable contents, m: PHRASE }
+
+  rule_002_evidence:
+    description: "Separates RULE-002 from the other rules in DELAYED_DELIVERY: Transit delay exceeding 72 hours with repeated customer inquiries (>2 times)"
+    weight: 2.0
+    source_id: RULE-002
+    terms:
+      - { t: times, m: WORD }
+      - { t: inquiries, m: WORD }
+      - { t: delay exceeding, m: PHRASE }
+      - { t: exceeding hours, m: PHRASE }
+
+  rule_003_evidence:
+    description: "Separates RULE-003 from the other rules in DELAYED_DELIVERY: Delayed delivery containing urgent medical supplies, life-saving drugs or temperature-se"
+    weight: 2.0
+    source_id: RULE-003
+    terms:
+      - { t: drugs, m: WORD }
+      - { t: urgent, m: WORD }
+      - { t: supplies, m: WORD }
+      - { t: life-saving, m: PHRASE }
+      - { t: temperature-sensitive, m: PHRASE }
+      - { t: urgent medical, m: PHRASE }
+      - { t: medical supplies, m: PHRASE }
+      - { t: containing urgent, m: PHRASE }
+
+  rule_004_evidence:
+    description: "Separates RULE-004 from the other rules in MISSED_DELIVERY_ATTEMPT: First missed delivery attempt due to customer premises locked or phone unattended"
+    weight: 2.0
+    source_id: RULE-004
+    terms:
+      - { t: first, m: WORD }
+      - { t: premises, m: WORD }
+      - { t: first missed, m: PHRASE }
+      - { t: premises locked, m: PHRASE }
+      - { t: phone unattended, m: PHRASE }
+
+  rule_005_evidence:
+    description: "Separates RULE-005 from the other rules in MISSED_DELIVERY_ATTEMPT: Consignee alleges fake delivery attempt / rider marked delivered or attempted without vi"
+    weight: 2.0
+    source_id: RULE-005
+    terms:
+      - { t: fake, m: WORD }
+      - { t: marked, m: WORD }
+      - { t: visiting, m: WORD }
+      - { t: attempted, m: WORD }
+      - { t: alleges fake, m: PHRASE }
+      - { t: rider marked, m: PHRASE }
+      - { t: marked delivered, m: PHRASE }
+      - { t: consignee alleges, m: PHRASE }
+
+  rule_006_evidence:
+    description: "Separates RULE-006 from the other rules in MISSED_DELIVERY_ATTEMPT: Third consecutive missed delivery attempt reaching maximum quota threshold"
+    weight: 2.0
+    source_id: RULE-006
+    terms:
+      - { t: third, m: WORD }
+      - { t: reaching, m: WORD }
+      - { t: attempt reaching, m: PHRASE }
+      - { t: reaching maximum, m: PHRASE }
+      - { t: third consecutive, m: PHRASE }
+      - { t: consecutive missed, m: PHRASE }
+      - { t: consecutive, m: WORD }
+
+  rule_007_evidence:
+    description: "Separates RULE-007 from the other rules in PACKAGE_LEFT_UNATTENDED: Package left on porch or with building guard with prior verbal consignee permission"
+    weight: 2.0
+    source_id: RULE-007
+    terms:
+      - { t: guard, m: WORD }
+      - { t: porch, m: WORD }
+      - { t: building, m: WORD }
+      - { t: permission, m: WORD }
+      - { t: left porch, m: PHRASE }
+      - { t: prior verbal, m: PHRASE }
+      - { t: verbal consignee, m: PHRASE }
+      - { t: consignee permission, m: PHRASE }
+
+  rule_008_evidence:
+    description: "Separates RULE-008 from the other rules in PACKAGE_LEFT_UNATTENDED: Package left unattended at gate/street without customer consent, package intact"
+    weight: 2.0
+    source_id: RULE-008
+    terms:
+      - { t: gate, m: WORD }
+      - { t: street, m: WORD }
+      - { t: package intact, m: PHRASE }
+      - { t: unattended gate, m: PHRASE }
+      - { t: intact, m: WORD }
+
+  rule_009_evidence:
+    description: "Separates RULE-009 from the other rules in PACKAGE_LEFT_UNATTENDED: Package left unattended without consent and subsequently stolen or missing (value > PKR "
+    weight: 2.0
+    source_id: RULE-009
+    terms:
+      - { t: subsequently stolen, m: PHRASE }
+      - { t: stolen, m: WORD }
+
+  rule_010_evidence:
+    description: "Separates RULE-010 from the other rules in WRONG_ROUTE_DISPATCH: Parcel misrouted to incorrect local branch within same city (e.g. Clifton instead of Gul"
+    weight: 2.0
+    source_id: RULE-010
+    terms:
+      - { t: local, m: WORD }
+      - { t: branch, m: WORD }
+      - { t: clifton, m: WORD }
+      - { t: gulshan, m: WORD }
+      - { t: instead, m: WORD }
+      - { t: misrouted, m: WORD }
+      - { t: same city, m: PHRASE }
+      - { t: incorrect local, m: PHRASE }
+
+  rule_011_evidence:
+    description: "Separates RULE-011 from the other rules in WRONG_ROUTE_DISPATCH: Parcel dispatched to incorrect province/city (e.g., booked for Lahore, dispatched to Mul"
+    weight: 2.0
+    source_id: RULE-011
+    terms:
+      - { t: multan, m: WORD }
+      - { t: province, m: WORD }
+      - { t: dispatched, m: WORD }
+      - { t: incorrect province, m: PHRASE }
+      - { t: dispatched incorrect, m: PHRASE }
+      - { t: booked, m: WORD }
+      - { t: lahore, m: WORD }
+
+  rule_012_evidence:
+    description: "Separates RULE-012 from the other rules in WRONG_ROUTE_DISPATCH: Repeated routing error on same consignment note (>2 misdirections)"
+    weight: 2.0
+    source_id: RULE-012
+    terms:
+      - { t: note, m: WORD }
+      - { t: routing, m: WORD }
+      - { t: misdirections, m: WORD }
+      - { t: error same, m: PHRASE }
+      - { t: routing error, m: PHRASE }
+      - { t: repeated routing, m: PHRASE }
+
+  rule_013_evidence:
+    description: "Separates RULE-013 from the other rules in LOST_PARCEL: Standard parcel missing scan for >5 days, declared value under PKR 15,000"
+    weight: 2.0
+    source_id: RULE-013
+    terms:
+      - { t: missing scan, m: PHRASE }
+
+  rule_014_evidence:
+    description: "Separates RULE-014 from the other rules in LOST_PARCEL: Insured shipment lost in transit with declared value between PKR 15,000 and PKR 100,000"
+    weight: 2.0
+    source_id: RULE-014
+    terms:
+      - { t: value between, m: PHRASE }
+      - { t: between, m: WORD }
+      - { t: insured, m: WORD }
+      - { t: between pkr, m: PHRASE }
+
+  rule_015_evidence:
+    description: "Separates RULE-015 from the other rules in LOST_PARCEL: High-value consignment lost in transit (declared value exceeding PKR 100,000 or corporat"
+    weight: 2.0
+    source_id: RULE-015
+    terms:
+      - { t: value exceeding, m: PHRASE }
+
+  rule_016_evidence:
+    description: "Separates RULE-016 from the other rules in PARTIAL_SHIPMENT_MISSING: Multi-piece consignment missing 1 of N boxes, standard commercial cargo"
+    weight: 2.0
+    source_id: RULE-016
+    terms:
+      - { t: boxes, m: WORD }
+      - { t: multi-piece, m: PHRASE }
+      - { t: missing boxes, m: PHRASE }
+      - { t: commercial cargo, m: PHRASE }
+      - { t: standard commercial, m: PHRASE }
+
+  rule_017_evidence:
+    description: "Separates RULE-017 from the other rules in PARTIAL_SHIPMENT_MISSING: Partial loss confirmed stolen from damaged outer master carton"
+    weight: 2.0
+    source_id: RULE-017
+    terms:
+      - { t: master, m: WORD }
+      - { t: confirmed, m: WORD }
+      - { t: outer master, m: PHRASE }
+      - { t: partial loss, m: PHRASE }
+      - { t: damaged outer, m: PHRASE }
+      - { t: master carton, m: PHRASE }
+      - { t: loss confirmed, m: PHRASE }
+      - { t: confirmed stolen, m: PHRASE }
+
+  rule_018_evidence:
+    description: "Separates RULE-018 from the other rules in PARTIAL_SHIPMENT_MISSING: High-value partial theft with total missing item value > PKR 100,000"
+    weight: 2.0
+    source_id: RULE-018
+    terms:
+      - { t: theft, m: WORD }
+      - { t: item value, m: PHRASE }
+      - { t: missing item, m: PHRASE }
+      - { t: partial theft, m: PHRASE }
+      - { t: total missing, m: PHRASE }
+      - { t: high-value partial, m: PHRASE }
+      - { t: item, m: WORD }
+      - { t: total, m: WORD }
+
+  rule_019_evidence:
+    description: "Separates RULE-019 from the other rules in DAMAGED_PARCEL: Minor outer carton denting with internal goods completely undamaged"
+    weight: 2.0
+    source_id: RULE-019
+    terms:
+      - { t: denting, m: WORD }
+      - { t: undamaged, m: WORD }
+      - { t: minor outer, m: PHRASE }
+      - { t: outer carton, m: PHRASE }
+      - { t: carton denting, m: PHRASE }
+      - { t: internal goods, m: PHRASE }
+      - { t: goods completely, m: PHRASE }
+      - { t: completely undamaged, m: PHRASE }
+
+  rule_020_evidence:
+    description: "Separates RULE-020 from the other rules in DAMAGED_PARCEL: Total breakage of fragile contents due to rough transit handling (value < PKR 15,000)"
+    weight: 2.0
+    source_id: RULE-020
+    terms:
+      - { t: rough, m: WORD }
+      - { t: breakage, m: WORD }
+      - { t: handling, m: WORD }
+      - { t: rough transit, m: PHRASE }
+      - { t: total breakage, m: PHRASE }
+      - { t: breakage fragile, m: PHRASE }
+      - { t: fragile contents, m: PHRASE }
+      - { t: transit handling, m: PHRASE }
+
+  rule_021_evidence:
+    description: "Separates RULE-021 from the other rules in DAMAGED_PARCEL: Catastrophic damage to commercial freight / industrial equipment exceeding PKR 100,000"
+    weight: 2.0
+    source_id: RULE-021
+    terms:
+      - { t: equipment, m: WORD }
+      - { t: catastrophic, m: WORD }
+      - { t: damage commercial, m: PHRASE }
+      - { t: catastrophic damage, m: PHRASE }
+      - { t: equipment exceeding, m: PHRASE }
+      - { t: industrial equipment, m: PHRASE }
+      - { t: damage, m: WORD }
+      - { t: industrial, m: WORD }
+
+  rule_022_evidence:
+    description: "Separates RULE-022 from the other rules in WRONG_ITEM_DELIVERED: Wrong parcel delivered due to courier label swap at last-mile delivery point"
+    weight: 2.0
+    source_id: RULE-022
+    terms:
+      - { t: swap, m: WORD }
+      - { t: label, m: WORD }
+      - { t: point, m: WORD }
+      - { t: last-mile, m: PHRASE }
+      - { t: courier label, m: PHRASE }
+      - { t: delivered, m: WORD }
+
+  rule_023_evidence:
+    description: "Separates RULE-023 from the other rules in WRONG_ITEM_DELIVERED: Merchant packed wrong SKU / manifest matches parcel contents but merchant made error"
+    weight: 2.0
+    source_id: RULE-023
+    terms:
+      - { t: made, m: WORD }
+      - { t: packed, m: WORD }
+      - { t: matches, m: WORD }
+      - { t: wrong sku, m: PHRASE }
+      - { t: made error, m: PHRASE }
+      - { t: packed wrong, m: PHRASE }
+      - { t: manifest matches, m: PHRASE }
+
+  rule_024_evidence:
+    description: "Separates RULE-024 from the other rules in WRONG_ITEM_DELIVERED: Misdelivered parcel contains confidential corporate data or restricted goods"
+    weight: 2.0
+    source_id: RULE-024
+    terms:
+      - { t: data, m: WORD }
+      - { t: contains, m: WORD }
+      - { t: restricted, m: WORD }
+      - { t: misdelivered, m: WORD }
+      - { t: corporate data, m: PHRASE }
+      - { t: restricted goods, m: PHRASE }
+      - { t: contains confidential, m: PHRASE }
+      - { t: confidential corporate, m: PHRASE }
+
+  rule_025_evidence:
+    description: "Separates RULE-025 from the other rules in TAMPERED_PACKAGING: Parcel received with broken security tape but all items accounted for and intact"
+    weight: 2.0
+    source_id: RULE-025
+    terms:
+      - { t: tape, m: WORD }
+      - { t: items, m: WORD }
+      - { t: broken, m: WORD }
+      - { t: security, m: WORD }
+      - { t: accounted, m: WORD }
+      - { t: intact, m: WORD }
+      - { t: received, m: WORD }
+
+  rule_026_evidence:
+    description: "Separates RULE-026 from the other rules in TAMPERED_PACKAGING: Parcel cut open and high-value item replaced with dummy weight / counterfeit goods"
+    weight: 2.0
+    source_id: RULE-026
+    terms:
+      - { t: open, m: WORD }
+      - { t: dummy, m: WORD }
+      - { t: replaced, m: WORD }
+      - { t: cut open, m: PHRASE }
+      - { t: dummy weight, m: PHRASE }
+      - { t: item replaced, m: PHRASE }
+      - { t: high-value item, m: PHRASE }
+      - { t: counterfeit goods, m: PHRASE }
+
+  rule_027_evidence:
+    description: "Separates RULE-027 from the other rules in TAMPERED_PACKAGING: Merchant reports repeated tampered packages from a specific regional dispatch route"
+    weight: 2.0
+    source_id: RULE-027
+    terms:
+      - { t: route, m: WORD }
+      - { t: packages, m: WORD }
+      - { t: tampered, m: WORD }
+      - { t: dispatch route, m: PHRASE }
+      - { t: regional dispatch, m: PHRASE }
+      - { t: repeated tampered, m: PHRASE }
+      - { t: specific regional, m: PHRASE }
+      - { t: dispatch, m: WORD }
+
+  rule_028_evidence:
+    description: "Separates RULE-028 from the other rules in COD_AMOUNT_MISMATCH: Rider demands higher COD cash than printed on official digital consignment manifest"
+    weight: 2.0
+    source_id: RULE-028
+    terms:
+      - { t: demands, m: WORD }
+      - { t: printed, m: WORD }
+      - { t: official, m: WORD }
+      - { t: higher cod, m: PHRASE }
+      - { t: rider demands, m: PHRASE }
+      - { t: demands higher, m: PHRASE }
+      - { t: official digital, m: PHRASE }
+      - { t: higher, m: WORD }
+
+  rule_029_evidence:
+    description: "Separates RULE-029 from the other rules in COD_AMOUNT_MISMATCH: Merchant booked wrong COD amount on portal and requests in-transit correction"
+    weight: 2.0
+    source_id: RULE-029
+    terms:
+      - { t: amount, m: WORD }
+      - { t: correction, m: WORD }
+      - { t: in-transit, m: PHRASE }
+      - { t: wrong cod, m: PHRASE }
+      - { t: cod amount, m: PHRASE }
+      - { t: booked wrong, m: PHRASE }
+      - { t: amount portal, m: PHRASE }
+      - { t: requests in-transit, m: PHRASE }
+
+  rule_030_evidence:
+    description: "Separates RULE-030 from the other rules in COD_AMOUNT_MISMATCH: COD cash discrepancy resulting in customer overpayment of > PKR 10,000"
+    weight: 2.0
+    source_id: RULE-030
+    terms:
+      - { t: discrepancy, m: WORD }
+      - { t: overpayment, m: WORD }
+      - { t: overpayment pkr, m: PHRASE }
+      - { t: cash discrepancy, m: PHRASE }
+
+  rule_031_evidence:
+    description: "Separates RULE-031 from the other rules in DUPLICATE_CHARGE: Customer online portal shows two identical invoice charges for a single consignment book"
+    weight: 2.0
+    source_id: RULE-031
+    terms:
+      - { t: booking, m: WORD }
+      - { t: charges, m: WORD }
+      - { t: identical, m: WORD }
+      - { t: shows two, m: PHRASE }
+      - { t: online portal, m: PHRASE }
+      - { t: two identical, m: PHRASE }
+      - { t: invoice charges, m: PHRASE }
+      - { t: identical invoice, m: PHRASE }
+
+  rule_032_evidence:
+    description: "Separates RULE-032 from the other rules in DUPLICATE_CHARGE: Merchant corporate freight account billed twice on monthly consolidated billing statemen"
+    weight: 2.0
+    source_id: RULE-032
+    terms:
+      - { t: twice, m: WORD }
+      - { t: billed, m: WORD }
+      - { t: billing, m: WORD }
+      - { t: statement, m: WORD }
+      - { t: consolidated, m: WORD }
+      - { t: twice monthly, m: PHRASE }
+      - { t: monthly consolidated, m: PHRASE }
+      - { t: monthly, m: WORD }
+
+  rule_033_evidence:
+    description: "Separates RULE-033 from the other rules in DUPLICATE_CHARGE: Repeated duplicate deductions causing severe bank overdraft / penalties (> PKR 50,000)"
+    weight: 2.0
+    source_id: RULE-033
+    terms:
+      - { t: duplicate, m: WORD }
+      - { t: overdraft, m: WORD }
+      - { t: penalties, m: WORD }
+      - { t: deductions, m: WORD }
+      - { t: severe bank, m: PHRASE }
+      - { t: bank overdraft, m: PHRASE }
+      - { t: repeated duplicate, m: PHRASE }
+
+  rule_034_evidence:
+    description: "Separates RULE-034 from the other rules in INCORRECT_CHARGE: Dispute over volumetric vs dead weight calculation resulting in minor overcharge (< PKR "
+    weight: 2.0
+    source_id: RULE-034
+    terms:
+      - { t: dead, m: WORD }
+      - { t: volumetric, m: WORD }
+      - { t: calculation, m: WORD }
+      - { t: dead weight, m: PHRASE }
+      - { t: minor overcharge, m: PHRASE }
+      - { t: weight calculation, m: PHRASE }
+      - { t: minor, m: WORD }
+
+  rule_035_evidence:
+    description: "Separates RULE-035 from the other rules in INCORRECT_CHARGE: Systemic fuel surcharge applied at expired higher rate across monthly merchant invoice"
+    weight: 2.0
+    source_id: RULE-035
+    terms:
+      - { t: fuel, m: WORD }
+      - { t: applied, m: WORD }
+      - { t: expired, m: WORD }
+      - { t: surcharge, m: WORD }
+      - { t: higher rate, m: PHRASE }
+      - { t: rate across, m: PHRASE }
+      - { t: systemic fuel, m: PHRASE }
+      - { t: across monthly, m: PHRASE }
+
+  rule_036_evidence:
+    description: "Separates RULE-036 from the other rules in INCORRECT_CHARGE: Freight overcharge dispute on enterprise bulk contract exceeding PKR 100,000"
+    weight: 2.0
+    source_id: RULE-036
+    terms:
+      - { t: bulk contract, m: PHRASE }
+      - { t: enterprise bulk, m: PHRASE }
+      - { t: contract exceeding, m: PHRASE }
+      - { t: dispute enterprise, m: PHRASE }
+      - { t: freight overcharge, m: PHRASE }
+      - { t: overcharge dispute, m: PHRASE }
+
+  rule_037_evidence:
+    description: "Separates RULE-037 from the other rules in COD_REMITTANCE_DELAY: Merchant COD remittance delayed past standard Wednesday cycle due to bank holiday"
+    weight: 2.0
+    source_id: RULE-037
+    terms:
+      - { t: holiday, m: WORD }
+      - { t: wednesday, m: WORD }
+      - { t: bank holiday, m: PHRASE }
+      - { t: past standard, m: PHRASE }
+      - { t: wednesday cycle, m: PHRASE }
+      - { t: remittance delayed, m: PHRASE }
+      - { t: standard wednesday, m: PHRASE }
+      - { t: cycle, m: WORD }
+
+  rule_038_evidence:
+    description: "Separates RULE-038 from the other rules in COD_REMITTANCE_DELAY: Merchant COD remittance overdue by >7 days with balance between PKR 20,000 and PKR 100,0"
+    weight: 2.0
+    source_id: RULE-038
+    terms:
+      - { t: overdue, m: WORD }
+      - { t: overdue days, m: PHRASE }
+      - { t: balance between, m: PHRASE }
+      - { t: remittance overdue, m: PHRASE }
+      - { t: balance, m: WORD }
+      - { t: between, m: WORD }
+      - { t: between pkr, m: PHRASE }
+
+  rule_039_evidence:
+    description: "Separates RULE-039 from the other rules in COD_REMITTANCE_DELAY: Unresolved COD remittance withheld exceeding PKR 100,000 with legal threat from merchant"
+    weight: 2.0
+    source_id: RULE-039
+    terms:
+      - { t: threat, m: WORD }
+      - { t: unresolved, m: WORD }
+      - { t: legal threat, m: PHRASE }
+      - { t: unresolved cod, m: PHRASE }
+      - { t: withheld exceeding, m: PHRASE }
+      - { t: remittance withheld, m: PHRASE }
+      - { t: withheld, m: WORD }
+
+  rule_040_evidence:
+    description: "Separates RULE-040 from the other rules in REFUND_NOT_PROCESSED: Customer refund requested within 7-day policy window, all documentation verified"
+    weight: 2.0
+    source_id: RULE-040
+    terms:
+      - { t: policy, m: WORD }
+      - { t: verified, m: WORD }
+      - { t: requested, m: WORD }
+      - { t: documentation, m: WORD }
+      - { t: day policy, m: PHRASE }
+      - { t: policy window, m: PHRASE }
+      - { t: refund requested, m: PHRASE }
+
+  rule_041_evidence:
+    description: "Separates RULE-041 from the other rules in REFUND_NOT_PROCESSED: Refund request submitted on day 8 (past 7-day window) citing genuine medical emergency"
+    weight: 2.0
+    source_id: RULE-041
+    terms:
+      - { t: citing, m: WORD }
+      - { t: genuine, m: WORD }
+      - { t: request, m: WORD }
+      - { t: emergency, m: WORD }
+      - { t: submitted, m: WORD }
+      - { t: submitted day, m: PHRASE }
+      - { t: refund request, m: PHRASE }
+      - { t: genuine medical, m: PHRASE }
+
+  rule_042_evidence:
+    description: "Separates RULE-042 from the other rules in REFUND_NOT_PROCESSED: Refund approved over 14 days ago but never disbursed due to banking IBFT batch drop"
+    weight: 2.0
+    source_id: RULE-042
+    terms:
+      - { t: drop, m: WORD }
+      - { t: never, m: WORD }
+      - { t: disbursed, m: WORD }
+      - { t: days ago, m: PHRASE }
+      - { t: batch drop, m: PHRASE }
+      - { t: ibft batch, m: PHRASE }
+      - { t: banking ibft, m: PHRASE }
+      - { t: refund approved, m: PHRASE }
+
+  rule_043_evidence:
+    description: "Separates RULE-043 from the other rules in REFUND_DELAY: Customer inquiry regarding refund status currently on day 3 of 5-7 day standard SLA"
+    weight: 2.0
+    source_id: RULE-043
+    terms:
+      - { t: status, m: WORD }
+      - { t: inquiry, m: WORD }
+      - { t: currently, m: WORD }
+      - { t: day day, m: PHRASE }
+      - { t: day standard, m: PHRASE }
+      - { t: standard sla, m: PHRASE }
+      - { t: currently day, m: PHRASE }
+      - { t: refund status, m: PHRASE }
+
+  rule_044_evidence:
+    description: "Separates RULE-044 from the other rules in REFUND_DELAY: Refund delayed due to customer providing incorrect IBFT account number / title mismatch"
+    weight: 2.0
+    source_id: RULE-044
+    terms:
+      - { t: mismatch, m: WORD }
+      - { t: providing, m: WORD }
+      - { t: incorrect ibft, m: PHRASE }
+      - { t: refund delayed, m: PHRASE }
+      - { t: title mismatch, m: PHRASE }
+      - { t: providing incorrect, m: PHRASE }
+      - { t: ibft, m: WORD }
+      - { t: title, m: WORD }
+
+  rule_045_evidence:
+    description: "Separates RULE-045 from the other rules in REFUND_DELAY: Bulk merchant refund batch delayed across 50+ accounts due to core banking portal outage"
+    weight: 2.0
+    source_id: RULE-045
+    terms:
+      - { t: core, m: WORD }
+      - { t: outage, m: WORD }
+      - { t: core banking, m: PHRASE }
+      - { t: refund batch, m: PHRASE }
+      - { t: batch delayed, m: PHRASE }
+      - { t: portal outage, m: PHRASE }
+      - { t: banking portal, m: PHRASE }
+      - { t: delayed across, m: PHRASE }
+
+  rule_046_evidence:
+    description: "Separates RULE-046 from the other rules in RTO_PROCESSING_DELAY: Failed delivery consignment held in hub awaiting scheduled weekly RTO consolidation"
+    weight: 2.0
+    source_id: RULE-046
+    terms:
+      - { t: failed, m: WORD }
+      - { t: weekly, m: WORD }
+      - { t: scheduled, m: WORD }
+      - { t: consolidation, m: WORD }
+      - { t: weekly rto, m: PHRASE }
+      - { t: rto consolidation, m: PHRASE }
+      - { t: awaiting scheduled, m: PHRASE }
+      - { t: awaiting, m: WORD }
+
+  rule_047_evidence:
+    description: "Separates RULE-047 from the other rules in RTO_PROCESSING_DELAY: RTO package stalled at regional transit hub for >10 days without movement scan"
+    weight: 2.0
+    source_id: RULE-047
+    terms:
+      - { t: stalled, m: WORD }
+      - { t: movement, m: WORD }
+      - { t: rto package, m: PHRASE }
+      - { t: movement scan, m: PHRASE }
+      - { t: package stalled, m: PHRASE }
+      - { t: regional transit, m: PHRASE }
+      - { t: stalled regional, m: PHRASE }
+
+  rule_048_evidence:
+    description: "Separates RULE-048 from the other rules in RTO_PROCESSING_DELAY: Merchant alleges high-value RTO parcel swapped with inferior merchandise during reverse "
+    weight: 2.0
+    source_id: RULE-048
+    terms:
+      - { t: reverse, m: WORD }
+      - { t: swapped, m: WORD }
+      - { t: inferior, m: WORD }
+      - { t: merchandise, m: WORD }
+      - { t: high-value rto, m: PHRASE }
+      - { t: reverse transit, m: PHRASE }
+      - { t: alleges high-value, m: PHRASE }
+
+  rule_049_evidence:
+    description: "Separates RULE-049 from the other rules in ACCOUNT_LOCKED: Consumer portal account locked after 5 consecutive incorrect password attempts"
+    weight: 2.0
+    source_id: RULE-049
+    terms:
+      - { t: attempts, m: WORD }
+      - { t: password, m: WORD }
+      - { t: consumer portal, m: PHRASE }
+      - { t: incorrect password, m: PHRASE }
+      - { t: consecutive incorrect, m: PHRASE }
+      - { t: consumer, m: WORD }
+      - { t: consecutive, m: WORD }
+
+  rule_050_evidence:
+    description: "Separates RULE-050 from the other rules in ACCOUNT_LOCKED: High-volume merchant account locked during peak sales festival (e.g. 11.11 / Eid)"
+    weight: 2.0
+    source_id: RULE-050
+    terms:
+      - { t: festival, m: WORD }
+      - { t: high-volume, m: PHRASE }
+      - { t: peak sales, m: PHRASE }
+      - { t: sales festival, m: PHRASE }
+      - { t: peak, m: WORD }
+
+  rule_051_evidence:
+    description: "Separates RULE-051 from the other rules in ACCOUNT_LOCKED: Merchant account locked due to suspicious automated bot scraping / API abuse"
+    weight: 2.0
+    source_id: RULE-051
+    terms:
+      - { t: abuse, m: WORD }
+      - { t: scraping, m: WORD }
+      - { t: automated, m: WORD }
+      - { t: api abuse, m: PHRASE }
+      - { t: bot scraping, m: PHRASE }
+      - { t: automated bot, m: PHRASE }
+      - { t: suspicious automated, m: PHRASE }
+      - { t: suspicious, m: WORD }
+
+  rule_052_evidence:
+    description: "Separates RULE-052 from the other rules in UNAUTHORIZED_ACCOUNT_ACCESS: Customer reports suspicious login alert from unfamiliar city/IP address, no funds divert"
+    weight: 2.0
+    source_id: RULE-052
+    terms:
+      - { t: alert, m: WORD }
+      - { t: funds, m: WORD }
+      - { t: login, m: WORD }
+      - { t: diverted, m: WORD }
+      - { t: unfamiliar, m: WORD }
+      - { t: unfamiliar city, m: PHRASE }
+      - { t: suspicious login, m: PHRASE }
+      - { t: reports suspicious, m: PHRASE }
+
+  rule_053_evidence:
+    description: "Separates RULE-053 from the other rules in UNAUTHORIZED_ACCOUNT_ACCESS: Merchant portal compromised and bank disbursement details altered to fraudulent account"
+    weight: 2.0
+    source_id: RULE-053
+    terms:
+      - { t: altered, m: WORD }
+      - { t: details, m: WORD }
+      - { t: fraudulent, m: WORD }
+      - { t: compromised, m: WORD }
+      - { t: disbursement, m: WORD }
+      - { t: bank disbursement, m: PHRASE }
+      - { t: portal compromised, m: PHRASE }
+
+  rule_054_evidence:
+    description: "Separates RULE-054 from the other rules in UNAUTHORIZED_ACCOUNT_ACCESS: Widespread credential-stuffing attack targeting corporate freight customer accounts"
+    weight: 2.0
+    source_id: RULE-054
+    terms:
+      - { t: attack, m: WORD }
+      - { t: targeting, m: WORD }
+      - { t: widespread, m: WORD }
+      - { t: credential-stuffing, m: PHRASE }
+      - { t: targeting corporate, m: PHRASE }
+      - { t: accounts, m: WORD }
+
+  rule_055_evidence:
+    description: "Separates RULE-055 from the other rules in MERCHANT_PROFILE_UPDATE: Merchant requests standard update to pickup warehouse address or contact phone number"
+    weight: 2.0
+    source_id: RULE-055
+    terms:
+      - { t: pickup, m: WORD }
+      - { t: contact, m: WORD }
+      - { t: warehouse, m: WORD }
+      - { t: phone number, m: PHRASE }
+      - { t: contact phone, m: PHRASE }
+      - { t: update pickup, m: PHRASE }
+      - { t: standard update, m: PHRASE }
+      - { t: requests standard, m: PHRASE }
+
+  rule_056_evidence:
+    description: "Separates RULE-056 from the other rules in MERCHANT_PROFILE_UPDATE: Merchant requests legal company title change and NTN/Sales Tax registration update"
+    weight: 2.0
+    source_id: RULE-056
+    terms:
+      - { t: registration, m: WORD }
+      - { t: title change, m: PHRASE }
+      - { t: company title, m: PHRASE }
+      - { t: legal company, m: PHRASE }
+      - { t: requests legal, m: PHRASE }
+      - { t: tax registration, m: PHRASE }
+      - { t: registration update, m: PHRASE }
+      - { t: title, m: WORD }
+
+  rule_057_evidence:
+    description: "Separates RULE-057 from the other rules in MERCHANT_PROFILE_UPDATE: Merchant requests critical change in corporate bank account for COD remittances"
+    weight: 2.0
+    source_id: RULE-057
+    terms:
+      - { t: critical, m: WORD }
+      - { t: remittances, m: WORD }
+      - { t: corporate bank, m: PHRASE }
+      - { t: cod remittances, m: PHRASE }
+      - { t: critical change, m: PHRASE }
+      - { t: change corporate, m: PHRASE }
+      - { t: requests critical, m: PHRASE }
+
+  rule_058_evidence:
+    description: "Separates RULE-058 from the other rules in TRACKING_NOT_UPDATING: Consignment tracking scan stationary for 12 hours during overnight inter-city linehaul"
+    weight: 2.0
+    source_id: RULE-058
+    terms:
+      - { t: inter-city, m: PHRASE }
+      - { t: stationary, m: WORD }
+      - { t: scan stationary, m: PHRASE }
+      - { t: inter-city linehaul, m: PHRASE }
+      - { t: overnight inter-city, m: PHRASE }
+      - { t: overnight, m: WORD }
+
+  rule_059_evidence:
+    description: "Separates RULE-059 from the other rules in TRACKING_NOT_UPDATING: Tracking scan frozen at origin hub for >48 hours without departure event"
+    weight: 2.0
+    source_id: RULE-059
+    terms:
+      - { t: event, m: WORD }
+      - { t: frozen, m: WORD }
+      - { t: origin, m: WORD }
+      - { t: departure, m: WORD }
+      - { t: scan frozen, m: PHRASE }
+
+  rule_060_evidence:
+    description: "Separates RULE-060 from the other rules in TRACKING_NOT_UPDATING: Public tracking portal shows internal system error code (500) for all merchant shipments"
+    weight: 2.0
+    source_id: RULE-060
+    terms:
+      - { t: code, m: WORD }
+      - { t: public, m: WORD }
+      - { t: system, m: WORD }
+      - { t: shipments, m: WORD }
+      - { t: error code, m: PHRASE }
+      - { t: system error, m: PHRASE }
+      - { t: shows internal, m: PHRASE }
+      - { t: internal system, m: PHRASE }
+
+  rule_061_evidence:
+    description: "Separates RULE-061 from the other rules in APP_CRASH: Single user reports mobile tracking app crashes on specific older Android OS version"
+    weight: 2.0
+    source_id: RULE-061
+    terms:
+      - { t: user, m: WORD }
+      - { t: older, m: WORD }
+      - { t: android, m: WORD }
+      - { t: version, m: WORD }
+      - { t: single user, m: PHRASE }
+      - { t: tracking app, m: PHRASE }
+      - { t: user reports, m: PHRASE }
+      - { t: reports mobile, m: PHRASE }
+
+  rule_062_evidence:
+    description: "Separates RULE-062 from the other rules in APP_CRASH: Courier mobile dispatch app crashes repeatedly across entire Lahore hub fleet"
+    weight: 2.0
+    source_id: RULE-062
+    terms:
+      - { t: repeatedly, m: WORD }
+      - { t: dispatch app, m: PHRASE }
+      - { t: across entire, m: PHRASE }
+      - { t: entire lahore, m: PHRASE }
+      - { t: courier mobile, m: PHRASE }
+      - { t: mobile dispatch, m: PHRASE }
+      - { t: repeatedly across, m: PHRASE }
+      - { t: crashes repeatedly, m: PHRASE }
+
+  rule_063_evidence:
+    description: "Separates RULE-063 from the other rules in APP_CRASH: Merchant bulk manifest generator crashes on CSV uploads exceeding 500 rows"
+    weight: 2.0
+    source_id: RULE-063
+    terms:
+      - { t: rows, m: WORD }
+      - { t: uploads, m: WORD }
+      - { t: generator, m: WORD }
+      - { t: crashes csv, m: PHRASE }
+      - { t: csv uploads, m: PHRASE }
+      - { t: bulk manifest, m: PHRASE }
+      - { t: exceeding rows, m: PHRASE }
+      - { t: generator crashes, m: PHRASE }
+
+  rule_064_evidence:
+    description: "Separates RULE-064 from the other rules in API_WEBHOOK_FAILURE: Merchant reports webhook delivery notification latency of 15 minutes during peak hours"
+    weight: 2.0
+    source_id: RULE-064
+    terms:
+      - { t: latency, m: WORD }
+      - { t: minutes, m: WORD }
+      - { t: notification, m: WORD }
+      - { t: peak hours, m: PHRASE }
+      - { t: reports webhook, m: PHRASE }
+      - { t: peak, m: WORD }
+
+  rule_065_evidence:
+    description: "Separates RULE-065 from the other rules in API_WEBHOOK_FAILURE: E-commerce merchant webhook endpoint failing due to TLS certificate / SSL handshake erro"
+    weight: 2.0
+    source_id: RULE-065
+    terms:
+      - { t: failing, m: WORD }
+      - { t: endpoint, m: WORD }
+      - { t: handshake, m: WORD }
+      - { t: e-commerce, m: PHRASE }
+      - { t: certificate, m: WORD }
+      - { t: ssl handshake, m: PHRASE }
+      - { t: handshake error, m: PHRASE }
+      - { t: tls certificate, m: PHRASE }
+
+  rule_066_evidence:
+    description: "Separates RULE-066 from the other rules in API_WEBHOOK_FAILURE: Enterprise corporate client API gateway completely down, blocking all nationwide booking"
+    weight: 2.0
+    source_id: RULE-066
+    terms:
+      - { t: down, m: WORD }
+      - { t: gateway, m: WORD }
+      - { t: blocking, m: WORD }
+      - { t: bookings, m: WORD }
+      - { t: api gateway, m: PHRASE }
+      - { t: completely down, m: PHRASE }
+      - { t: gateway completely, m: PHRASE }
+      - { t: nationwide bookings, m: PHRASE }
+
+  rule_067_evidence:
+    description: "Separates RULE-067 from the other rules in RUDE_RIDER_DRIVER_BEHAVIOR: Customer reports rider spoke discourteously or showed impatient attitude during delivery"
+    weight: 2.0
+    source_id: RULE-067
+    terms:
+      - { t: spoke, m: WORD }
+      - { t: showed, m: WORD }
+      - { t: attitude, m: WORD }
+      - { t: impatient, m: WORD }
+      - { t: discourteously, m: WORD }
+      - { t: rider spoke, m: PHRASE }
+      - { t: reports rider, m: PHRASE }
+
+  rule_068_evidence:
+    description: "Separates RULE-068 from the other rules in RUDE_RIDER_DRIVER_BEHAVIOR: Rider used profanity, verbal threats, or aggressive harassment towards customer"
+    weight: 2.0
+    source_id: RULE-068
+    terms:
+      - { t: used, m: WORD }
+      - { t: threats, m: WORD }
+      - { t: towards, m: WORD }
+      - { t: profanity, m: WORD }
+      - { t: aggressive, m: WORD }
+      - { t: harassment, m: WORD }
+      - { t: rider used, m: PHRASE }
+      - { t: verbal threats, m: PHRASE }
+
+  rule_069_evidence:
+    description: "Separates RULE-069 from the other rules in RUDE_RIDER_DRIVER_BEHAVIOR: Repeated behavioral complaints (>3) against same delivery courier within 30 days"
+    weight: 2.0
+    source_id: RULE-069
+    terms:
+      - { t: against, m: WORD }
+      - { t: behavioral, m: WORD }
+      - { t: complaints, m: WORD }
+      - { t: against same, m: PHRASE }
+      - { t: repeated behavioral, m: PHRASE }
+
+  rule_070_evidence:
+    description: "Separates RULE-070 from the other rules in RIDER_DEMANDING_CASH_TIP: Rider verbally asks for tip / round-up change on prepaid shipment, customer refused and "
+    weight: 2.0
+    source_id: RULE-070
+    terms:
+      - { t: asks, m: WORD }
+      - { t: refused, m: WORD }
+      - { t: round-up, m: PHRASE }
+      - { t: verbally, m: WORD }
+      - { t: change prepaid, m: PHRASE }
+      - { t: rider verbally, m: PHRASE }
+      - { t: round-up change, m: PHRASE }
+      - { t: received, m: WORD }
+
+  rule_071_evidence:
+    description: "Separates RULE-071 from the other rules in RIDER_DEMANDING_CASH_TIP: Rider refuses to release prepaid parcel unless customer pays unauthorized cash fee"
+    weight: 2.0
+    source_id: RULE-071
+    terms:
+      - { t: pays, m: WORD }
+      - { t: unless, m: WORD }
+      - { t: refuses, m: WORD }
+      - { t: release, m: WORD }
+      - { t: cash fee, m: PHRASE }
+      - { t: rider refuses, m: PHRASE }
+      - { t: release prepaid, m: PHRASE }
+      - { t: pays unauthorized, m: PHRASE }
+
+  rule_072_evidence:
+    description: "Separates RULE-072 from the other rules in RIDER_DEMANDING_CASH_TIP: Rider forged customer signature and pocketed change balance from large COD banknote"
+    weight: 2.0
+    source_id: RULE-072
+    terms:
+      - { t: large, m: WORD }
+      - { t: forged, m: WORD }
+      - { t: banknote, m: WORD }
+      - { t: pocketed, m: WORD }
+      - { t: signature, m: WORD }
+      - { t: large cod, m: PHRASE }
+      - { t: cod banknote, m: PHRASE }
+      - { t: rider forged, m: PHRASE }
+
+  rule_073_evidence:
+    description: "Separates RULE-073 from the other rules in WARRANTY_CLAIM_DENIED: Customer disputes warranty claim denial on non-insured cargo damaged by improper packagi"
+    weight: 2.0
+    source_id: RULE-073
+    terms:
+      - { t: disputes, m: WORD }
+      - { t: improper, m: WORD }
+      - { t: packaging, m: WORD }
+      - { t: non-insured, m: PHRASE }
+      - { t: claim denial, m: PHRASE }
+      - { t: cargo damaged, m: PHRASE }
+      - { t: damaged improper, m: PHRASE }
+      - { t: disputes warranty, m: PHRASE }
+
+  rule_074_evidence:
+    description: "Separates RULE-074 from the other rules in WARRANTY_CLAIM_DENIED: Warranty claim denied due to filing on day 15 (1 day past 14-day window) due to hospital"
+    weight: 2.0
+    source_id: RULE-074
+    terms:
+      - { t: stay, m: WORD }
+      - { t: denied, m: WORD }
+      - { t: filing, m: WORD }
+      - { t: hospital, m: WORD }
+      - { t: day past, m: PHRASE }
+      - { t: filing day, m: PHRASE }
+      - { t: claim denied, m: PHRASE }
+      - { t: past day, m: PHRASE }
+
+  rule_075_evidence:
+    description: "Separates RULE-075 from the other rules in WARRANTY_CLAIM_DENIED: Corporate VIP client claims denial on PKR 250,000 shipment threatening contract terminat"
+    weight: 2.0
+    source_id: RULE-075
+    terms:
+      - { t: claims, m: WORD }
+      - { t: threatening, m: WORD }
+      - { t: denial pkr, m: PHRASE }
+      - { t: claims denial, m: PHRASE }
+      - { t: corporate vip, m: PHRASE }
+      - { t: contract termination, m: PHRASE }
+      - { t: threatening contract, m: PHRASE }
+      - { t: termination, m: WORD }
+
+  rule_076_evidence:
+    description: "Separates RULE-076 from the other rules in INSURANCE_PAYOUT_DELAY: Customer insurance claim approved, awaiting standard 21-day insurer settlement cycle"
+    weight: 2.0
+    source_id: RULE-076
+    terms:
+      - { t: insurer, m: WORD }
+      - { t: settlement, m: WORD }
+      - { t: day insurer, m: PHRASE }
+      - { t: standard day, m: PHRASE }
+      - { t: claim approved, m: PHRASE }
+      - { t: insurance claim, m: PHRASE }
+      - { t: settlement cycle, m: PHRASE }
+      - { t: awaiting standard, m: PHRASE }
+
+  rule_077_evidence:
+    description: "Separates RULE-077 from the other rules in INSURANCE_PAYOUT_DELAY: Insured payout delayed past 30 days due to missing underwriter surveyor sign-off"
+    weight: 2.0
+    source_id: RULE-077
+    terms:
+      - { t: sign-off, m: PHRASE }
+      - { t: surveyor, m: WORD }
+      - { t: underwriter, m: WORD }
+      - { t: past days, m: PHRASE }
+      - { t: insured payout, m: PHRASE }
+      - { t: payout delayed, m: PHRASE }
+      - { t: missing underwriter, m: PHRASE }
+      - { t: insured, m: WORD }
+
+  rule_078_evidence:
+    description: "Separates RULE-078 from the other rules in INSURANCE_PAYOUT_DELAY: Insurance payout withheld for enterprise cargo loss exceeding PKR 500,000"
+    weight: 2.0
+    source_id: RULE-078
+    terms:
+      - { t: cargo loss, m: PHRASE }
+      - { t: loss exceeding, m: PHRASE }
+      - { t: payout withheld, m: PHRASE }
+      - { t: enterprise cargo, m: PHRASE }
+      - { t: insurance payout, m: PHRASE }
+      - { t: loss, m: WORD }
+      - { t: withheld, m: WORD }
+
+  rule_079_evidence:
+    description: "Separates RULE-079 from the other rules in DATA_PRIVACY_BREACH: Customer reports courier sent unsolicited personal message on WhatsApp after delivery"
+    weight: 2.0
+    source_id: RULE-079
+    terms:
+      - { t: message, m: WORD }
+      - { t: personal, m: WORD }
+      - { t: whatsapp, m: WORD }
+      - { t: unsolicited, m: WORD }
+      - { t: courier sent, m: PHRASE }
+      - { t: sent unsolicited, m: PHRASE }
+      - { t: reports courier, m: PHRASE }
+
+  rule_080_evidence:
+    description: "Separates RULE-080 from the other rules in DATA_PRIVACY_BREACH: Merchant manifests containing 500+ customer names and phone numbers leaked online or sen"
+    weight: 2.0
+    source_id: RULE-080
+    terms:
+      - { t: names, m: WORD }
+      - { t: leaked, m: WORD }
+      - { t: numbers, m: WORD }
+      - { t: sent wrong, m: PHRASE }
+      - { t: leaked online, m: PHRASE }
+      - { t: phone numbers, m: PHRASE }
+      - { t: manifests containing, m: PHRASE }
+      - { t: online, m: WORD }
+
+  rule_081_evidence:
+    description: "Separates RULE-081 from the other rules in DATA_PRIVACY_BREACH: Customer requests permanent deletion / erasure of shipping history under privacy rights"
+    weight: 2.0
+    source_id: RULE-081
+    terms:
+      - { t: rights, m: WORD }
+      - { t: erasure, m: WORD }
+      - { t: history, m: WORD }
+      - { t: privacy, m: WORD }
+      - { t: deletion, m: WORD }
+      - { t: shipping, m: WORD }
+      - { t: permanent, m: WORD }
+      - { t: requests permanent, m: PHRASE }
+
+  rule_082_evidence:
+    description: "Separates RULE-082 from the other rules in UNSOLICITED_MARKETING_SMS: Customer requests opt-out from promotional broadcast SMS marketing campaigns"
+    weight: 2.0
+    source_id: RULE-082
+    terms:
+      - { t: opt-out, m: PHRASE }
+      - { t: broadcast, m: WORD }
+      - { t: campaigns, m: WORD }
+      - { t: promotional, m: WORD }
+      - { t: broadcast sms, m: PHRASE }
+      - { t: sms marketing, m: PHRASE }
+      - { t: requests opt-out, m: PHRASE }
+      - { t: marketing campaigns, m: PHRASE }
+
+  rule_083_evidence:
+    description: "Separates RULE-083 from the other rules in UNSOLICITED_MARKETING_SMS: Customer receives spam SMS originating from rogue third-party claiming to be company par"
+    weight: 2.0
+    source_id: RULE-083
+    terms:
+      - { t: spam, m: WORD }
+      - { t: rogue, m: WORD }
+      - { t: partner, m: WORD }
+      - { t: claiming, m: WORD }
+      - { t: receives, m: WORD }
+      - { t: originating, m: WORD }
+      - { t: third-party, m: PHRASE }
+      - { t: spam sms, m: PHRASE }
+
+  rule_084_evidence:
+    description: "Separates RULE-084 from the other rules in UNSOLICITED_MARKETING_SMS: Enterprise client alleges unauthorized marketing outreach to their confidential customer"
+    weight: 2.0
+    source_id: RULE-084
+    terms:
+      - { t: list, m: WORD }
+      - { t: outreach, m: WORD }
+      - { t: marketing outreach, m: PHRASE }
+      - { t: alleges unauthorized, m: PHRASE }
+      - { t: unauthorized marketing, m: PHRASE }
+      - { t: confidential, m: WORD }
+      - { t: unauthorized, m: WORD }
+
+  rule_085_evidence:
+    description: "Separates RULE-085 from the other rules in RECKLESS_DRIVING_SAFETY_RISK: Citizen reports courier van driving recklessly / speeding in residential neighborhood"
+    weight: 2.0
+    source_id: RULE-085
+    terms:
+      - { t: citizen, m: WORD }
+      - { t: driving, m: WORD }
+      - { t: speeding, m: WORD }
+      - { t: recklessly, m: WORD }
+      - { t: residential, m: WORD }
+      - { t: neighborhood, m: WORD }
+      - { t: courier van, m: PHRASE }
+      - { t: van driving, m: PHRASE }
+
+  rule_086_evidence:
+    description: "Separates RULE-086 from the other rules in RECKLESS_DRIVING_SAFETY_RISK: Company delivery vehicle involved in road traffic accident resulting in property damage"
+    weight: 2.0
+    source_id: RULE-086
+    terms:
+      - { t: road, m: WORD }
+      - { t: traffic, m: WORD }
+      - { t: accident, m: WORD }
+      - { t: involved, m: WORD }
+      - { t: property, m: WORD }
+      - { t: property damage, m: PHRASE }
+      - { t: vehicle involved, m: PHRASE }
+      - { t: damage, m: WORD }
+
+  rule_087_evidence:
+    description: "Separates RULE-087 from the other rules in RECKLESS_DRIVING_SAFETY_RISK: Severe fleet collision involving bodily injury or fatality"
+    weight: 2.0
+    source_id: RULE-087
+    terms:
+      - { t: bodily, m: WORD }
+      - { t: injury, m: WORD }
+      - { t: fatality, m: WORD }
+      - { t: collision, m: WORD }
+      - { t: severe fleet, m: PHRASE }
+      - { t: fleet collision, m: PHRASE }
+      - { t: involving bodily, m: PHRASE }
+      - { t: collision involving, m: PHRASE }
+
+  rule_088_evidence:
+    description: "Separates RULE-088 from the other rules in HAZARDOUS_MATERIAL_MISHANDLING: Hub staff identifies parcel emitting pungent odor / small non-toxic cosmetic liquid leak"
+    weight: 2.0
+    source_id: RULE-088
+    terms:
+      - { t: leak, m: WORD }
+      - { t: odor, m: WORD }
+      - { t: small, m: WORD }
+      - { t: staff, m: WORD }
+      - { t: liquid, m: WORD }
+      - { t: pungent, m: WORD }
+      - { t: cosmetic, m: WORD }
+      - { t: emitting, m: WORD }
+
+  rule_089_evidence:
+    description: "Separates RULE-089 from the other rules in HAZARDOUS_MATERIAL_MISHANDLING: Consignment of undeclared lithium batteries catches fire / emits smoke in regional sorta"
+    weight: 2.0
+    source_id: RULE-089
+    terms:
+      - { t: fire, m: WORD }
+      - { t: emits, m: WORD }
+      - { t: smoke, m: WORD }
+      - { t: center, m: WORD }
+      - { t: catches, m: WORD }
+      - { t: lithium, m: WORD }
+      - { t: batteries, m: WORD }
+      - { t: sortation, m: WORD }
+
+  rule_090_evidence:
+    description: "Separates RULE-090 from the other rules in HAZARDOUS_MATERIAL_MISHANDLING: Commercial freight shipment found to contain undeclared toxic industrial chemicals / aci"
+    weight: 2.0
+    source_id: RULE-090
+    terms:
+      - { t: acids, m: WORD }
+      - { t: found, m: WORD }
+      - { t: toxic, m: WORD }
+      - { t: contain, m: WORD }
+      - { t: chemicals, m: WORD }
+      - { t: toxic industrial, m: PHRASE }
+      - { t: undeclared toxic, m: PHRASE }
+      - { t: contain undeclared, m: PHRASE }
+
+  rule_091_evidence:
+    description: "Separates RULE-091 from the other rules in MISSING_CUSTOMS_DOCUMENTS: Inter-provincial consignment missing commercial invoice copy in outer pouch; digital cop"
+    weight: 2.0
+    source_id: RULE-091
+    terms:
+      - { t: copy, m: WORD }
+      - { t: file, m: WORD }
+      - { t: pouch, m: WORD }
+      - { t: inter-provincial, m: PHRASE }
+      - { t: copy outer, m: PHRASE }
+      - { t: outer pouch, m: PHRASE }
+      - { t: digital copy, m: PHRASE }
+      - { t: invoice copy, m: PHRASE }
+
+  rule_092_evidence:
+    description: "Separates RULE-092 from the other rules in MISSING_CUSTOMS_DOCUMENTS: Shipment held at provincial check-post due to missing provincial sales tax / e-way bill"
+    weight: 2.0
+    source_id: RULE-092
+    terms:
+      - { t: bill, m: WORD }
+      - { t: e-way, m: PHRASE }
+      - { t: check-post, m: PHRASE }
+      - { t: held provincial, m: PHRASE }
+      - { t: provincial sales, m: PHRASE }
+      - { t: missing provincial, m: PHRASE }
+      - { t: provincial check-post, m: PHRASE }
+      - { t: provincial, m: WORD }
+
+  rule_093_evidence:
+    description: "Separates RULE-093 from the other rules in MISSING_CUSTOMS_DOCUMENTS: Corporate freight fleet impounded at customs terminal due to falsified commercial manife"
+    weight: 2.0
+    source_id: RULE-093
+    terms:
+      - { t: terminal, m: WORD }
+      - { t: falsified, m: WORD }
+      - { t: impounded, m: WORD }
+      - { t: freight fleet, m: PHRASE }
+      - { t: fleet impounded, m: PHRASE }
+      - { t: customs terminal, m: PHRASE }
+      - { t: impounded customs, m: PHRASE }
+      - { t: commercial manifests, m: PHRASE }
+
+  rule_094_evidence:
+    description: "Separates RULE-094 from the other rules in REGULATORY_IMPOUNDMENT_HOLD: Consignment held for routine random provincial excise vehicle weight and document check"
+    weight: 2.0
+    source_id: RULE-094
+    terms:
+      - { t: check, m: WORD }
+      - { t: excise, m: WORD }
+      - { t: random, m: WORD }
+      - { t: document, m: WORD }
+      - { t: excise vehicle, m: PHRASE }
+      - { t: routine random, m: PHRASE }
+      - { t: vehicle weight, m: PHRASE }
+      - { t: provincial excise, m: PHRASE }
+
+  rule_095_evidence:
+    description: "Separates RULE-095 from the other rules in REGULATORY_IMPOUNDMENT_HOLD: Customer shipment seized by customs due to suspicion of counterfeit trademark goods"
+    weight: 2.0
+    source_id: RULE-095
+    terms:
+      - { t: seized, m: WORD }
+      - { t: suspicion, m: WORD }
+      - { t: trademark, m: WORD }
+      - { t: seized customs, m: PHRASE }
+      - { t: trademark goods, m: PHRASE }
+      - { t: counterfeit trademark, m: PHRASE }
+      - { t: suspicion counterfeit, m: PHRASE }
+      - { t: customs, m: WORD }
+
+  rule_096_evidence:
+    description: "Separates RULE-096 from the other rules in REGULATORY_IMPOUNDMENT_HOLD: Mass regulatory seizure of entire linehaul container valued at > PKR 5,000,000"
+    weight: 2.0
+    source_id: RULE-096
+    terms:
+      - { t: mass, m: WORD }
+      - { t: valued, m: WORD }
+      - { t: seizure, m: WORD }
+      - { t: container, m: WORD }
+      - { t: regulatory, m: WORD }
+      - { t: valued pkr, m: PHRASE }
+      - { t: seizure entire, m: PHRASE }
+      - { t: entire linehaul, m: PHRASE }
+
+  rule_097_evidence:
+    description: "Separates RULE-097 from the other rules in SUBSCRIPTION_CONTRACT_RENEWAL: Corporate freight client requests routine annual rate review and SLA contract renewal"
+    weight: 2.0
+    source_id: RULE-097
+    terms:
+      - { t: review, m: WORD }
+      - { t: renewal, m: WORD }
+      - { t: annual rate, m: PHRASE }
+      - { t: rate review, m: PHRASE }
+      - { t: routine annual, m: PHRASE }
+      - { t: contract renewal, m: PHRASE }
+      - { t: requests routine, m: PHRASE }
+      - { t: rate, m: WORD }
+
+  rule_098_evidence:
+    description: "Separates RULE-098 from the other rules in SUBSCRIPTION_CONTRACT_RENEWAL: Corporate client contract expiring in 7 days with disputed volume tier discounts"
+    weight: 2.0
+    source_id: RULE-098
+    terms:
+      - { t: volume, m: WORD }
+      - { t: disputed, m: WORD }
+      - { t: expiring, m: WORD }
+      - { t: discounts, m: WORD }
+      - { t: volume tier, m: PHRASE }
+      - { t: expiring days, m: PHRASE }
+      - { t: tier discounts, m: PHRASE }
+      - { t: contract expiring, m: PHRASE }
+
+  rule_099_evidence:
+    description: "Separates RULE-099 from the other rules in SUBSCRIPTION_CONTRACT_RENEWAL: Top-tier corporate account (annual freight > PKR 10M) serves 30-day termination notice o"
+    weight: 2.0
+    source_id: RULE-099
+    terms:
+      - { t: serves, m: WORD }
+      - { t: quality, m: WORD }
+      - { t: service, m: WORD }
+      - { t: top-tier, m: PHRASE }
+      - { t: serves day, m: PHRASE }
+      - { t: freight pkr, m: PHRASE }
+      - { t: annual freight, m: PHRASE }
+      - { t: day termination, m: PHRASE }
+
+  rule_100_evidence:
+    description: "Separates RULE-100 from the other rules in EXECUTIVE_SLA_BREACH: VIP consumer shipment misses guaranteed overnight delivery commitment by 4 hours"
+    weight: 2.0
+    source_id: RULE-100
+    terms:
+      - { t: misses, m: WORD }
+      - { t: commitment, m: WORD }
+      - { t: guaranteed, m: WORD }
+      - { t: vip consumer, m: PHRASE }
+      - { t: commitment hours, m: PHRASE }
+      - { t: guaranteed overnight, m: PHRASE }
+      - { t: consumer, m: WORD }
+      - { t: overnight, m: WORD }
+
+  rule_101_evidence:
+    description: "Separates RULE-101 from the other rules in EXECUTIVE_SLA_BREACH: Nationwide severe linehaul breakdown causing systemic SLA failure across 1,000+ consignm"
+    weight: 2.0
+    source_id: RULE-101
+    terms:
+      - { t: failure, m: WORD }
+      - { t: breakdown, m: WORD }
+      - { t: consignments, m: WORD }
+      - { t: sla failure, m: PHRASE }
+      - { t: systemic sla, m: PHRASE }
+      - { t: failure across, m: PHRASE }
+      - { t: severe linehaul, m: PHRASE }
+      - { t: nationwide severe, m: PHRASE }
+
+  rule_102_evidence:
+    description: "Separates RULE-102 from the other rules in EXECUTIVE_SLA_BREACH: Formal legal notice served by corporate client for systemic breach of SLA contract (> PK"
+    weight: 2.0
+    source_id: RULE-102
+    terms:
+      - { t: breach, m: WORD }
+      - { t: formal, m: WORD }
+      - { t: served, m: WORD }
+      - { t: breach sla, m: PHRASE }
+      - { t: formal legal, m: PHRASE }
+      - { t: legal notice, m: PHRASE }
+      - { t: notice served, m: PHRASE }
+      - { t: systemic breach, m: PHRASE }
+
+  rule_103_evidence:
+    description: "Separates RULE-103 from the other rules in MISSING_CUSTOMS_DOCUMENTS: Cargo inspection reveals unregistered pharmaceutical narcotics hidden inside commercial "
+    weight: 2.0
+    source_id: RULE-103
+    terms:
+      - { t: hidden, m: WORD }
+      - { t: inside, m: WORD }
+      - { t: reveals, m: WORD }
+      - { t: narcotics, m: WORD }
+      - { t: inspection, m: WORD }
+      - { t: unregistered, m: WORD }
+      - { t: pharmaceutical, m: WORD }
+      - { t: cargo inspection, m: PHRASE }
+
+  rule_104_evidence:
+    description: "Separates RULE-104 from the other rules in EXECUTIVE_SLA_BREACH: Customer video of courier throwing fragile parcels goes viral on social media (>100k vie"
+    weight: 2.0
+    source_id: RULE-104
+    terms:
+      - { t: goes, m: WORD }
+      - { t: media, m: WORD }
+      - { t: video, m: WORD }
+      - { t: views, m: WORD }
+      - { t: viral, m: WORD }
+      - { t: social, m: WORD }
+      - { t: parcels, m: WORD }
+      - { t: throwing, m: WORD }
+
+  rule_105_evidence:
+    description: "Separates RULE-105 from the other rules in DELAYED_DELIVERY: Nationwide highway flooding closes national transit artery for >5 days"
+    weight: 2.0
+    source_id: RULE-105
+    terms:
+      - { t: artery, m: WORD }
+      - { t: closes, m: WORD }
+      - { t: highway, m: WORD }
+      - { t: flooding, m: WORD }
+      - { t: national, m: WORD }
+      - { t: transit artery, m: PHRASE }
+      - { t: national transit, m: PHRASE }
+      - { t: nationwide highway, m: PHRASE }
+
+  legal_threat:
+    description: "Legal or regulatory exposure. Routes to Compliance and raises the floor: once a customer has mentioned a lawyer, a reply that commits the company to anything is a liability, and the response guard is stricter about it."
+    weight: 3.0
+    source_id: authored
+    terms:
+      - { t: legal action, m: PHRASE }
+      - { t: legal notice, m: PHRASE }
+      - { t: take you to court, m: PHRASE }
+      - { t: see you in court, m: PHRASE }
+      - { t: my lawyer, m: PHRASE }
+      - { t: our lawyer, m: PHRASE }
+      - { t: my solicitor, m: PHRASE }
+      - { t: legal counsel, m: PHRASE }
+      - { t: law firm, m: PHRASE }
+      - { t: sue you, m: PHRASE }
+      - { t: suing, m: WORD }
+      - { t: litigation, m: WORD }
+      - { t: court order, m: PHRASE }
+      - { t: breach of contract, m: PHRASE }
+      - { t: consumer court, m: PHRASE }
+      - { t: consumer protection, m: PHRASE }
+      - { t: regulatory complaint, m: PHRASE }
+      - { t: ombudsman, m: WORD }
+      - { t: defamation, m: WORD }
+      - { t: compensation claim, m: PHRASE }
+
+  regulatory_body:
+    description: "A named regulator or enforcement agency. Distinct from a general legal threat: a customs seizure or an FBR notice is not the customer being angry, it is a third party with statutory power already involved."
+    weight: 3.0
+    source_id: authored
+    terms:
+      - { t: customs, m: WORD }
+      - { t: fbr, m: WORD }
+      - { t: pta, m: WORD }
+      - { t: secp, m: WORD }
+      - { t: federal investigation, m: PHRASE }
+      - { t: police report, m: PHRASE }
+      - { t: police complaint, m: PHRASE }
+      - { t: fir, m: WORD }
+      - { t: seized, m: WORD }
+      - { t: impounded, m: WORD }
+      - { t: confiscated, m: WORD }
+      - { t: held by authorities, m: PHRASE }
+      - { t: regulatory hold, m: PHRASE }
+
+  repeat_contact:
+    description: "The customer says they have been here before. Corroborating evidence only: the repeat COUNT is derived from stored prior complaints, never from the complaint claiming to be a repeat, because a claim is exactly what an adversarial submission would forge."
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: third time, m: PHRASE }
+      - { t: fourth time, m: PHRASE }
+      - { t: fifth time, m: PHRASE }
+      - { t: again and again, m: PHRASE }
+      - { t: still waiting, m: PHRASE }
+      - { t: no one has replied, m: PHRASE }
+      - { t: no response, m: PHRASE }
+      - { t: chased, m: WORD }
+      - { t: chasing, m: WORD }
+      - { t: followed up, m: PHRASE }
+      - { t: previous complaint, m: PHRASE }
+      - { t: earlier complaint, m: PHRASE }
+      - { t: raised this before, m: PHRASE }
+      - { t: as i said before, m: PHRASE }
+      - { t: repeatedly, m: WORD }
+
+  vip_or_corporate:
+    description: A corporate, merchant or premium account. Recorded because the SLA matrix differs, not because the person matters more.
+    weight: 1.5
+    source_id: authored
+    terms:
+      - { t: corporate account, m: PHRASE }
+      - { t: merchant account, m: PHRASE }
+      - { t: business account, m: PHRASE }
+      - { t: our company, m: PHRASE }
+      - { t: our warehouse, m: PHRASE }
+      - { t: bulk shipment, m: PHRASE }
+      - { t: freight contract, m: PHRASE }
+      - { t: service agreement, m: PHRASE }
+      - { t: sla, m: WORD }
+      - { t: enterprise, m: WORD }
+      - { t: premium account, m: PHRASE }
+
+  time_critical_contents:
+    description: What is inside makes the delay dangerous rather than annoying. This is the difference between a late parcel and a late organ transport, and it is detectable from the words alone.
+    weight: 3.0
+    source_id: authored
+    terms:
+      - { t: medicine, m: WORD }
+      - { t: medication, m: WORD }
+      - { t: medical supplies, m: PHRASE }
+      - { t: life-saving, m: PHRASE }
+      - { t: life saving, m: PHRASE }
+      - { t: insulin, m: WORD }
+      - { t: vaccine, m: WORD }
+      - { t: blood sample, m: PHRASE }
+      - { t: organ, m: WORD }
+      - { t: transplant, m: WORD }
+      - { t: chemotherapy, m: WORD }
+      - { t: dialysis, m: WORD }
+      - { t: surgery, m: WORD }
+      - { t: perishable, m: WORD }
+      - { t: temperature-sensitive, m: PHRASE }
+      - { t: cold chain, m: PHRASE }
+      - { t: frozen, m: WORD }
+      - { t: expiring, m: WORD }
+      - { t: passport, m: WORD }
+      - { t: visa, m: WORD }
+      - { t: legal documents, m: PHRASE }
+      - { t: exam, m: WORD }
+
+  safety_lexicon_hit:
+    description: "Physical hazard indicators. Forces SAFETY routing and P0 regardless of tone - the Sentiment-Urgency trap (SRS 1.8 #6) turns on hazard being detectable from the words alone."
+    weight: 3.0
+    source_id: authored
+    terms:
+      - { t: burning smell, m: PHRASE }
+      - { t: smells like burning, m: PHRASE }
+      - { t: smell of burning, m: PHRASE }
+      - { t: caught fire, m: PHRASE }
+      - { t: catching fire, m: PHRASE }
+      - { t: on fire, m: PHRASE }
+      - { t: fire hazard, m: PHRASE }
+      - { t: smoke, m: WORD }
+      - { t: smoking, m: WORD }
+      - { t: sparks, m: WORD }
+      - { t: sparking, m: WORD }
+      - { t: exploded, m: WORD }
+      - { t: explosion, m: WORD }
+      - { t: overheating, m: WORD }
+      - { t: overheated, m: WORD }
+      - { t: melted, m: WORD }
+      - { t: melting, m: WORD }
+      - { t: chemical leak, m: PHRASE }
+      - { t: chemical spill, m: PHRASE }
+      - { t: acid leak, m: PHRASE }
+      - { t: toxic fumes, m: PHRASE }
+      - { t: leaking liquid, m: PHRASE }
+      - { t: gas leak, m: PHRASE }
+      - { t: battery fire, m: PHRASE }
+      - { t: lithium battery, m: PHRASE }
+      - { t: hazardous, m: WORD }
+      - { t: hazmat, m: WORD }
+      - { t: biohazard, m: WORD }
+      - { t: radioactive, m: WORD }
+      - { t: dangerous goods, m: PHRASE }
+      - { t: flammable, m: WORD }
+      - { t: corrosive, m: WORD }
+
+  injury_mention:
+    description: "Personal injury or property damage. Compounds with a hazard signal: a danger that has already hurt somebody is a different complaint from one that has not."
+    weight: 3.0
+    source_id: authored
+    terms:
+      - { t: injured, m: WORD }
+      - { t: injury, m: WORD }
+      - { t: burnt my, m: PHRASE }
+      - { t: burned my, m: PHRASE }
+      - { t: burn on my, m: PHRASE }
+      - { t: hospital, m: WORD }
+      - { t: ambulance, m: WORD }
+      - { t: paramedic, m: WORD }
+      - { t: electric shock, m: PHRASE }
+      - { t: shocked me, m: PHRASE }
+      - { t: cut my, m: PHRASE }
+      - { t: bleeding, m: WORD }
+      - { t: hurt my, m: PHRASE }
+      - { t: went to a&e, m: PHRASE }
+      - { t: emergency room, m: PHRASE }
+      - { t: damaged my house, m: PHRASE }
+      - { t: damaged my property, m: PHRASE }
+      - { t: caught my hand, m: PHRASE }
+      - { t: broke my, m: PHRASE }
+
+  emotional_intensity:
+    description: "How upset the writer sounds. ANALYTICS ONLY: recorded and shown, and structurally unable to reach the rule engine. SRS 1.8 #6 - a furious complaint about a late parcel must not outrank a calm one about a fire."
+    weight: 1.0
+    source_id: authored
+    analytics_only: true
+    terms:
+      - { t: furious, m: WORD }
+      - { t: outraged, m: WORD }
+      - { t: disgusted, m: WORD }
+      - { t: appalled, m: WORD }
+      - { t: livid, m: WORD }
+      - { t: unacceptable, m: WORD }
+      - { t: disgraceful, m: WORD }
+      - { t: shambles, m: WORD }
+      - { t: pathetic, m: WORD }
+      - { t: worst service, m: PHRASE }
+      - { t: never again, m: PHRASE }
+      - { t: fed up, m: PHRASE }
+      - { t: sick of, m: PHRASE }
+      - { t: ridiculous, m: WORD }
+      - { t: insulting, m: WORD }
+      - { t: how dare, m: PHRASE }
+      - { t: scam, m: WORD }
+      - { t: fraudsters, m: WORD }
+      - { t: will sue, m: PHRASE }
+      - { t: legal action, m: PHRASE }
+      - { t: social media, m: PHRASE }
+      - { t: trustpilot, m: WORD }
+      - { t: absolutely fuming, m: PHRASE }
+
+# -- injection patterns --------------------------------------------------
+# Carried across unchanged. These describe how a support system is
+# attacked, which does not vary with the company behind it.
+injection_patterns:
+  - label: INSTRUCTION_OVERRIDE
+    severity: CRITICAL
+    patterns:
+      - "ignore (all |any |your |the )?(previous|prior|above|earlier) (instruction|rule|prompt|direction)s?"
+      - "disregard (all |any |your |the )?(previous|prior|above|rules|instructions|policy|policies)"
+      - "forget (everything|all|your) (you|instructions|rules|training)"
+      - "do not (validate|verify|check|apply) (the )?(rules|policy|policies|validation)"
+      - "skip (the )?(validation|verification|policy|approval) (step|check|process)?"
+  - label: ROLE_HIJACK
+    severity: CRITICAL
+    patterns:
+      - "you are now (a|an|the)"
+      - "act as (a|an|the) (admin|administrator|supervisor|manager|system)"
+      - "pretend (you are|to be)"
+      - "new (system )?(prompt|instruction|role)\\s*:"
+      - "</?(system|assistant|instruction)>"
+  - label: FAKE_AUTHORITY
+    severity: HIGH
+    patterns:
+      - "(admin|administrator|system|manager|supervisor)\\s*(override|approval|instruction)"
+      - "this (complaint|case|request) (is |has been )?(pre-?)?approved"
+      - "authoris?zed by (management|the manager|head office)"
+      - "internal note\\s*:\\s*approve"
+      - "as (per|instructed by) (the )?(ceo|director|head office)"
+  - label: FORCED_OUTCOME
+    severity: HIGH
+    patterns:
+      - "approve (my|the|this) (refund|claim|request|compensation) (immediately|now|without)"
+      - "issue (a |the )?(full )?refund (immediately|now|regardless|without)"
+      - "mark (this|it) as (resolved|closed|approved)"
+      - "set (priority|urgency) to (low|p3)"
+      - "do not escalate"
+  - label: PROMPT_LEAK
+    severity: MEDIUM
+    patterns:
+      - "(reveal|print|show|repeat|output) (your|the) (system )?(prompt|instructions|rules)"
+      - "what (are|were) your (instructions|rules|system prompt)"
+  - label: DELIMITER_FORGERY
+    severity: HIGH
+    patterns:
+      - "</?untrusted_(complaint|document)>"
+      - "\\[/?(system|instruction|end of complaint)\\]"
+      - "-{3,}\\s*end of (complaint|customer) (text|message)\\s*-{3,}"
+  - label: HIDDEN_CONTENT
+    severity: MEDIUM
+    patterns:
+      - "[\\u200b\\u200c\\u200d\\u2060\\ufeff]{3,}"   # zero-width runs
+      - "[\\u202a-\\u202e]"                            # bidi override
+      - "\\s{80,}"                                     # whitespace padding
+
+# ── 3. Unsupported-promise patterns (SRS Step 34) ─────────────────────────
+# Each match is cross-checked against the permitted_actions that Pipeline 2
+# derived.  A match with no matching permitted action is flagged, redacted or
+# regenerated - never sent.
+# ── 3. Unsupported-promise patterns (SRS Step 34; SRS 1.8 #9) ────────────
+# A promise of type T in a generated reply is UNSUPPORTED unless Pipeline 2
+# independently derived an eligibility decision of type `requires_eligibility`
+# with outcome ELIGIBLE.
+#
+# `requires_eligibility` therefore names a value of the EligibilityType enum,
+# which the eligibility rules in complaint_rules/eligibility.yaml actually
+# produce. An earlier draft named invented action codes (ISSUE_REFUND,
+# OFFER_COMPENSATION) that nothing else in the system emitted, which would
+# have made every promise check vacuous: no permitted action would ever have
+# matched, so either everything or nothing would be flagged.
+#
+# TIMELINE has no eligibility type. A committed date is checked against the
+# cited policy instead, because no eligibility rule can authorise it.
+
+# -- promise patterns ----------------------------------------------------
+# Also unchanged: a promise of a refund is the same commitment whoever
+# makes it, and requires_eligibility still names a real EligibilityType.
+
+# -- promise patterns ----------------------------------------------------
+# Also unchanged: a promise of a refund is the same commitment whoever
+# makes it, and requires_eligibility still names a real EligibilityType.
+
+# -- promise patterns ----------------------------------------------------
+# Also unchanged: a promise of a refund is the same commitment whoever
+# makes it, and requires_eligibility still names a real EligibilityType.
+
+# -- promise patterns ----------------------------------------------------
+# Also unchanged: a promise of a refund is the same commitment whoever
+# makes it, and requires_eligibility still names a real EligibilityType.
+
+# -- promise patterns ----------------------------------------------------
+# Also unchanged: a promise of a refund is the same commitment whoever
+# makes it, and requires_eligibility still names a real EligibilityType.
+
+# -- promise patterns ----------------------------------------------------
+# Also unchanged: a promise of a refund is the same commitment whoever
+# makes it, and requires_eligibility still names a real EligibilityType.
+
+# -- promise patterns ----------------------------------------------------
+# Also unchanged: a promise of a refund is the same commitment whoever
+# makes it, and requires_eligibility still names a real EligibilityType.
+
+# -- promise patterns ----------------------------------------------------
+# Also unchanged: a promise of a refund is the same commitment whoever
+# makes it, and requires_eligibility still names a real EligibilityType.
+
+# -- promise patterns ----------------------------------------------------
+# Also unchanged: a promise of a refund is the same commitment whoever
+# makes it, and requires_eligibility still names a real EligibilityType.
+
+# -- promise patterns ----------------------------------------------------
+# Also unchanged: a promise of a refund is the same commitment whoever
+# makes it, and requires_eligibility still names a real EligibilityType.
+
+# -- promise patterns ----------------------------------------------------
+# Also unchanged: a promise of a refund is the same commitment whoever
+# makes it, and requires_eligibility still names a real EligibilityType.
+promise_patterns:
+  - promise_type: REFUND
+    requires_eligibility: REFUND
+    patterns:
+      - "(full|complete|100%|entire) refund"
+      - "will (definitely |certainly )?(be )?refund(ed)?"
+      - "guarantee[ds]? (a |your |the )?refund"
+      - "refund (will be|is) (processed|issued|credited)"
+  - promise_type: COMPENSATION
+    requires_eligibility: COMPENSATION
+    patterns:
+      - "compensat(e|ion) (will|of|you)"
+      - "(voucher|coupon|credit) (of|worth|will be)"
+      - "goodwill (gesture|payment|credit)"
+      - "we will pay (for|you)"
+  - promise_type: REPLACEMENT
+    requires_eligibility: REPLACEMENT
+    patterns:
+      - "(free|complimentary|no-cost) replacement"
+      - "replacement (will be|is being) (sent|dispatched|shipped)"
+      - "we will replace (it|your|the)"
+  - promise_type: TIMELINE
+    requires_eligibility: null   # checked against the cited policy instead
+    patterns:
+      - "within \\d+\\s?(hour|day|week|business day)s?"
+      - "by (tomorrow|today|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday)"
+      - "guarantee[ds]? (delivery|resolution|repair) (by|within|on)"
+      - "no later than"
+  - promise_type: EXCEPTION
+    requires_eligibility: POLICY_EXCEPTION
+    patterns:
+      - "(as |we will make )?an exception"
+      - "we (will )?waive (the|your|all)"
+      - "outside (of )?(the )?(normal |usual )?policy"
+      - "special (approval|case|arrangement) for you"
+
+# ── 4. Deterministic entity patterns (SRS Step 16) ────────────────────────
+# Python's own extraction pass, compared against the model's extraction.
+
+# -- entity patterns -----------------------------------------------------
+# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
+
+# -- entity patterns -----------------------------------------------------
+# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
+
+# -- entity patterns -----------------------------------------------------
+# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
+
+# -- entity patterns -----------------------------------------------------
+# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
+
+# -- entity patterns -----------------------------------------------------
+# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
+
+# -- entity patterns -----------------------------------------------------
+# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
+
+# -- entity patterns -----------------------------------------------------
+# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
+
+# -- entity patterns -----------------------------------------------------
+# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
+
+# -- entity patterns -----------------------------------------------------
+# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
+
+# -- entity patterns -----------------------------------------------------
+# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
+
+# -- entity patterns -----------------------------------------------------
+# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
+entity_patterns:
+  ORDER_ID: "\\b(?:CN|FWD)-?\\d{6,12}\\b"
+  TRANSACTION_ID: "\\bMER-\\d{3,5}-[A-Z]{2,8}\\b"
+  INVOICE_ID: "\\bINV-?\\d{5,10}\\b"
+  COMPLAINT_REF: "\\bCMP-?\\d{4,8}\\b"
+  AMOUNT: "(?:pkr|rs\\.?|inr|usd|[$])\\s?\\d[\\d,]*(?:\\.\\d{1,2})?"
+  DATE_ISO: "\\b\\d{4}-\\d{2}-\\d{2}\\b"
+  EMAIL: "[\\w.+-]+@[\\w-]+\\.[\\w.]{2,}"
+  PHONE: "\\+?\\d[\\d\\s-]{8,14}\\d"

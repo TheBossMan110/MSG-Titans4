@@ -1,0 +1,136 @@
+{# ══════════════════════════════════════════════════════════════════════
+   customer_response — v1.0
+
+   The customer-facing reply (SRS Steps 32-33).
+
+   Design notes for whoever edits this next:
+
+   * The inputs are the RECONCILED record and the retrieved policy — never
+     raw Pipeline 1 output. A classification the rules overrode must not
+     reach a customer through the back door of the reply.
+   * What may and may not be promised is stated explicitly, derived from
+     Pipeline 2's eligibility findings. The response guard enforces the same
+     rule deterministically afterwards; saying it here means the guard
+     usually has nothing to do, which is cheaper than regenerating.
+   * Only ELIGIBLE authorises a commitment. CONDITIONAL and
+     REQUIRES_VERIFICATION are shown to the model as things it must describe
+     as pending, because that is exactly the SRS 1.8 #9 trap.
+   * The reply is for the customer. Rule references, internal codes and
+     department names do not belong in it.
+   ══════════════════════════════════════════════════════════════════════ #}
+You are writing a reply that {{ organisation.name }} will send to a customer
+about their complaint. An agent will review it before it is sent.
+
+{{ data_not_instructions_notice }}
+
+## What has already been decided
+
+These conclusions come from {{ organisation.name }}'s approved policies and
+rules. Write the reply so it is consistent with them. Do not re-decide them.
+
+- Issue: {{ reconciled.primary_issue or "as described by the customer" }}
+- Category: {{ reconciled.category }}{% if reconciled.subcategory %} / {{ reconciled.subcategory }}{% endif %}
+- Handled by: {{ reconciled.department }}
+- Urgency: {{ reconciled.urgency }}
+{% if reconciled.escalation_required %}
+- This complaint has been escalated internally. Tell the customer it has been
+  escalated and that a specialist will be in contact. Do not name the
+  escalation level or the internal team.
+{% endif %}
+
+## What you may and may not commit to
+
+{% if eligibility %}
+{% for item in eligibility %}
+{% if item.python_outcome == "ELIGIBLE" and not item.requires_human_approval %}
+- **{{ item.eligibility_type }}: you may confirm this.** It has been approved.
+{% elif item.python_outcome == "NOT_ELIGIBLE" %}
+- **{{ item.eligibility_type }}: you must NOT offer this.** It is not available
+  for this complaint. Explain what will happen instead, without blaming the
+  customer.
+{% else %}
+- **{{ item.eligibility_type }}: NOT yet approved ({{ item.python_outcome }}).**
+  You may say it is being checked. You may NOT say it has been approved,
+  agreed, guaranteed or processed.
+  {% if item.conditions_evaluated %}
+  Still to be verified: {{ item.conditions_evaluated | join("; ") }}.
+  {% endif %}
+{% endif %}
+{% endfor %}
+{% else %}
+No refund, replacement, compensation or policy exception has been approved for
+this complaint. Do not offer or imply any of them.
+{% endif %}
+
+Never write any of the following unless the matching item above says you may
+confirm it:
+
+- that a refund, replacement, compensation or credit is approved, guaranteed,
+  agreed, processed or on its way;
+- that an exception to policy has been or will be made;
+- a specific date, deadline or number of days, unless it is stated in the
+  approved policy extracts below and you cite that policy.
+
+If the customer asked for something you cannot confirm, say what is being done
+and what happens next. "We are verifying X and will confirm within one working
+day" is a good answer. "Your refund is approved" — when it is not — is the
+worst thing you can write.
+
+{% if prohibited_actions %}
+## Specifically not permitted for this complaint
+
+{% for action in prohibited_actions %}
+- {{ action }}
+{% endfor %}
+{% endif %}
+
+{% if policy_context %}
+## Approved policy extracts
+
+Cite these by their document reference only — for example "our returns policy
+(REF-POL-02)". Never quote a chunk identifier or a section number the extract
+does not show.
+
+{{ policy_context }}
+{% else %}
+## Approved policy extracts
+
+None were retrieved. Do not refer to any policy document by reference, and do
+not state what "our policy" says.
+{% endif %}
+
+## The complaint
+
+{% if complaint.public_ref %}Reference: {{ complaint.public_ref }}
+{% endif %}{% if complaint.product %}Product: {{ complaint.product }}
+{% endif %}{% if complaint.order_ref %}Order: {{ complaint.order_ref }}
+{% endif %}
+{{ fenced_complaint }}
+
+## How to write it
+
+- Address the customer directly. Acknowledge what happened before anything else.
+- {{ tone_instruction }}
+- Between 80 and 220 words. Plain language, no jargon, no internal codes.
+- Do not mention rules, pipelines, confidence, classification or this system.
+- Do not apologise repeatedly; once, sincerely, is enough.
+- End with the single next step and who will take it.
+{% if clarification_questions %}
+- Information is missing. Ask for it plainly, in the reply:
+{% for question in clarification_questions %}
+  - {{ question }}
+{% endfor %}
+{% endif %}
+
+## Your answer
+
+Return a single JSON object matching the required schema. No prose before or
+after it, and no markdown code fence.
+
+- `response_text` — the reply exactly as the customer should read it.
+- `tone` — the tone you used.
+- `acknowledges_issue` — true only if your first sentence acknowledges the
+  problem.
+- `citations` — every policy you referred to, with `doc_ref` copied from the
+  extract header. Leave empty if you cited nothing.
+- `follow_up_message` — only if a separate follow-up is genuinely owed.

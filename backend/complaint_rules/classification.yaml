@@ -1,0 +1,2025 @@
+# ========================================================================
+# RaftarXpress - CLASSIFICATION RULES
+#
+# What a complaint is about, decided without the model. Precedence
+# rises with severity, so inside one subcategory the worse rule wins:
+# a delayed parcel carrying life-saving drugs is not a routine delay.
+#
+# GENERATED from dataset/raftarxpress by scripts/convert_raftarxpress.py.
+# Edit the dataset and re-run. Tune live at /api/admin/rules, which
+# refuses a condition naming a signal no lexicon term raises.
+# ========================================================================
+
+version: "1.0"
+ruleset: classification
+
+rules:
+
+  - rule_ref: RULE-001
+    name: Standard domestic transit delay under 24 hours without perishable contents
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Routine operational delay; priority based on transit SLA standard, not customer agitation level"
+    when:
+      signal: delayed_delivery_terms
+    then:
+      category: DELIVERY
+      subcategory: DELAYED_DELIVERY
+      department: LOGISTICS_OPS
+      urgency: MEDIUM
+      priority: P2
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "1" }
+
+  - rule_ref: RULE-002
+    name: "Transit delay exceeding 72 hours with repeated customer inquiries (>2 times)"
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Extended SLA breach triggers elevated operational review regardless of initial package value
+    when:
+      all_of:
+        - signal: delayed_delivery_terms
+        - signal: rule_002_evidence
+    then:
+      category: DELIVERY
+      subcategory: DELAYED_DELIVERY
+      department: LOGISTICS_OPS
+      support_department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "1" }
+
+  - rule_ref: RULE-003
+    name: Delayed delivery containing urgent medical supplies, life-saving drugs or temperature-sensitive goods
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Critical human health and safety impact mandates P0 classification even if customer is calm
+    when:
+      all_of:
+        - signal: delayed_delivery_terms
+        - signal: rule_003_evidence
+    then:
+      category: DELIVERY
+      subcategory: DELAYED_DELIVERY
+      department: LOGISTICS_OPS
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-018, section_ref: "1" }
+
+  - rule_ref: RULE-004
+    name: First missed delivery attempt due to customer premises locked or phone unattended
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Standard operational first-attempt failure; low severity under standard delivery workflow"
+    when:
+      signal: missed_delivery_attempt_terms
+    then:
+      category: DELIVERY
+      subcategory: MISSED_DELIVERY_ATTEMPT
+      department: LOGISTICS_OPS
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "1" }
+
+  - rule_ref: RULE-005
+    name: Consignee alleges fake delivery attempt / rider marked delivered or attempted without visiting
+    rule_type: CLASSIFICATION
+    precedence: 66
+    rationale: Integrity breach allegation by field courier warrants P1 priority investigation
+    when:
+      all_of:
+        - signal: missed_delivery_attempt_terms
+        - signal: rule_005_evidence
+    then:
+      category: DELIVERY
+      subcategory: MISSED_DELIVERY_ATTEMPT
+      department: LOGISTICS_OPS
+      support_department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-020, section_ref: "1" }
+
+  - rule_ref: RULE-006
+    name: Third consecutive missed delivery attempt reaching maximum quota threshold
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Approaching RTO transition threshold requires structured hold verification
+    when:
+      all_of:
+        - signal: missed_delivery_attempt_terms
+        - signal: rule_006_evidence
+    then:
+      category: DELIVERY
+      subcategory: MISSED_DELIVERY_ATTEMPT
+      department: LOGISTICS_OPS
+      support_department: RETURNS_REFUNDS
+      urgency: MEDIUM
+      priority: P2
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "4" }
+
+  - rule_ref: RULE-007
+    name: Package left on porch or with building guard with prior verbal consignee permission
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Routine delivery variation with customer consent; low operational risk"
+    when:
+      signal: package_left_unattended_terms
+    then:
+      category: DELIVERY
+      subcategory: PACKAGE_LEFT_UNATTENDED
+      department: LOGISTICS_OPS
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "3" }
+
+  - rule_ref: RULE-008
+    name: Package left unattended at gate/street without customer consent, package intact
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: "Delivery policy violation without asset loss; corrective feedback required"
+    when:
+      all_of:
+        - signal: package_left_unattended_terms
+        - signal: rule_008_evidence
+    then:
+      category: DELIVERY
+      subcategory: PACKAGE_LEFT_UNATTENDED
+      department: LOGISTICS_OPS
+      urgency: MEDIUM
+      priority: P2
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "3" }
+
+  - rule_ref: RULE-009
+    name: "Package left unattended without consent and subsequently stolen or missing (value > PKR 50,000)"
+    rule_type: CLASSIFICATION
+    precedence: 66
+    rationale: Courier negligence leading to high-value loss constitutes mandatory escalation
+    when:
+      all_of:
+        - signal: package_left_unattended_terms
+        - signal: rule_009_evidence
+    then:
+      category: DELIVERY
+      subcategory: PACKAGE_LEFT_UNATTENDED
+      department: LOGISTICS_OPS
+      support_department: WARRANTY_CLAIMS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "3" }
+
+  - rule_ref: RULE-010
+    name: Parcel misrouted to incorrect local branch within same city (e.g. Clifton instead of Gulshan)
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Internal inter-branch routing error; resolvable within next intra-city shuttle cycle"
+    when:
+      signal: wrong_route_dispatch_terms
+    then:
+      category: DELIVERY
+      subcategory: WRONG_ROUTE_DISPATCH
+      department: LOGISTICS_OPS
+      urgency: MEDIUM
+      priority: P2
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-011, section_ref: "1" }
+
+  - rule_ref: RULE-011
+    name: Parcel dispatched to incorrect province/city (e.g., booked for Lahore, dispatched to Multan)
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Inter-provincial misdirection adds 48+ hours transit delay, requiring expedited linehaul turnaround
+    when:
+      all_of:
+        - signal: wrong_route_dispatch_terms
+        - signal: rule_011_evidence
+    then:
+      category: DELIVERY
+      subcategory: WRONG_ROUTE_DISPATCH
+      department: LOGISTICS_OPS
+      support_department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-011, section_ref: "1" }
+
+  - rule_ref: RULE-012
+    name: "Repeated routing error on same consignment note (>2 misdirections)"
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Severe operational failure indicating system barcode corruption or sorting malfunction
+    when:
+      all_of:
+        - signal: wrong_route_dispatch_terms
+        - signal: rule_012_evidence
+    then:
+      category: DELIVERY
+      subcategory: WRONG_ROUTE_DISPATCH
+      department: LOGISTICS_OPS
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-013
+    name: "Standard parcel missing scan for >5 days, declared value under PKR 15,000"
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: "Loss claim within standard non-insured cap; requires systematic hub search and standard claim validation"
+    when:
+      all_of:
+        - signal: lost_parcel_terms
+        - signal: rule_013_evidence
+    then:
+      category: LOST_SHIPMENT
+      subcategory: LOST_PARCEL
+      department: WARRANTY_CLAIMS
+      support_department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "1" }
+
+  - rule_ref: RULE-014
+    name: Insured shipment lost in transit with declared value between PKR 15,000 and PKR 100,000
+    rule_type: CLASSIFICATION
+    precedence: 66
+    rationale: Insured asset loss requiring policy payout verification under cargo claims protocol
+    when:
+      signal: lost_parcel_terms
+    then:
+      category: LOST_SHIPMENT
+      subcategory: LOST_PARCEL
+      department: WARRANTY_CLAIMS
+      support_department: BILLING
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "3" }
+
+  - rule_ref: RULE-015
+    name: High-value consignment lost in transit (declared value exceeding PKR 100,000 or corporate freight)
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: "High-value threshold (>PKR 100k) mandates immediate executive management escalation"
+    when:
+      all_of:
+        - signal: lost_parcel_terms
+        - signal: rule_015_evidence
+    then:
+      category: LOST_SHIPMENT
+      subcategory: LOST_PARCEL
+      department: WARRANTY_CLAIMS
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-016
+    name: Multi-piece consignment missing 1 of N boxes, standard commercial cargo
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: "Partial loss in multi-piece freight; requires immediate split-manifest tracking"
+    when:
+      all_of:
+        - signal: partial_shipment_missing_terms
+        - signal: rule_016_evidence
+    then:
+      category: LOST_SHIPMENT
+      subcategory: PARTIAL_SHIPMENT_MISSING
+      department: WARRANTY_CLAIMS
+      support_department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "2" }
+
+  - rule_ref: RULE-017
+    name: Partial loss confirmed stolen from damaged outer master carton
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Cargo pilferage in transit involves security assessment alongside loss compensation
+    when:
+      signal: partial_shipment_missing_terms
+    then:
+      category: LOST_SHIPMENT
+      subcategory: PARTIAL_SHIPMENT_MISSING
+      department: WARRANTY_CLAIMS
+      support_department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "4" }
+
+  - rule_ref: RULE-018
+    name: "High-value partial theft with total missing item value > PKR 100,000"
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: High financial threshold combined with cargo tampering requires executive intervention
+    when:
+      all_of:
+        - signal: partial_shipment_missing_terms
+        - signal: rule_018_evidence
+    then:
+      category: LOST_SHIPMENT
+      subcategory: PARTIAL_SHIPMENT_MISSING
+      department: WARRANTY_CLAIMS
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-019
+    name: Minor outer carton denting with internal goods completely undamaged
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Superficial aesthetic damage without product defect; standard inquiry closure"
+    when:
+      signal: damaged_parcel_terms
+    then:
+      category: PRODUCT_DEFECT
+      subcategory: DAMAGED_PARCEL
+      department: WARRANTY_CLAIMS
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "4" }
+
+  - rule_ref: RULE-020
+    name: "Total breakage of fragile contents due to rough transit handling (value < PKR 15,000)"
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: Verified transit destruction within standard liability limits
+    when:
+      all_of:
+        - signal: damaged_parcel_terms
+        - signal: rule_020_evidence
+    then:
+      category: PRODUCT_DEFECT
+      subcategory: DAMAGED_PARCEL
+      department: WARRANTY_CLAIMS
+      support_department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "2" }
+
+  - rule_ref: RULE-021
+    name: Catastrophic damage to commercial freight / industrial equipment exceeding PKR 100,000
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: "Severe property loss (>PKR 100,000) requiring mandatory executive management escalation"
+    when:
+      all_of:
+        - signal: damaged_parcel_terms
+        - signal: rule_021_evidence
+    then:
+      category: PRODUCT_DEFECT
+      subcategory: DAMAGED_PARCEL
+      department: WARRANTY_CLAIMS
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-022
+    name: Wrong parcel delivered due to courier label swap at last-mile delivery point
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: "Direct courier swap error; urgent recovery required to protect privacy and deliver correct goods"
+    when:
+      all_of:
+        - signal: wrong_item_delivered_terms
+        - signal: rule_022_evidence
+    then:
+      category: PRODUCT_DEFECT
+      subcategory: WRONG_ITEM_DELIVERED
+      department: LOGISTICS_OPS
+      support_department: RETURNS_REFUNDS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-011, section_ref: "1" }
+
+  - rule_ref: RULE-023
+    name: Merchant packed wrong SKU / manifest matches parcel contents but merchant made error
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Merchant fulfillment mistake outside courier liability; customer guided to merchant return flow"
+    when:
+      signal: wrong_item_delivered_terms
+    then:
+      category: PRODUCT_DEFECT
+      subcategory: WRONG_ITEM_DELIVERED
+      department: LOGISTICS_OPS
+      support_department: CUSTOMER_RELATIONS
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "1" }
+
+  - rule_ref: RULE-024
+    name: Misdelivered parcel contains confidential corporate data or restricted goods
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Security and privacy emergency created by wrong delivery handover
+    when:
+      all_of:
+        - signal: wrong_item_delivered_terms
+        - signal: rule_024_evidence
+    then:
+      category: PRODUCT_DEFECT
+      subcategory: WRONG_ITEM_DELIVERED
+      department: LOGISTICS_OPS
+      support_department: ACCOUNT_SECURITY
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RULE-025
+    name: Parcel received with broken security tape but all items accounted for and intact
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: "Security seal compromise without financial loss; internal handling review required"
+    when:
+      signal: tampered_packaging_terms
+    then:
+      category: PRODUCT_DEFECT
+      subcategory: TAMPERED_PACKAGING
+      department: ACCOUNT_SECURITY
+      support_department: LOGISTICS_OPS
+      urgency: MEDIUM
+      priority: P2
+      policy_refs:
+        - { doc_ref: DOC-009, section_ref: "3" }
+
+  - rule_ref: RULE-026
+    name: Parcel cut open and high-value item replaced with dummy weight / counterfeit goods
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Internal organized theft/fraud pattern mandates immediate security escalation
+    when:
+      all_of:
+        - signal: tampered_packaging_terms
+        - signal: rule_026_evidence
+    then:
+      category: PRODUCT_DEFECT
+      subcategory: TAMPERED_PACKAGING
+      department: ACCOUNT_SECURITY
+      support_department: WARRANTY_CLAIMS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-006, section_ref: "1" }
+
+  - rule_ref: RULE-027
+    name: Merchant reports repeated tampered packages from a specific regional dispatch route
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: Systemic route theft pattern threatening route security and client retention
+    when:
+      all_of:
+        - signal: tampered_packaging_terms
+        - signal: rule_027_evidence
+    then:
+      category: PRODUCT_DEFECT
+      subcategory: TAMPERED_PACKAGING
+      department: ACCOUNT_SECURITY
+      support_department: SAFETY
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "3" }
+
+  - rule_ref: RULE-028
+    name: Rider demands higher COD cash than printed on official digital consignment manifest
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Field extortion or overcharging allegation requires strict compliance intervention
+    when:
+      all_of:
+        - signal: cod_amount_mismatch_terms
+        - signal: rule_028_evidence
+    then:
+      category: BILLING
+      subcategory: COD_AMOUNT_MISMATCH
+      department: BILLING
+      support_department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "3" }
+
+  - rule_ref: RULE-029
+    name: Merchant booked wrong COD amount on portal and requests in-transit correction
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Merchant booking correction before delivery handover; routine administrative adjustment"
+    when:
+      signal: cod_amount_mismatch_terms
+    then:
+      category: BILLING
+      subcategory: COD_AMOUNT_MISMATCH
+      department: BILLING
+      urgency: MEDIUM
+      priority: P2
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "3" }
+
+  - rule_ref: RULE-030
+    name: "COD cash discrepancy resulting in customer overpayment of > PKR 10,000"
+    rule_type: CLASSIFICATION
+    precedence: 66
+    rationale: Material financial overcharge requiring immediate excess refund reconciliation
+    when:
+      all_of:
+        - signal: cod_amount_mismatch_terms
+        - signal: rule_030_evidence
+    then:
+      category: BILLING
+      subcategory: COD_AMOUNT_MISMATCH
+      department: BILLING
+      support_department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "3" }
+
+  - rule_ref: RULE-031
+    name: Customer online portal shows two identical invoice charges for a single consignment booking
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Technical payment gateway double-deduction; verified via transaction reference"
+    when:
+      signal: duplicate_charge_terms
+    then:
+      category: BILLING
+      subcategory: DUPLICATE_CHARGE
+      department: BILLING
+      urgency: MEDIUM
+      priority: P2
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "3" }
+
+  - rule_ref: RULE-032
+    name: Merchant corporate freight account billed twice on monthly consolidated billing statement
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Corporate billing error impacting B2B client relationship and credit limits
+    when:
+      all_of:
+        - signal: duplicate_charge_terms
+        - signal: rule_032_evidence
+    then:
+      category: BILLING
+      subcategory: DUPLICATE_CHARGE
+      department: BILLING
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "3" }
+
+  - rule_ref: RULE-033
+    name: "Repeated duplicate deductions causing severe bank overdraft / penalties (> PKR 50,000)"
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Severe financial distress caused by billing engine defect mandates executive escalation
+    when:
+      all_of:
+        - signal: duplicate_charge_terms
+        - signal: rule_033_evidence
+    then:
+      category: BILLING
+      subcategory: DUPLICATE_CHARGE
+      department: BILLING
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-034
+    name: "Dispute over volumetric vs dead weight calculation resulting in minor overcharge (< PKR 1,000)"
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Standard dimensional weight inquiry; priority remains low regardless of customer frustration"
+    when:
+      signal: incorrect_charge_terms
+    then:
+      category: BILLING
+      subcategory: INCORRECT_CHARGE
+      department: BILLING
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "1" }
+
+  - rule_ref: RULE-035
+    name: Systemic fuel surcharge applied at expired higher rate across monthly merchant invoice
+    rule_type: CLASSIFICATION
+    precedence: 66
+    rationale: Regulatory and contractual tariff discrepancy affecting broad client billing accuracy
+    when:
+      all_of:
+        - signal: incorrect_charge_terms
+        - signal: rule_035_evidence
+    then:
+      category: BILLING
+      subcategory: INCORRECT_CHARGE
+      department: BILLING
+      support_department: COMPLIANCE
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "2" }
+
+  - rule_ref: RULE-036
+    name: Freight overcharge dispute on enterprise bulk contract exceeding PKR 100,000
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Major contract dispute exceeding PKR 100k threshold requires executive review
+    when:
+      all_of:
+        - signal: incorrect_charge_terms
+        - signal: rule_036_evidence
+    then:
+      category: BILLING
+      subcategory: INCORRECT_CHARGE
+      department: BILLING
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-037
+    name: Merchant COD remittance delayed past standard Wednesday cycle due to bank holiday
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Banking holiday calendar postponement; routine automated notification workflow"
+    when:
+      signal: cod_remittance_delay_terms
+    then:
+      category: BILLING
+      subcategory: COD_REMITTANCE_DELAY
+      department: BILLING
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "2" }
+
+  - rule_ref: RULE-038
+    name: "Merchant COD remittance overdue by >7 days with balance between PKR 20,000 and PKR 100,000"
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: "Extended financial remittance delay disrupts merchant cash-flow; requires senior accountant intervention"
+    when:
+      all_of:
+        - signal: cod_remittance_delay_terms
+        - signal: rule_038_evidence
+    then:
+      category: BILLING
+      subcategory: COD_REMITTANCE_DELAY
+      department: BILLING
+      support_department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "2" }
+
+  - rule_ref: RULE-039
+    name: Unresolved COD remittance withheld exceeding PKR 100,000 with legal threat from merchant
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: "Legal threat combined with high-value financial retention (>PKR 100k) mandates P0 escalation"
+    when:
+      all_of:
+        - signal: cod_remittance_delay_terms
+        - signal: rule_039_evidence
+    then:
+      category: BILLING
+      subcategory: COD_REMITTANCE_DELAY
+      department: BILLING
+      support_department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-040
+    name: Customer refund requested within 7-day policy window, all documentation verified
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: Standard authorized refund processing within standard 5-7 business day window
+    when:
+      signal: refund_not_processed_terms
+    then:
+      category: REFUND
+      subcategory: REFUND_NOT_PROCESSED
+      department: RETURNS_REFUNDS
+      support_department: BILLING
+      urgency: MEDIUM
+      priority: P2
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-001, section_ref: "2" }
+
+  - rule_ref: RULE-041
+    name: Refund request submitted on day 8 (past 7-day window) citing genuine medical emergency
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Policy exception request requiring supervisor discretionary review under customer care guidelines
+    when:
+      all_of:
+        - signal: refund_not_processed_terms
+        - signal: rule_041_evidence
+    then:
+      category: REFUND
+      subcategory: REFUND_NOT_PROCESSED
+      department: RETURNS_REFUNDS
+      support_department: CUSTOMER_RELATIONS
+      urgency: MEDIUM
+      priority: P2
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-001, section_ref: "2" }
+
+  - rule_ref: RULE-042
+    name: Refund approved over 14 days ago but never disbursed due to banking IBFT batch drop
+    rule_type: CLASSIFICATION
+    precedence: 66
+    rationale: Company processing failure resulting in severe SLA breach on customer funds
+    when:
+      all_of:
+        - signal: refund_not_processed_terms
+        - signal: rule_042_evidence
+    then:
+      category: REFUND
+      subcategory: REFUND_NOT_PROCESSED
+      department: RETURNS_REFUNDS
+      support_department: BILLING
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-001, section_ref: "4" }
+
+  - rule_ref: RULE-043
+    name: Customer inquiry regarding refund status currently on day 3 of 5-7 day standard SLA
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Inquiry within standard SLA window; low priority reassurance and status sharing"
+    when:
+      signal: refund_delay_terms
+    then:
+      category: REFUND
+      subcategory: REFUND_DELAY
+      department: RETURNS_REFUNDS
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-001, section_ref: "4" }
+
+  - rule_ref: RULE-044
+    name: Refund delayed due to customer providing incorrect IBFT account number / title mismatch
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "External banking data mismatch; requires prompt customer contact for account correction"
+    when:
+      all_of:
+        - signal: refund_delay_terms
+        - signal: rule_044_evidence
+    then:
+      category: REFUND
+      subcategory: REFUND_DELAY
+      department: RETURNS_REFUNDS
+      urgency: MEDIUM
+      priority: P2
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-001, section_ref: "4" }
+
+  - rule_ref: RULE-045
+    name: Bulk merchant refund batch delayed across 50+ accounts due to core banking portal outage
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: Widespread financial distribution failure impacting multiple merchant partnerships
+    when:
+      all_of:
+        - signal: refund_delay_terms
+        - signal: rule_045_evidence
+    then:
+      category: REFUND
+      subcategory: REFUND_DELAY
+      department: RETURNS_REFUNDS
+      support_department: BILLING
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-018, section_ref: "1" }
+
+  - rule_ref: RULE-046
+    name: Failed delivery consignment held in hub awaiting scheduled weekly RTO consolidation
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Normal reverse logistics transit timeline; low priority operational update"
+    when:
+      signal: rto_processing_delay_terms
+    then:
+      category: REFUND
+      subcategory: RTO_PROCESSING_DELAY
+      department: RETURNS_REFUNDS
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "4" }
+
+  - rule_ref: RULE-047
+    name: "RTO package stalled at regional transit hub for >10 days without movement scan"
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Extended reverse transit stall risks inventory obsolescence and merchant loss
+    when:
+      all_of:
+        - signal: rto_processing_delay_terms
+        - signal: rule_047_evidence
+    then:
+      category: REFUND
+      subcategory: RTO_PROCESSING_DELAY
+      department: RETURNS_REFUNDS
+      support_department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-010, section_ref: "2" }
+
+  - rule_ref: RULE-048
+    name: Merchant alleges high-value RTO parcel swapped with inferior merchandise during reverse transit
+    rule_type: CLASSIFICATION
+    precedence: 66
+    rationale: Reverse logistics cargo tampering and fraud allegation requires security escalation
+    when:
+      all_of:
+        - signal: rto_processing_delay_terms
+        - signal: rule_048_evidence
+    then:
+      category: REFUND
+      subcategory: RTO_PROCESSING_DELAY
+      department: RETURNS_REFUNDS
+      support_department: ACCOUNT_SECURITY
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-009, section_ref: "3" }
+
+  - rule_ref: RULE-049
+    name: Consumer portal account locked after 5 consecutive incorrect password attempts
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Standard automated security lockout; low priority self-service or basic verification reset"
+    when:
+      signal: account_locked_terms
+    then:
+      category: ACCOUNT
+      subcategory: ACCOUNT_LOCKED
+      department: CUSTOMER_RELATIONS
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "1" }
+
+  - rule_ref: RULE-050
+    name: High-volume merchant account locked during peak sales festival (e.g. 11.11 / Eid)
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: "Severe business impact on active corporate client; urgent priority resolution required"
+    when:
+      all_of:
+        - signal: account_locked_terms
+        - signal: rule_050_evidence
+    then:
+      category: ACCOUNT
+      subcategory: ACCOUNT_LOCKED
+      department: CUSTOMER_RELATIONS
+      support_department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-018, section_ref: "1" }
+
+  - rule_ref: RULE-051
+    name: Merchant account locked due to suspicious automated bot scraping / API abuse
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: "Security risk mitigation; requires technical security audit before access restoration"
+    when:
+      all_of:
+        - signal: account_locked_terms
+        - signal: rule_051_evidence
+    then:
+      category: ACCOUNT
+      subcategory: ACCOUNT_LOCKED
+      department: ACCOUNT_SECURITY
+      support_department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RULE-052
+    name: Customer reports suspicious login alert from unfamiliar city/IP address, no funds diverted
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: "Security threat detected; requires immediate credential revocation to prevent breach"
+    when:
+      signal: unauthorized_account_access_terms
+    then:
+      category: ACCOUNT
+      subcategory: UNAUTHORIZED_ACCOUNT_ACCESS
+      department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RULE-053
+    name: Merchant portal compromised and bank disbursement details altered to fraudulent account
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Critical financial security breach and active fraud attempt mandates P0 escalation
+    when:
+      all_of:
+        - signal: unauthorized_account_access_terms
+        - signal: rule_053_evidence
+    then:
+      category: ACCOUNT
+      subcategory: UNAUTHORIZED_ACCOUNT_ACCESS
+      department: ACCOUNT_SECURITY
+      support_department: BILLING
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RULE-054
+    name: Widespread credential-stuffing attack targeting corporate freight customer accounts
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Systemic cyber-attack threatening enterprise infrastructure and customer security
+    when:
+      all_of:
+        - signal: unauthorized_account_access_terms
+        - signal: rule_054_evidence
+    then:
+      category: ACCOUNT
+      subcategory: UNAUTHORIZED_ACCOUNT_ACCESS
+      department: ACCOUNT_SECURITY
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RULE-055
+    name: Merchant requests standard update to pickup warehouse address or contact phone number
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Routine administrative profile maintenance; low priority standard request"
+    when:
+      signal: merchant_profile_update_terms
+    then:
+      category: ACCOUNT
+      subcategory: MERCHANT_PROFILE_UPDATE
+      department: CUSTOMER_RELATIONS
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "1" }
+
+  - rule_ref: RULE-056
+    name: Merchant requests legal company title change and NTN/Sales Tax registration update
+    rule_type: CLASSIFICATION
+    precedence: 72
+    rationale: Legal and tax document verification required before modifying invoicing profile
+    when:
+      all_of:
+        - signal: merchant_profile_update_terms
+        - signal: rule_056_evidence
+    then:
+      category: ACCOUNT
+      subcategory: MERCHANT_PROFILE_UPDATE
+      department: CUSTOMER_RELATIONS
+      support_department: COMPLIANCE
+      urgency: MEDIUM
+      priority: P2
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "1" }
+
+  - rule_ref: RULE-057
+    name: Merchant requests critical change in corporate bank account for COD remittances
+    rule_type: CLASSIFICATION
+    precedence: 66
+    rationale: High-risk financial profile update requiring multi-party verification to prevent fraud
+    when:
+      all_of:
+        - signal: merchant_profile_update_terms
+        - signal: rule_057_evidence
+    then:
+      category: ACCOUNT
+      subcategory: MERCHANT_PROFILE_UPDATE
+      department: CUSTOMER_RELATIONS
+      support_department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "2" }
+
+  - rule_ref: RULE-058
+    name: Consignment tracking scan stationary for 12 hours during overnight inter-city linehaul
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Normal transit interval between major hub scans; low priority customer inquiry"
+    when:
+      signal: tracking_not_updating_terms
+    then:
+      category: TECHNICAL_SUPPORT
+      subcategory: TRACKING_NOT_UPDATING
+      department: CUSTOMER_RELATIONS
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-019, section_ref: "1" }
+
+  - rule_ref: RULE-059
+    name: "Tracking scan frozen at origin hub for >48 hours without departure event"
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Hub dwell time SLA breach indicates staging backlog or misplaced parcel
+    when:
+      all_of:
+        - signal: tracking_not_updating_terms
+        - signal: rule_059_evidence
+    then:
+      category: TECHNICAL_SUPPORT
+      subcategory: TRACKING_NOT_UPDATING
+      department: CUSTOMER_RELATIONS
+      support_department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-010, section_ref: "2" }
+
+  - rule_ref: RULE-060
+    name: Public tracking portal shows internal system error code (500) for all merchant shipments
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: Public API / web tracking outage affecting customer self-service visibility
+    when:
+      all_of:
+        - signal: tracking_not_updating_terms
+        - signal: rule_060_evidence
+    then:
+      category: TECHNICAL_SUPPORT
+      subcategory: TRACKING_NOT_UPDATING
+      department: CUSTOMER_RELATIONS
+      support_department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "2" }
+
+  - rule_ref: RULE-061
+    name: Single user reports mobile tracking app crashes on specific older Android OS version
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Isolated device compatibility issue; standard bug logging workflow"
+    when:
+      signal: app_crash_terms
+    then:
+      category: TECHNICAL_SUPPORT
+      subcategory: APP_CRASH
+      department: CUSTOMER_RELATIONS
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "2" }
+
+  - rule_ref: RULE-062
+    name: Courier mobile dispatch app crashes repeatedly across entire Lahore hub fleet
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Field operational stoppage impacting hundreds of deliveries requires emergency IT fix
+    when:
+      all_of:
+        - signal: app_crash_terms
+        - signal: rule_062_evidence
+    then:
+      category: TECHNICAL_SUPPORT
+      subcategory: APP_CRASH
+      department: CUSTOMER_RELATIONS
+      support_department: LOGISTICS_OPS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-018, section_ref: "1" }
+
+  - rule_ref: RULE-063
+    name: Merchant bulk manifest generator crashes on CSV uploads exceeding 500 rows
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: Feature performance bug affecting merchant batch booking productivity
+    when:
+      all_of:
+        - signal: app_crash_terms
+        - signal: rule_063_evidence
+    then:
+      category: TECHNICAL_SUPPORT
+      subcategory: APP_CRASH
+      department: CUSTOMER_RELATIONS
+      urgency: MEDIUM
+      priority: P2
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "2" }
+
+  - rule_ref: RULE-064
+    name: Merchant reports webhook delivery notification latency of 15 minutes during peak hours
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Non-fatal queue latency; performance tuning required on message broker"
+    when:
+      signal: api_webhook_failure_terms
+    then:
+      category: TECHNICAL_SUPPORT
+      subcategory: API_WEBHOOK_FAILURE
+      department: CUSTOMER_RELATIONS
+      urgency: MEDIUM
+      priority: P2
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "2" }
+
+  - rule_ref: RULE-065
+    name: E-commerce merchant webhook endpoint failing due to TLS certificate / SSL handshake error
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: "Endpoint configuration failure; technical diagnostics required"
+    when:
+      all_of:
+        - signal: api_webhook_failure_terms
+        - signal: rule_065_evidence
+    then:
+      category: TECHNICAL_SUPPORT
+      subcategory: API_WEBHOOK_FAILURE
+      department: CUSTOMER_RELATIONS
+      urgency: MEDIUM
+      priority: P2
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "2" }
+
+  - rule_ref: RULE-066
+    name: Enterprise corporate client API gateway completely down, blocking all nationwide bookings
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Enterprise B2B integration failure causing total revenue and operational standstill
+    when:
+      all_of:
+        - signal: api_webhook_failure_terms
+        - signal: rule_066_evidence
+    then:
+      category: TECHNICAL_SUPPORT
+      subcategory: API_WEBHOOK_FAILURE
+      department: CUSTOMER_RELATIONS
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-067
+    name: Customer reports rider spoke discourteously or showed impatient attitude during delivery
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: "Customer service quality lapse; requires coaching and formal record on rider file"
+    when:
+      signal: rude_rider_driver_behavior_terms
+    then:
+      category: STAFF_BEHAVIOR
+      subcategory: RUDE_RIDER_DRIVER_BEHAVIOR
+      department: LOGISTICS_OPS
+      support_department: CUSTOMER_RELATIONS
+      urgency: MEDIUM
+      priority: P2
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-020, section_ref: "1" }
+
+  - rule_ref: RULE-068
+    name: Rider used profanity, verbal threats, or aggressive harassment towards customer
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Zero-tolerance safety and harassment violation mandates emergency P0 escalation
+    when:
+      all_of:
+        - signal: rude_rider_driver_behavior_terms
+        - signal: rule_068_evidence
+    then:
+      category: STAFF_BEHAVIOR
+      subcategory: RUDE_RIDER_DRIVER_BEHAVIOR
+      department: LOGISTICS_OPS
+      support_department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-020, section_ref: "1" }
+
+  - rule_ref: RULE-069
+    name: "Repeated behavioral complaints (>3) against same delivery courier within 30 days"
+    rule_type: CLASSIFICATION
+    precedence: 66
+    rationale: Persistent behavioral non-compliance threatening brand reputation and customer safety
+    when:
+      all_of:
+        - signal: rude_rider_driver_behavior_terms
+        - signal: rule_069_evidence
+    then:
+      category: STAFF_BEHAVIOR
+      subcategory: RUDE_RIDER_DRIVER_BEHAVIOR
+      department: LOGISTICS_OPS
+      support_department: COMPLIANCE
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "2" }
+
+  - rule_ref: RULE-070
+    name: Rider verbally asks for tip / round-up change on prepaid shipment, customer refused and received parcel
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: "Violation of company ethical standards; rider compliance counseling required"
+    when:
+      signal: rider_demanding_cash_tip_terms
+    then:
+      category: STAFF_BEHAVIOR
+      subcategory: RIDER_DEMANDING_CASH_TIP
+      department: ACCOUNT_SECURITY
+      support_department: LOGISTICS_OPS
+      urgency: MEDIUM
+      priority: P2
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "2" }
+
+  - rule_ref: RULE-071
+    name: Rider refuses to release prepaid parcel unless customer pays unauthorized cash fee
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Illegal extortion and unlawful cargo withholding constitutes critical integrity breach
+    when:
+      all_of:
+        - signal: rider_demanding_cash_tip_terms
+        - signal: rule_071_evidence
+    then:
+      category: STAFF_BEHAVIOR
+      subcategory: RIDER_DEMANDING_CASH_TIP
+      department: ACCOUNT_SECURITY
+      support_department: LOGISTICS_OPS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "2" }
+
+  - rule_ref: RULE-072
+    name: Rider forged customer signature and pocketed change balance from large COD banknote
+    rule_type: CLASSIFICATION
+    precedence: 66
+    rationale: Financial fraud and forgery by field representative requiring audit and immediate refund
+    when:
+      all_of:
+        - signal: rider_demanding_cash_tip_terms
+        - signal: rule_072_evidence
+    then:
+      category: STAFF_BEHAVIOR
+      subcategory: RIDER_DEMANDING_CASH_TIP
+      department: ACCOUNT_SECURITY
+      support_department: BILLING
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "3" }
+
+  - rule_ref: RULE-073
+    name: Customer disputes warranty claim denial on non-insured cargo damaged by improper packaging
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Standard packaging guideline enforcement; clear policy explanation required"
+    when:
+      signal: warranty_claim_denied_terms
+    then:
+      category: WARRANTY
+      subcategory: WARRANTY_CLAIM_DENIED
+      department: WARRANTY_CLAIMS
+      urgency: MEDIUM
+      priority: P2
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "4" }
+
+  - rule_ref: RULE-074
+    name: Warranty claim denied due to filing on day 15 (1 day past 14-day window) due to hospital stay
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Policy exception dispute with extenuating medical circumstances
+    when:
+      all_of:
+        - signal: warranty_claim_denied_terms
+        - signal: rule_074_evidence
+    then:
+      category: WARRANTY
+      subcategory: WARRANTY_CLAIM_DENIED
+      department: WARRANTY_CLAIMS
+      support_department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "1" }
+
+  - rule_ref: RULE-075
+    name: Corporate VIP client claims denial on PKR 250,000 shipment threatening contract termination
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: "High-value dispute (>PKR 100,000) and major corporate contract risk requires executive intervention"
+    when:
+      all_of:
+        - signal: warranty_claim_denied_terms
+        - signal: rule_075_evidence
+    then:
+      category: WARRANTY
+      subcategory: WARRANTY_CLAIM_DENIED
+      department: WARRANTY_CLAIMS
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-076
+    name: Customer insurance claim approved, awaiting standard 21-day insurer settlement cycle
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Claim within normal insurance underwriter settlement timeline; status update workflow"
+    when:
+      signal: insurance_payout_delay_terms
+    then:
+      category: WARRANTY
+      subcategory: INSURANCE_PAYOUT_DELAY
+      department: WARRANTY_CLAIMS
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "3" }
+
+  - rule_ref: RULE-077
+    name: Insured payout delayed past 30 days due to missing underwriter surveyor sign-off
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: Insurance SLA breach requiring active claims department escalation with underwriter
+    when:
+      all_of:
+        - signal: insurance_payout_delay_terms
+        - signal: rule_077_evidence
+    then:
+      category: WARRANTY
+      subcategory: INSURANCE_PAYOUT_DELAY
+      department: WARRANTY_CLAIMS
+      support_department: BILLING
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "3" }
+
+  - rule_ref: RULE-078
+    name: Insurance payout withheld for enterprise cargo loss exceeding PKR 500,000
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Major capital loss dispute requiring Chief Operating Officer and Underwriter CEO engagement
+    when:
+      all_of:
+        - signal: insurance_payout_delay_terms
+        - signal: rule_078_evidence
+    then:
+      category: WARRANTY
+      subcategory: INSURANCE_PAYOUT_DELAY
+      department: WARRANTY_CLAIMS
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-079
+    name: Customer reports courier sent unsolicited personal message on WhatsApp after delivery
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Direct violation of customer data privacy and contact masking policy
+    when:
+      signal: data_privacy_breach_terms
+    then:
+      category: PRIVACY
+      subcategory: DATA_PRIVACY_BREACH
+      department: ACCOUNT_SECURITY
+      support_department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RULE-080
+    name: Merchant manifests containing 500+ customer names and phone numbers leaked online or sent to wrong client
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Massive PII data breach mandates immediate critical management and compliance escalation
+    when:
+      all_of:
+        - signal: data_privacy_breach_terms
+        - signal: rule_080_evidence
+    then:
+      category: PRIVACY
+      subcategory: DATA_PRIVACY_BREACH
+      department: ACCOUNT_SECURITY
+      support_department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RULE-081
+    name: Customer requests permanent deletion / erasure of shipping history under privacy rights
+    rule_type: CLASSIFICATION
+    precedence: 72
+    rationale: "Statutory data retention and erasure request; standard legal compliance workflow"
+    when:
+      all_of:
+        - signal: data_privacy_breach_terms
+        - signal: rule_081_evidence
+    then:
+      category: PRIVACY
+      subcategory: DATA_PRIVACY_BREACH
+      department: ACCOUNT_SECURITY
+      support_department: COMPLIANCE
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "3" }
+
+  - rule_ref: RULE-082
+    name: Customer requests opt-out from promotional broadcast SMS marketing campaigns
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Standard marketing unsubscribe request; low priority automated workflow"
+    when:
+      signal: unsolicited_marketing_sms_terms
+    then:
+      category: PRIVACY
+      subcategory: UNSOLICITED_MARKETING_SMS
+      department: COMPLIANCE
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "2" }
+
+  - rule_ref: RULE-083
+    name: Customer receives spam SMS originating from rogue third-party claiming to be company partner
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Brand spoofing and potential phishing attack targeting delivery recipients
+    when:
+      all_of:
+        - signal: unsolicited_marketing_sms_terms
+        - signal: rule_083_evidence
+    then:
+      category: PRIVACY
+      subcategory: UNSOLICITED_MARKETING_SMS
+      department: COMPLIANCE
+      support_department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "3" }
+
+  - rule_ref: RULE-084
+    name: Enterprise client alleges unauthorized marketing outreach to their confidential customer list
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Contractual non-solicitation breach and major corporate trust violation
+    when:
+      all_of:
+        - signal: unsolicited_marketing_sms_terms
+        - signal: rule_084_evidence
+    then:
+      category: PRIVACY
+      subcategory: UNSOLICITED_MARKETING_SMS
+      department: COMPLIANCE
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-085
+    name: Citizen reports courier van driving recklessly / speeding in residential neighborhood
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Public safety hazard requires immediate telematics review regardless of whether accident occurred
+    when:
+      signal: reckless_driving_safety_risk_terms
+    then:
+      category: SAFETY
+      subcategory: RECKLESS_DRIVING_SAFETY_RISK
+      department: SAFETY
+      support_department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-025, section_ref: "2" }
+
+  - rule_ref: RULE-086
+    name: Company delivery vehicle involved in road traffic accident resulting in property damage
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Traffic collision involving third-party property damage requires emergency P0 response
+    when:
+      all_of:
+        - signal: reckless_driving_safety_risk_terms
+        - signal: rule_086_evidence
+    then:
+      category: SAFETY
+      subcategory: RECKLESS_DRIVING_SAFETY_RISK
+      department: SAFETY
+      support_department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-025, section_ref: "2" }
+
+  - rule_ref: RULE-087
+    name: Severe fleet collision involving bodily injury or fatality
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Catastrophic human safety emergency mandates highest level executive crisis management
+    when:
+      all_of:
+        - signal: reckless_driving_safety_risk_terms
+        - signal: rule_087_evidence
+    then:
+      category: SAFETY
+      subcategory: RECKLESS_DRIVING_SAFETY_RISK
+      department: SAFETY
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-088
+    name: Hub staff identifies parcel emitting pungent odor / small non-toxic cosmetic liquid leak
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: "Minor contained spill; standard hazardous isolation and repacking protocol"
+    when:
+      signal: hazardous_material_mishandling_terms
+    then:
+      category: SAFETY
+      subcategory: HAZARDOUS_MATERIAL_MISHANDLING
+      department: SAFETY
+      urgency: MEDIUM
+      priority: P2
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-025, section_ref: "2" }
+
+  - rule_ref: RULE-089
+    name: Consignment of undeclared lithium batteries catches fire / emits smoke in regional sortation center
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Active fire hazard threatening personnel and facility mandates emergency P0 escalation
+    when:
+      all_of:
+        - signal: hazardous_material_mishandling_terms
+        - signal: rule_089_evidence
+    then:
+      category: SAFETY
+      subcategory: HAZARDOUS_MATERIAL_MISHANDLING
+      department: SAFETY
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-025, section_ref: "2" }
+
+  - rule_ref: RULE-090
+    name: Commercial freight shipment found to contain undeclared toxic industrial chemicals / acids
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Illegal contraband and toxic hazard violation requiring regulatory reporting
+    when:
+      all_of:
+        - signal: hazardous_material_mishandling_terms
+        - signal: rule_090_evidence
+    then:
+      category: SAFETY
+      subcategory: HAZARDOUS_MATERIAL_MISHANDLING
+      department: SAFETY
+      support_department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "1" }
+
+  - rule_ref: RULE-091
+    name: "Inter-provincial consignment missing commercial invoice copy in outer pouch; digital copy on file"
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: Administrative documentation omission resolvable via electronic archive printout
+    when:
+      signal: missing_customs_documents_terms
+    then:
+      category: CUSTOMS
+      subcategory: MISSING_CUSTOMS_DOCUMENTS
+      department: COMPLIANCE
+      urgency: MEDIUM
+      priority: P2
+      policy_refs:
+        - { doc_ref: DOC-024, section_ref: "1" }
+
+  - rule_ref: RULE-092
+    name: Shipment held at provincial check-post due to missing provincial sales tax / e-way bill
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Regulatory checkpoint hold threatens delivery SLA and risks fine
+    when:
+      all_of:
+        - signal: missing_customs_documents_terms
+        - signal: rule_092_evidence
+    then:
+      category: CUSTOMS
+      subcategory: MISSING_CUSTOMS_DOCUMENTS
+      department: COMPLIANCE
+      support_department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-024, section_ref: "1" }
+
+  - rule_ref: RULE-093
+    name: Corporate freight fleet impounded at customs terminal due to falsified commercial manifests
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Major legal and regulatory impoundment of carrier assets mandates executive intervention
+    when:
+      all_of:
+        - signal: missing_customs_documents_terms
+        - signal: rule_093_evidence
+    then:
+      category: CUSTOMS
+      subcategory: MISSING_CUSTOMS_DOCUMENTS
+      department: COMPLIANCE
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-094
+    name: Consignment held for routine random provincial excise vehicle weight and document check
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Standard regulatory inspection delay outside carrier control; low priority status notice"
+    when:
+      signal: regulatory_impoundment_hold_terms
+    then:
+      category: CUSTOMS
+      subcategory: REGULATORY_IMPOUNDMENT_HOLD
+      department: COMPLIANCE
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-024, section_ref: "2" }
+
+  - rule_ref: RULE-095
+    name: Customer shipment seized by customs due to suspicion of counterfeit trademark goods
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: Intellectual property and customs seizure requires formal compliance handling
+    when:
+      all_of:
+        - signal: regulatory_impoundment_hold_terms
+        - signal: rule_095_evidence
+    then:
+      category: CUSTOMS
+      subcategory: REGULATORY_IMPOUNDMENT_HOLD
+      department: COMPLIANCE
+      support_department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "1" }
+
+  - rule_ref: RULE-096
+    name: "Mass regulatory seizure of entire linehaul container valued at > PKR 5,000,000"
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Massive enterprise operational and legal seizure requiring emergency executive response
+    when:
+      all_of:
+        - signal: regulatory_impoundment_hold_terms
+        - signal: rule_096_evidence
+    then:
+      category: CUSTOMS
+      subcategory: REGULATORY_IMPOUNDMENT_HOLD
+      department: COMPLIANCE
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-097
+    name: Corporate freight client requests routine annual rate review and SLA contract renewal
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: "Standard account management lifecycle; low urgency commercial negotiation"
+    when:
+      signal: subscription_contract_renewal_terms
+    then:
+      category: SERVICE_QUALITY
+      subcategory: SUBSCRIPTION_CONTRACT_RENEWAL
+      department: CUSTOMER_RELATIONS
+      urgency: LOW
+      priority: P3
+      policy_refs:
+        - { doc_ref: DOC-020, section_ref: "2" }
+
+  - rule_ref: RULE-098
+    name: Corporate client contract expiring in 7 days with disputed volume tier discounts
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: Imminent contract lapse threatening significant recurring revenue stream
+    when:
+      all_of:
+        - signal: subscription_contract_renewal_terms
+        - signal: rule_098_evidence
+    then:
+      category: SERVICE_QUALITY
+      subcategory: SUBSCRIPTION_CONTRACT_RENEWAL
+      department: CUSTOMER_RELATIONS
+      support_department: BILLING
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "2" }
+
+  - rule_ref: RULE-099
+    name: "Top-tier corporate account (annual freight > PKR 10M) serves 30-day termination notice over service quality"
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Critical enterprise retention risk mandates immediate executive leadership intervention
+    when:
+      all_of:
+        - signal: subscription_contract_renewal_terms
+        - signal: rule_099_evidence
+    then:
+      category: SERVICE_QUALITY
+      subcategory: SUBSCRIPTION_CONTRACT_RENEWAL
+      department: CUSTOMER_RELATIONS
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-100
+    name: VIP consumer shipment misses guaranteed overnight delivery commitment by 4 hours
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: VIP tier service level breach requires proactive priority compensation and outreach
+    when:
+      signal: executive_sla_breach_terms
+    then:
+      category: SERVICE_QUALITY
+      subcategory: EXECUTIVE_SLA_BREACH
+      department: MGMT_ESCALATIONS
+      support_department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-014, section_ref: "2" }
+
+  - rule_ref: RULE-101
+    name: Nationwide severe linehaul breakdown causing systemic SLA failure across 1,000+ consignments
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Catastrophic network disruption impacting nationwide operations requires executive crisis leadership
+    when:
+      all_of:
+        - signal: executive_sla_breach_terms
+        - signal: rule_101_evidence
+    then:
+      category: SERVICE_QUALITY
+      subcategory: EXECUTIVE_SLA_BREACH
+      department: MGMT_ESCALATIONS
+      support_department: LOGISTICS_OPS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-102
+    name: "Formal legal notice served by corporate client for systemic breach of SLA contract (> PKR 1,000,000)"
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Legal notice regarding major financial claim mandates highest priority management escalation
+    when:
+      all_of:
+        - signal: executive_sla_breach_terms
+        - signal: rule_102_evidence
+    then:
+      category: SERVICE_QUALITY
+      subcategory: EXECUTIVE_SLA_BREACH
+      department: MGMT_ESCALATIONS
+      support_department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-103
+    name: Cargo inspection reveals unregistered pharmaceutical narcotics hidden inside commercial parcel
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Criminal contraband discovery requires immediate police and regulatory notification
+    when:
+      all_of:
+        - signal: missing_customs_documents_terms
+        - signal: rule_103_evidence
+    then:
+      category: CUSTOMS
+      subcategory: MISSING_CUSTOMS_DOCUMENTS
+      department: COMPLIANCE
+      support_department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "1" }
+
+  - rule_ref: RULE-104
+    name: "Customer video of courier throwing fragile parcels goes viral on social media (>100k views)"
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Severe brand reputation crisis mandates immediate executive public relations response
+    when:
+      all_of:
+        - signal: executive_sla_breach_terms
+        - signal: rule_104_evidence
+    then:
+      category: SERVICE_QUALITY
+      subcategory: EXECUTIVE_SLA_BREACH
+      department: MGMT_ESCALATIONS
+      support_department: CUSTOMER_RELATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RULE-105
+    name: "Nationwide highway flooding closes national transit artery for >5 days"
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: Force majeure crisis affecting all provincial linehaul transit routes
+    when:
+      all_of:
+        - signal: delayed_delivery_terms
+        - signal: rule_105_evidence
+    then:
+      category: DELIVERY
+      subcategory: DELAYED_DELIVERY
+      department: LOGISTICS_OPS
+      support_department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+      policy_refs:
+        - { doc_ref: DOC-014, section_ref: "3" }
+
+  - rule_ref: SAF-0001
+    name: Physical hazard reported, however calmly
+    rule_type: CLASSIFICATION
+    precedence: 130
+    rationale: "A hazard is a hazard at any volume. SRS 1.8 #6: a calmly worded safety report must reach P0, and a furious one about a late parcel must not. Tone is recorded and structurally cannot reach this rule."
+    when:
+      signal: safety_lexicon_hit
+    then:
+      category: SAFETY
+      subcategory: RECKLESS_DRIVING_SAFETY_RISK
+      department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true
+
+  - rule_ref: SAF-0002
+    name: Hazard that has already caused injury or damage
+    rule_type: CLASSIFICATION
+    precedence: 135
+    rationale: A danger that has already hurt somebody is not the same complaint as one that has not. Ranked above SAF-0001 so the more serious reading wins when both match.
+    when:
+      all_of:
+        - signal: safety_lexicon_hit
+        - signal: injury_mention
+    then:
+      category: SAFETY
+      subcategory: RECKLESS_DRIVING_SAFETY_RISK
+      department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+      follow_up_required: true

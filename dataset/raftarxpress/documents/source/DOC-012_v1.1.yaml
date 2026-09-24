@@ -1,0 +1,49 @@
+# RaftarXpress Logistics (Pvt) Ltd - Shipment Booking Cancellation Policy, version 1.1 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [docx]
+
+metadata:
+  doc_ref: DOC-012
+  title: Shipment Booking Cancellation Policy
+  version: "1.1"
+  doc_type: POLICY
+  category: Cancellation Policy
+  family: FAM-CANCELLATION-POLICY
+  status: ACTIVE
+  effective_date: "2024-02-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-012 v1.1 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-012-S1
+    heading: Pre-Pickup Cancellation Window
+    page: 1
+    body:
+      - >-
+        Shippers may cancel booking requests without penalty at any time prior to
+        rider dispatch from the local operations hub.
+
+  - ref: "2"
+    source_id: DOC-012-S2
+    heading: In-Transit Interception Restrictions
+    page: 1
+    body:
+      - >-
+        Shipments already sorted into linehaul inter-city transit cannot be
+        immediately cancelled; an interception request may be logged to trigger
+        Return to Origin upon arrival at the destination hub.
+
+  - ref: "3"
+    source_id: DOC-012-S3
+    heading: Cancellation Surcharges
+    page: 2
+    body:
+      - >-
+        A nominal attempted pickup charge of PKR 150 applies if the rider arrives
+        at the merchant warehouse and pickup is declined without prior portal
+        cancellation.

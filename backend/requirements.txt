@@ -1,0 +1,54 @@
+# ─────────────────────────────────────────────────────────────
+# SupportNova — Backend requirements  (Python 3.11+)
+# ─────────────────────────────────────────────────────────────
+
+# --- web framework ---
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.12
+
+# --- config & validation ---
+pydantic>=2.9.0
+pydantic-settings>=2.6.0
+email-validator>=2.2.0
+
+# --- database ---
+SQLAlchemy>=2.0.35
+psycopg[binary]>=3.2.0
+alembic>=1.14.0
+pgvector>=0.3.6
+
+# --- auth & security ---
+argon2-cffi>=23.1.0
+PyJWT>=2.9.0
+slowapi>=0.1.9
+filetype>=1.2.0            # magic-byte file type detection (pure python, cross-platform)
+
+# --- document processing ---
+pdfplumber>=0.11.4
+pypdf>=5.1.0
+python-docx>=1.1.2
+
+# --- generative ai ---
+google-genai>=1.0.0        # Gemini (primary provider + embeddings)
+jinja2>=3.1.4              # versioned prompt templates
+tenacity>=9.0.0            # bounded retry / backoff
+
+# --- text matching & retrieval ---
+rapidfuzz>=3.10.0          # near-duplicate complaint detection
+rank-bm25>=0.2.2           # lexical retrieval fallback
+regex>=2024.9.11
+
+# --- http / storage ---
+httpx>=0.27.0              # LLM fallback providers + Supabase Storage REST
+
+# --- reporting & export ---
+pandas>=2.2.3
+openpyxl>=3.1.5
+reportlab>=4.2.5
+
+# --- config files ---
+PyYAML>=6.0.2
+
+# --- observability ---
+structlog>=24.4.0

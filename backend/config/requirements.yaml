@@ -1,0 +1,1545 @@
+# ══════════════════════════════════════════════════════════════════════════
+# SupportNova — SRS REQUIREMENT COVERAGE REGISTRY
+#
+# Every functional requirement (1.6 i–lxxv), every development step (1.2
+# Steps 1–68), every non-functional requirement (1.7) and every competition
+# integrity item (1.8) is listed here with the exact artefacts that implement
+# it: database tables, columns, modules, API endpoints and tests.
+#
+# This file is ENFORCED, not decorative.  `tests/test_requirements_coverage.py`
+# fails the build if:
+#   * a requirement id is missing from this file,
+#   * an item marked `status: done` names a table/column that does not exist,
+#   * an item marked `status: done` names a module file that does not exist,
+#   * an item marked `status: done` names an endpoint absent from the OpenAPI
+#     schema.
+#
+# status values
+#   done      implemented and verifiable right now
+#   partial   partially implemented; `gap` explains exactly what remains
+#   planned   not started; artefacts listed are the intended design
+#   frontend  delivered by the Next.js client, not the backend
+# ══════════════════════════════════════════════════════════════════════════
+
+meta:
+  project: SupportNova
+  theme: ResponseX Intelligence
+  category: Generative AI PowerPlay
+  srs_version: "1.0"
+  functional_requirement_count: 75
+  development_step_count: 68
+  non_functional_requirement_count: 5
+  integrity_item_count: 19
+
+# ══════════════════════════════════════════════════════════════════════════
+# 1.6 FUNCTIONAL REQUIREMENTS  (i – lxxv)
+# ══════════════════════════════════════════════════════════════════════════
+functional_requirements:
+
+  FR-i:
+    name: User Authentication
+    status: done
+    tables: [users, refresh_tokens]
+    columns: [users.password_hash, users.email, users.is_active, users.last_login_at]
+    modules: [src/core/security.py, src/services/auth.py, src/api/v1/auth.py]
+    api: ["POST /api/auth/login", "POST /api/auth/refresh", "POST /api/auth/logout"]
+    tests: [tests/test_auth.py]
+
+  FR-ii:
+    name: Role-Based Access Control
+    status: done
+    tables: [users]
+    columns: [users.role, users.department_id]
+    modules: [src/core/deps.py]
+    notes: >-
+      Six roles: customer, agent, reviewer, manager, admin, evaluator.
+      Refusals are written to audit_log as ACCESS_DENIED on an independent
+      committed session so the evidence survives the request rollback.
+    tests: [tests/test_auth.py]
+
+  FR-iii:
+    name: Complaint Submission
+    status: done
+    tables: [complaints, customers, complaint_validation_issues]
+    modules:
+      - complaint_processing/intake.py
+      - src/api/v1/complaints.py
+    tests: [tests/test_complaints_api.py]
+    notes: >-
+      Accepted, recorded and analysed in one call. The complaint is
+      persisted before analysis runs, so one that is accepted and then
+      fails analysis is still findable and workable by hand rather than
+      lost.
+    columns: [complaints.public_ref, complaints.description_raw, complaints.channel]
+    api: ["POST /api/complaints"]
+    srs_step: 9
+
+  FR-iv:
+    name: Complaint Validation
+    status: done
+    tables: [complaint_validation_issues]
+    modules:
+      - complaint_processing/validation.py
+    tests: [tests/test_complaints_api.py]
+    notes: >-
+      Empty, too short, too long, duplicate, invalid reference, missing
+      field, unsupported attachment and suspected injection are all
+      detected and persisted. Only an empty complaint is refused, and even
+      that attempt is recorded against submitted_ref so a refused intake
+      is visible in the audit rather than vanishing.
+    columns: [complaint_validation_issues.issue_code, complaint_validation_issues.outcome]
+    srs_step: 10
+
+  FR-v:
+    name: Complaint Pre-processing
+    status: done
+    tables: [complaints]
+    modules:
+      - complaint_processing/preprocess.py
+    tests: [tests/test_complaints_api.py]
+    notes: >-
+      NFKC normalisation, invisible and control character stripping,
+      whitespace collapse and a length cap. Both texts are kept:
+      description_raw is the evidence a security reviewer needs,
+      description_clean is what the pipelines read.
+    columns: [complaints.description_clean]
+    srs_step: 11
+
+  FR-vi:
+    name: Knowledge-Base Upload
+    status: done
+    tables: [documents, document_versions]
+    columns: [document_versions.file_path, document_versions.file_format]
+    modules: [knowledge_base/ingest.py, src/api/v1/documents.py, src/services/storage.py]
+    api: ["POST /api/documents"]
+    tests: [tests/test_documents_api.py, tests/test_knowledge_base.py]
+    srs_step: 3
+    notes: >-
+      PDF and DOCX both ingest end to end. Files are content-addressed in
+      object storage, and a per-file result is returned so one bad file in a
+      batch does not discard the good ones.
+
+  FR-vii:
+    name: Document Validation
+    status: done
+    tables: [document_validation_issues]
+    columns: [document_validation_issues.issue_code, document_validation_issues.outcome]
+    modules: [document_processing/validation.py, knowledge_base/ingest.py]
+    api: ["GET /api/documents/validation-issues"]
+    tests: [tests/test_document_processing.py, tests/test_documents_api.py]
+    srs_step: 4
+    notes: >-
+      File type is decided by magic bytes, not the extension. Every finding is
+      persisted, including for refused uploads, so the checks are provable
+      rather than merely asserted.
+
+  FR-viii:
+    name: Document Parsing
+    status: done
+    tables: [document_sections]
+    columns: [document_sections.page_no, document_sections.paragraph_index]
+    modules:
+      - document_processing/pdf_parser.py
+      - document_processing/docx_parser.py
+      - document_processing/sections.py
+      - document_processing/metadata.py
+    tests: [tests/test_document_processing.py]
+    srs_step: 5
+    notes: >-
+      PDF carries page numbers, DOCX carries paragraph indices, and both reach
+      the chunk row. A parity test renders the same policy to both formats and
+      asserts the parsers agree.
+
+  FR-ix:
+    name: Document Chunking
+    status: done
+    tables: [chunks]
+    columns: [chunks.chunk_key, chunks.section_ref, chunks.page_no, chunks.embedding]
+    modules: [document_processing/chunker.py, knowledge_base/embeddings.py]
+    tests: [tests/test_document_processing.py, tests/test_knowledge_base.py]
+    srs_step: 6
+    notes: >-
+      A chunk never crosses a section boundary, so every chunk is honestly
+      citable. Enforced by test.
+
+  FR-x:
+    name: Document Version Control
+    status: done
+    tables: [document_versions]
+    columns: [document_versions.status, document_versions.superseded_by_id, document_versions.effective_date]
+    modules: [src/db/models/knowledge.py]
+    srs_step: 7
+    notes: >-
+      Partial unique index ux_docver_one_active makes "at most one ACTIVE
+      version per document" a database guarantee, not a convention.
+
+  FR-xi:
+    name: Complaint Resolution Rule Matrix
+    status: done
+    tables: [rules]
+    columns: [rules.conditions, rules.precedence, rules.is_mandatory_escalation, rules.rationale]
+    modules: [src/db/models/rules.py]
+    srs_step: 8
+
+  FR-xii:
+    name: GenAI API Integration
+    status: done
+    tables: [genai_runs, llm_cache]
+    columns: [genai_runs.provider, genai_runs.model, genai_runs.status, genai_runs.latency_ms]
+    modules:
+      - genai_pipeline/providers/base.py
+      - genai_pipeline/providers/gemini.py
+      - genai_pipeline/providers/openai_compatible.py
+      - genai_pipeline/providers/__init__.py
+      - genai_pipeline/intelligence.py
+    tests: [tests/test_genai_pipeline.py::TestProviderChain]
+    srs_step: 46
+    notes: >-
+      Gemini primary with Groq and OpenRouter fallback. Failures are sorted
+      into retryable and terminal; retry is bounded by LLM_MAX_RETRIES and
+      every attempt writes its own genai_runs row.
+
+  FR-xiii:
+    name: Complaint Issue Identification
+    status: done
+    notes: >-
+      Generated, schema-validated, reconciled against the rule engine and
+      written onto the complaint at intake. complaints.primary_issue.
+    tables: [complaints]
+    columns: [complaints.primary_issue]
+    modules: [genai_pipeline/intelligence.py]
+    srs_step: 12
+
+  FR-xiv:
+    name: Secondary Issue Identification
+    status: done
+    notes: >-
+      Generated, schema-validated, reconciled against the rule engine and
+      written onto the complaint at intake. complaints.secondary_issue.
+    tables: [complaints]
+    columns: [complaints.secondary_issue]
+    modules: [genai_pipeline/intelligence.py]
+    srs_step: 13
+
+  FR-xv:
+    name: Complaint Classification
+    status: done
+    notes: >-
+      Both pipelines classify, the comparison engine reconciles, and the
+      reconciled category and subcategory are written to the complaint.
+    tables: [categories, subcategories, complaints]
+    columns: [complaints.category_id, complaints.subcategory_id]
+    modules: [genai_pipeline/intelligence.py, python_validation/rule_engine.py]
+    srs_step: 14
+
+  FR-xvi:
+    name: Entity Extraction
+    status: done
+    notes: >-
+      Python's regex pass and the model's pass are stored separately and
+      tagged with extracted_by, never merged. Merging them would destroy
+      the comparison SRS Step 16 asks for and let a model-invented order
+      number sit indistinguishably beside one actually found in the text.
+    tables: [complaint_entities]
+    columns: [complaint_entities.entity_type, complaint_entities.extracted_by]
+    modules: [complaint_processing/entities.py]
+    srs_step: 16
+
+  FR-xvii:
+    name: Sentiment Analysis
+    status: done
+    notes: >-
+      Generated, schema-validated, reconciled against the rule engine and
+      written onto the complaint at intake. Sentiment is recorded for
+      analytics and is structurally unable to reach the rule engine (SRS
+      1.8 #6).
+    tables: [complaints]
+    columns: [complaints.sentiment, complaints.emotion_indicators]
+    modules: [genai_pipeline/intelligence.py]
+    srs_step: 17
+
+  FR-xviii:
+    name: Urgency Classification
+    status: done
+    notes: >-
+      Both pipelines derive urgency, compared by ladder rank so the
+      direction of a disagreement is recorded, and the reconciled value is
+      written to the complaint.
+    tables: [complaints, validation_runs]
+    columns: [complaints.urgency, validation_runs.derived_urgency]
+    modules: [python_validation/rule_engine.py, python_validation/signals.py]
+    srs_step: 19
+
+  FR-xix:
+    name: Priority Assignment
+    status: done
+    tables: [priority_levels, complaints, comparisons]
+    columns: [complaints.priority_code, comparisons.field, comparisons.winner]
+    modules: [python_validation/rule_engine.py, genai_pipeline/intelligence.py,
+              comparison_engine/ladders.py]
+    tests: [tests/test_python_validation.py, tests/test_comparison_engine.py]
+    srs_step: 20
+    notes: >-
+      Both pipelines assign a priority and the comparison engine compares them
+      by ladder rank, so a disagreement records its direction rather than a
+      bare mismatch. priority_levels.rank counts down (P0 is 0) while
+      escalation_levels.rank counts up; both are normalised on load so that
+      "higher" always means "more severe", because the raw comparison reported
+      a model that under-prioritised as if it had been over-cautious.
+
+  FR-xx:
+    name: Department Routing
+    status: done
+    tables: [departments, complaints, comparisons]
+    columns: [complaints.department_id, comparisons.genai_value, comparisons.python_value]
+    modules: [python_validation/rule_engine.py, genai_pipeline/intelligence.py,
+              comparison_engine/fields.py]
+    tests: [tests/test_python_validation.py, tests/test_comparison_engine.py]
+    srs_step: 23
+    notes: >-
+      Both pipelines route, the comparison engine compares the destination and
+      the reconciled department is written to the complaint. The rules win on
+      disagreement: a routing decision is an operational commitment, not an
+      opinion.
+
+  FR-xxi:
+    name: Multi-Department Routing
+    status: done
+    tables: [departments, complaints, comparisons]
+    columns: [complaints.support_department_id,
+              validation_runs.derived_support_department_id]
+    modules: [python_validation/rule_engine.py, routing_rules/departments.yaml,
+              comparison_engine/fields.py]
+    tests: [tests/test_python_validation.py, tests/test_comparison_engine.py]
+    srs_step: 24
+    notes: >-
+      A complaint that spans two teams carries a supporting department
+      alongside the owning one, derived by the routing rules and compared
+      field-by-field like every other classification. Ownership stays singular
+      on purpose: two owners is the same as none, and the SLA clock has to
+      belong to somebody.
+
+  FR-xxii:
+    name: Policy Retrieval
+    status: done
+    tables: [chunks, complaint_policy_refs]
+    columns: [complaint_policy_refs.chunk_key, complaint_policy_refs.doc_ref]
+    modules: [knowledge_base/retrieval.py, knowledge_base/embeddings.py]
+    api: ["POST /api/documents/search", "GET /api/documents/coverage"]
+    tests: [tests/test_knowledge_base.py, tests/test_documents_api.py]
+    srs_step: 25
+    notes: >-
+      Hybrid lexical (PostgreSQL full-text) plus semantic (pgvector), fused
+      with Reciprocal Rank Fusion, with an exact-reference retriever that
+      dominates when a query names a document outright. Only ACTIVE versions
+      are retrievable. Degrades to lexical-only when embeddings are
+      unavailable.
+
+  FR-xxiii:
+    name: Policy Applicability Validation
+    status: done
+    tables: [complaint_policy_refs, document_versions]
+    columns: [complaint_policy_refs.applicability, complaint_policy_refs.doc_ref,
+              document_versions.status]
+    modules: [knowledge_base/versioning.py, hallucination_checks/citation_validator.py]
+    tests: [tests/test_hallucination_checks.py, tests/test_knowledge_base.py]
+    srs_step: 26
+    notes: >-
+      Every citation the model makes is resolved, classified APPLICABLE /
+      CONDITIONALLY_APPLICABLE / NOT_APPLICABLE / OUTDATED, and written to
+      complaint_policy_refs for that complaint. A citation to a superseded
+      version resolves but does not support, and that distinction is the whole
+      point: a reply grounded in last year's policy looks perfectly well-cited.
+
+  FR-xxiv:
+    name: Resolution Generation
+    status: done
+    notes: >-
+      Rule obligations and generated steps are both stored, tagged by
+      source and never merged. A rule obligation stays MISSING until an
+      agent confirms it: whether 'verify the shipment in the tracking
+      system' was done is not readable from generated text, and guessing
+      would turn a checklist into a rubber stamp.
+    tables: [resolution_steps]
+    columns: [resolution_steps.text, resolution_steps.source]
+    modules: [genai_pipeline/intelligence.py]
+    srs_step: 27
+
+  FR-xxv:
+    name: Resolution Validation
+    status: done
+    tables: [resolution_steps]
+    columns: [resolution_steps.status, resolution_steps.explanation, resolution_steps.policy_ref]
+    modules: [python_validation/resolution.py, python_validation/rule_engine.py]
+    api: ["GET /api/complaints/{ref}/checklist",
+          "POST /api/complaints/{ref}/checklist/{step_id}/confirm"]
+    tests: [tests/test_completion.py]
+    srs_step: 28
+    notes: >-
+      A rule-required step stays MISSING until a person confirms it. Whether
+      'verify the shipment in the tracking system' actually happened is not
+      readable from anything the system holds, and a checklist that ticked
+      itself would be decorative -- it is what stops a safety obligation being
+      skipped. REQUIRED_MET is reachable only through confirm(), which records
+      who confirmed it, and re-running the classifier never undoes one.
+      PROHIBITED is decided by the response guard's own promise-versus-
+      eligibility rule rather than by matching the step's prose against a
+      prohibition's prose: that comparison was tried in the comparison engine
+      and produced false findings in both directions.
+
+  FR-xxvi:
+    name: Refund Rule Validation
+    status: done
+    tables: [eligibility_decisions, rules]
+    columns: [eligibility_decisions.eligibility_type, eligibility_decisions.python_outcome,
+              eligibility_decisions.conditions_evaluated]
+    modules: [python_validation/pipeline.py, complaint_rules/eligibility.yaml]
+    tests: [tests/test_python_validation.py, tests/test_response_guard.py]
+    srs_step: 29
+    notes: >-
+      Eligibility is Pipeline 2's alone, by design. The model is never asked
+      for it and the response schema has no field for it, so there is nothing
+      to reconcile: an entitlement a customer can hold the company to must not
+      begin life as a model's opinion. Every decision is persisted with the
+      rule that produced it, the conditions evaluated and whether a human must
+      approve, and the response guard refuses any promise of type T that no
+      ELIGIBLE decision of type T authorises.
+
+  FR-xxvii:
+    name: Replacement Rule Validation
+    status: done
+    tables: [eligibility_decisions, rules]
+    columns: [eligibility_decisions.eligibility_type, eligibility_decisions.rule_ref]
+    modules: [python_validation/pipeline.py, complaint_rules/eligibility.yaml]
+    tests: [tests/test_python_validation.py, tests/test_response_guard.py]
+    srs_step: 30
+    notes: >-
+      Eligibility is Pipeline 2's alone, by design. The model is never asked
+      for it and the response schema has no field for it, so there is nothing
+      to reconcile: an entitlement a customer can hold the company to must not
+      begin life as a model's opinion. Every decision is persisted with the
+      rule that produced it, the conditions evaluated and whether a human must
+      approve, and the response guard refuses any promise of type T that no
+      ELIGIBLE decision of type T authorises.
+
+  FR-xxviii:
+    name: Compensation Validation
+    status: done
+    tables: [eligibility_decisions, response_flags]
+    columns: [eligibility_decisions.max_amount, eligibility_decisions.currency,
+              eligibility_decisions.requires_human_approval]
+    modules: [python_validation/pipeline.py, complaint_rules/eligibility.yaml,
+              security/response_guard.py]
+    tests: [tests/test_python_validation.py, tests/test_response_guard.py]
+    srs_step: 31
+    notes: >-
+      Compensation carries a ceiling as well as an outcome, and the guard
+      enforces both. An amount above the cap is the expensive failure the
+      outcome check cannot catch: eligibility says yes, so the promise reads as
+      authorised and every other gate passes -- only the number is wrong, and a
+      number given to a customer is a commitment the company is held to. The
+      check is scoped to the sentence carrying the promise, so a reply that
+      quotes the customer's disputed amount and then approves a smaller credit
+      is not flagged.
+
+  FR-xxix:
+    name: Professional Response Generation
+    status: done
+    tables: [responses, response_flags, genai_runs]
+    columns: [responses.draft_text, responses.citations, responses.version]
+    modules: [genai_pipeline/response.py, prompt_templates/customer_response/]
+    tests: [tests/test_response_guard.py::TestResponseGeneration]
+    srs_step: 32
+    notes: >-
+      Generated from the reconciled record and the retrieved policy, never from
+      raw Pipeline 1 output, so a classification the rules overrode cannot
+      reach a customer by the back door. Every draft is stored with its own
+      version, including the ones the guard rejects.
+
+  FR-xxx:
+    name: Response Tone Management
+    status: done
+    tables: [responses]
+    columns: [responses.tone]
+    modules: [genai_pipeline/response.py]
+    tests: [tests/test_response_guard.py::TestTone]
+    srs_step: 33
+    notes: >-
+      Tone is chosen from the reconciled urgency, not by the model. A safety
+      incident answered breezily is a complaint of its own, so that decision
+      does not belong to the thing writing the prose.
+
+  FR-xxxi:
+    name: Unsupported Promise Detection
+    status: done
+    tables: [response_flags, promise_patterns, responses]
+    columns:
+      - response_flags.flag_type
+      - response_flags.span_start
+      - response_flags.blocking_rule_ref
+      - responses.guard_status
+      - responses.regeneration_count
+    modules: [security/response_guard.py, genai_pipeline/response.py]
+    tests: [tests/test_response_guard.py::TestUnsupportedPromise]
+    srs_step: 34
+    notes: >-
+      One deterministic rule: a promise of type T is unsupported unless
+      Pipeline 2 derived an eligibility decision of type T with outcome
+      ELIGIBLE. CONDITIONAL and REQUIRES_VERIFICATION deliberately do not
+      authorise one, which is what makes the SRS 1.8 #9 trap fall out for
+      free. A blocked draft is regenerated once, then routed to a human, and
+      the rejected draft is kept with its flagged spans as evidence.
+
+  FR-xxxii:
+    name: Hallucination Detection
+    status: done
+    tables: [response_flags, complaint_policy_refs]
+    columns:
+      - complaint_policy_refs.resolved
+      - complaint_policy_refs.was_active
+      - complaint_policy_refs.applicability
+      - response_flags.flag_type
+    modules:
+      - hallucination_checks/citation_validator.py
+      - hallucination_checks/claim_support.py
+      - security/response_guard.py
+    tests: [tests/test_hallucination_checks.py]
+    srs_step: 35
+    notes: >-
+      Two questions, kept apart: does the source exist, and does the source say
+      it. Citations resolve to a chunk and their version is classified, so an
+      invented reference, a superseded one and a not-yet-in-force one are three
+      verdicts rather than one vague doubt. Claims are scored by content-word
+      containment against the text they cite, with two checks overlap cannot
+      make -- every figure must appear in the cited text, and the claim's
+      polarity must match the source line it rests on. Only policy claims are
+      scored; process narration is skipped, because no policy document
+      describes what the company is currently doing and reporting those would
+      fill the queue with noise. No model is involved, enforced by a test.
+
+  FR-xxxiii:
+    name: Escalation Detection
+    status: done
+    tables: [escalations, validation_runs, comparisons]
+    columns: [validation_runs.derived_escalation_code, escalations.triggered_by]
+    modules: [python_validation/rule_engine.py, genai_pipeline/intelligence.py,
+              comparison_engine/decision.py]
+    tests: [tests/test_python_validation.py, tests/test_comparison_engine.py]
+    srs_step: 36
+    notes: >-
+      Both pipelines decide whether to escalate and the comparison engine
+      records where they differ, but the rules are not outvoted: a mandatory
+      escalation raised by the matrix stands whatever the model concluded.
+
+  FR-xxxiv:
+    name: Escalation Level Assignment
+    status: done
+    tables: [escalation_levels, escalations, validation_runs]
+    columns: [validation_runs.escalation_floor_code, escalations.escalation_code]
+    modules: [comparison_engine/ladders.py, comparison_engine/decision.py,
+              escalation_rules/mandatory.yaml]
+    tests: [tests/test_comparison_engine.py, tests/test_review.py]
+    srs_step: 37
+    notes: >-
+      The floor may be raised and never lowered, and it is enforced against the
+      model, the comparison engine and a human reviewer alike -- an override
+      that would drop below it is refused with 422 and an explanation naming
+      the rule. A floor only machines respect is not a floor.
+
+  FR-xxxv:
+    name: Escalation Notes Generation
+    status: done
+    tables: [escalations, genai_runs]
+    columns: [escalations.notes, escalations.reason, genai_runs.pipeline]
+    modules: [genai_pipeline/escalation_notes.py,
+              prompt_templates/escalation_note/v1.0.j2]
+    api: ["GET /api/complaints/{ref}/escalation"]
+    tests: [tests/test_completion.py]
+    srs_step: 38
+    notes: >-
+      Written from the reconciled record, like the customer reply and for the
+      same reason: a classification the rules overrode must not reach a
+      colleague through the back door of a note. The note explains, it does not
+      decide -- the level and the rules that forced it are injected into the
+      prompt rather than asked for. An outage costs the note, never the
+      escalation: escalations.notes stays null and note_available says so,
+      rather than the record implying no escalation happened.
+
+  FR-xxxvi:
+    name: Escalation Validation
+    status: done
+    tables: [validation_runs]
+    columns: [validation_runs.escalation_floor_code]
+    modules: [python_validation/rule_engine.py, python_validation/pipeline.py]
+    srs_step: 39
+    notes: >-
+      The floor is a rank the reconciler may raise but never lower. This is the
+      answer to the Escalation Trap (SRS 1.8 #7).
+
+  FR-xxxvii:
+    name: Follow-Up Communication Generation
+    status: done
+    tables: [follow_ups]
+    columns: [follow_ups.message, follow_ups.follow_up_type, follow_ups.completed_at]
+    modules: [complaint_processing/followup.py]
+    api: ["GET /api/complaints/{ref}/follow-ups",
+          "POST /api/complaints/{ref}/follow-ups/{follow_up_id}/complete",
+          "GET /api/review/follow-ups/due"]
+    tests: [tests/test_completion.py]
+    srs_step: 40
+    notes: >-
+      Five trigger types, each naming why the system owes contact. The message
+      is composed from the stored trigger -- the outstanding eligibility
+      conditions, the unanswered question -- rather than generated, because a
+      reminder an agent reads must say exactly what is outstanding and must
+      still exist during a provider outage.
+
+  FR-xxxviii:
+    name: Follow-Up Requirement Detection
+    status: done
+    tables: [follow_ups, validation_runs, sla_policies]
+    columns: [validation_runs.follow_up_required, follow_ups.due_at,
+              sla_policies.first_response_mins]
+    modules: [complaint_processing/followup.py, python_validation/rule_engine.py]
+    api: ["GET /api/review/follow-ups/due"]
+    tests: [tests/test_completion.py]
+    srs_step: 41
+    notes: >-
+      Every trigger is a stored fact, never the model saying a follow-up was
+      needed -- follow_up_required reaches here through the reconciled record,
+      where the rules have already had their say. The one that matters is
+      VERIFICATION: a refund left at REQUIRES_VERIFICATION with nobody
+      scheduled to verify it is how a customer waits three weeks for an answer
+      nobody was working on. Due dates are a fraction of the matched SLA
+      window, so retuning a target moves the follow-up with it rather than
+      leaving two numbers to drift apart. One open follow-up per (complaint,
+      type): re-analysis refreshes rather than duplicating.
+
+  FR-xxxix:
+    name: Missing Information Detection
+    status: done
+    tables: [complaints]
+    modules:
+      - schemas/genai.py
+      - genai_pipeline/intelligence.py
+      - complaint_processing/intake.py
+    tests: [tests/test_genai_pipeline.py::TestValidation]
+    notes: >-
+      Pipeline 1 reports what it needed and did not have, and intake
+      writes it to complaints.missing_information. Declaring the gap is
+      treated as a correct answer rather than a failure, which is what
+      stops the model inventing the missing fact instead.
+    columns: [complaints.missing_information]
+    srs_step: 42
+
+  FR-xl:
+    name: Clarification Question Generation
+    status: done
+    tables: [clarification_questions]
+    modules:
+      - schemas/genai.py
+      - complaint_processing/intake.py
+    tests: [tests/test_genai_pipeline.py::TestValidation]
+    notes: >-
+      Schema-enforced: a result claiming insufficient_information without
+      asking a question is rejected outright. Half an answer -- declaring
+      the gap and then not asking about it -- is exactly the failure SRS
+      Step 43 is written against.
+    columns: [clarification_questions.question, clarification_questions.missing_field]
+    srs_step: 43
+
+  FR-xli:
+    name: Complaint Summary Generation
+    status: done
+    notes: >-
+      Generated, schema-validated, reconciled against the rule engine and
+      written onto the complaint at intake. complaints.summary.
+    tables: [complaints]
+    columns: [complaints.summary]
+    modules: [genai_pipeline/intelligence.py]
+    srs_step: 44
+
+  FR-xlii:
+    name: Agent Guidance
+    status: done
+    notes: >-
+      Rule-derived prohibitions are written as MANDATORY caution items an
+      agent cannot dismiss; model guidance is advisory. The difference is
+      the point: 'do not confirm a refund before eligibility is verified'
+      is policy, not a suggestion.
+    tables: [agent_guidance]
+    columns: [agent_guidance.text, agent_guidance.kind, agent_guidance.is_mandatory]
+    modules: [genai_pipeline/intelligence.py, python_validation/rule_engine.py]
+    srs_step: 45
+
+  FR-xliii:
+    name: Structured JSON Output
+    status: done
+    tables: [genai_runs]
+    columns: [genai_runs.parsed_json, genai_runs.response_raw]
+    modules: [schemas/genai.py, genai_pipeline/validator.py]
+    tests: [tests/test_genai_pipeline.py::TestProviderSchema]
+    srs_step: 37
+    notes: >-
+      Gemini enforces the schema during decoding; the OpenAI-compatible
+      fallbacks cannot, so the schema is restated in the prompt and Pydantic
+      is the enforcement point for every provider.
+
+  FR-xliv:
+    name: JSON Schema Validation
+    status: done
+    tables: [genai_runs]
+    columns: [genai_runs.schema_errors, genai_runs.status]
+    modules: [genai_pipeline/validator.py]
+    tests: [tests/test_genai_pipeline.py::TestValidation]
+    srs_step: 46
+    notes: >-
+      Four gates: JSON extraction, Pydantic shape, reference codes resolved
+      against the live taxonomy, and every cited chunk_key resolved against
+      the knowledge base and the set actually retrieved. A failure produces a
+      field-specific correction instruction and one bounded repair attempt.
+
+  FR-xlv:
+    name: Python Ground-Truth Validation
+    status: done
+    tables: [validation_runs, rule_hits]
+    columns: [validation_runs.signals, validation_runs.reason_codes, rule_hits.matched_spans]
+    modules:
+      - python_validation/pipeline.py
+      - python_validation/cli.py
+      - python_validation/rule_engine.py
+      - python_validation/conditions.py
+      - python_validation/signals.py
+
+  FR-xlvi:
+    name: Classification Comparison
+    status: done
+    modules:
+      - comparison_engine/diff.py
+      - comparison_engine/fields.py
+      - comparison_engine/ladders.py
+      - comparison_engine/engine.py
+    tests: [tests/test_comparison_engine.py]
+    notes: >-
+      Category and subcategory compared field by field; every row stores an explanation of the disagreement, not merely its existence.
+    tables: [comparisons]
+    columns: [comparisons.field, comparisons.genai_value, comparisons.python_value]
+
+  FR-xlvii:
+    name: Routing Comparison
+    status: done
+    modules:
+      - comparison_engine/diff.py
+      - comparison_engine/fields.py
+      - comparison_engine/ladders.py
+      - comparison_engine/engine.py
+    tests: [tests/test_comparison_engine.py]
+    notes: >-
+      Department and support department. A disagreement is CRITICAL and the rule-derived destination stands.
+    tables: [comparisons]
+    columns: [comparisons.winner]
+
+  FR-xlviii:
+    name: Urgency Comparison
+    status: done
+    modules:
+      - comparison_engine/diff.py
+      - comparison_engine/fields.py
+      - comparison_engine/ladders.py
+      - comparison_engine/engine.py
+    tests: [tests/test_comparison_engine.py]
+    notes: >-
+      Urgency and priority compared by ladder rank, not string equality, so the direction of a disagreement is recorded. Priority ranks are inverted on load because P0 is rank 0 in its own table.
+    tables: [comparisons]
+    columns: [comparisons.severity]
+
+  FR-xlix:
+    name: Escalation Comparison
+    status: done
+    modules:
+      - comparison_engine/diff.py
+      - comparison_engine/fields.py
+      - comparison_engine/ladders.py
+      - comparison_engine/engine.py
+    tests: [tests/test_comparison_engine.py]
+    notes: >-
+      Compared against the mandatory floor. A GenAI level below the rule-derived one is recorded as GENAI_BELOW_RULE_DERIVED and raised to the floor in the reconciled record (SRS 1.8 #7).
+    tables: [comparisons]
+    columns: [comparisons.reason_code, comparisons.explanation]
+
+  FR-l:
+    name: Policy Traceability
+    status: done
+    tables: [complaint_policy_refs, chunks, document_versions, verification_decisions]
+    columns:
+      - complaint_policy_refs.document_version_id
+      - complaint_policy_refs.resolved
+      - complaint_policy_refs.was_active
+      - complaint_policy_refs.applicability
+      - verification_decisions.traceability_score
+    modules: [hallucination_checks/citation_validator.py, comparison_engine/engine.py]
+    tests: [tests/test_hallucination_checks.py::TestCitationPersistence]
+    notes: >-
+      Every reference that touches a complaint -- cited by the model, required
+      by a matched rule, or surfaced by retrieval -- is written to
+      complaint_policy_refs with the document, version, section, page, chunk,
+      who proposed it, whether the version was ACTIVE and the resulting
+      applicability. The Source-Traceability Challenge is answered with a row,
+      not a search. The traceability score counts only what the model cited:
+      rule-required references are correct by construction and including them
+      would dilute the number into flattery.
+
+  FR-li:
+    name: Verification Score
+    status: done
+    tables: [verification_decisions]
+    columns:
+      - verification_decisions.agreement_score
+      - verification_decisions.traceability_score
+      - verification_decisions.compliance_score
+    modules: [comparison_engine/decision.py, security/response_guard.py]
+    tests: [tests/test_comparison_engine.py::TestScores, tests/test_response_guard.py]
+    notes: >-
+      Three scores, each computed from stored rows and each carrying its own
+      numerator and denominator. Agreement and traceability are settled at
+      reconciliation; compliance is measured by the response guard against the
+      generated reply and written back onto the same decision, because it asks
+      a question no earlier stage can answer. A score with no denominator
+      renders as null, never as 0% or 100% -- an unmeasured control must not
+      display as a passing one (SRS 1.8 #17).
+
+  FR-lii:
+    name: Prompt Template Management
+    status: done
+    tables: [prompt_versions]
+    columns: [prompt_versions.file_path, prompt_versions.checksum, prompt_versions.is_active]
+    modules: [genai_pipeline/prompts.py]
+    tests: [tests/test_genai_pipeline.py::TestPromptRegistry]
+    srs_step: 48
+    notes: >-
+      Templates live only in prompt_templates/<name>/v<major>.<minor>.j2 and
+      are reached only through this module. Each is checksummed, so an edit
+      without a version bump is detectable. Taxonomy enums are injected from
+      the database, so a new category needs no prompt change.
+
+  FR-liii:
+    name: Prompt Version Tracking
+    status: done
+    tables: [genai_runs, prompt_versions, validation_runs]
+    columns: [genai_runs.prompt_version, genai_runs.knowledge_base_version, genai_runs.policy_snapshot, validation_runs.ruleset_version]
+    modules: [src/db/models/pipelines.py]
+    srs_step: 49
+    notes: Prompt version, provider, model, timestamp and policy version are all stored per analysis.
+
+  FR-liv:
+    name: Prompt Injection Protection
+    status: done
+    tables: [injection_patterns, injection_events]
+    columns: [injection_events.matched_spans, injection_events.action_taken]
+    modules: [security/injection_defense.py, genai_pipeline/intelligence.py]
+    tests: [tests/test_genai_pipeline.py::TestOrchestration]
+    srs_step: 50
+    notes: >-
+      Four layers: structural fencing with forged-delimiter stripping,
+      28 configurable detection patterns, Unicode neutralisation, and the
+      structural immunity of Pipeline 2, which has no instruction-following
+      surface at all.
+
+  FR-lv:
+    name: Adversarial Complaint Detection
+    status: done
+    tables: [injection_events, complaints]
+    columns: [complaints.injection_suspected, injection_events.severity]
+    modules: [security/injection_defense.py, genai_pipeline/intelligence.py]
+    notes: >-
+      Four layers of defence, and a flagged complaint is never refused: it is
+      recorded, analysed on its merits, and routed to a reviewer with reason
+      SENSITIVE_COMPLAINT.
+    srs_step: 51
+
+  FR-lvi:
+    name: Duplicate Complaint Detection
+    status: done
+    tables: [complaint_links, complaints]
+    modules:
+      - complaint_processing/dedupe.py
+    tests: [tests/test_complaints_api.py]
+    notes: >-
+      Exact and near duplicates are linked, never refused: a customer who
+      submits twice because the first attempt appeared to fail still needs
+      an answer. Similarity is lexical and deterministic, so a link cannot
+      appear or vanish with the embedding service.
+    columns: [complaint_links.link_type, complaint_links.similarity, complaint_links.detected_by]
+    srs_step: 52
+
+  FR-lvii:
+    name: Complaint History
+    status: done
+    tables: [complaints, customers, complaint_status_history]
+    columns: [complaints.previous_complaint_id, complaints.customer_id]
+    modules: [src/db/models/complaints.py]
+    srs_step: 53
+
+  FR-lviii:
+    name: Repeat Complaint Detection
+    status: done
+    tables: [complaint_links, complaints]
+    modules:
+      - complaint_processing/dedupe.py
+    tests: [tests/test_complaints_api.py]
+    notes: >-
+      Counted from stored records of prior UNRESOLVED contacts, never from
+      the complaint claiming to be a repeat. 'I have called five times' is
+      a sentiment, and letting it drive escalation would put the customer
+      in charge of their own priority.
+    columns: [complaints.repeat_count]
+    srs_step: 54
+
+  FR-lix:
+    name: SLA Tracking
+    status: done
+    tables: [sla_events, sla_policies, complaints]
+    modules:
+      - src/services/sla.py
+      - src/api/v1/review.py
+    tests: [tests/test_review_sla.py]
+    notes: >-
+      Two clocks per complaint, due dates derived from sla_policies rather
+      than constants so a target can be retightened at runtime. A
+      category-specific policy beats a generic one for the same priority,
+      and a complaint matching no policy gets no clock rather than an
+      invented deadline.
+    columns: [sla_events.due_at, sla_events.met_at, sla_policies.first_response_mins]
+    gap: Policies are seeded; the clock service is not written.
+    srs_step: 55
+
+  FR-lx:
+    name: SLA Risk Detection
+    status: done
+    tables: [sla_events]
+    modules:
+      - src/services/sla.py
+    tests: [tests/test_review_sla.py]
+    notes: >-
+      At-risk is a warning while there is still time; a breach is a fact
+      recorded afterwards. risk_threshold_pct decides how much of the
+      window must elapse first. The sweep is what turns a stored deadline
+      into something somebody sees, because a due date otherwise passes
+      silently.
+    columns: [sla_events.at_risk, sla_events.breached]
+    srs_step: 56
+
+  FR-lxi:
+    name: Manual Review Queue
+    status: done
+    tables: [review_queue, verification_decisions]
+    modules:
+      - src/services/review.py
+      - src/api/v1/review.py
+    tests: [tests/test_review_sla.py]
+    notes: >-
+      Derived from the stored verification decision plus any intake
+      finding marked ROUTED_TO_REVIEW, never hand-populated. Deciding
+      twice is how a queue and a verdict drift apart. Ordered by priority
+      then age, so the most severe waiting longest is at the top.
+    columns: [review_queue.reasons, review_queue.status]
+    srs_step: 57
+
+  FR-lxii:
+    name: Reviewer Decision
+    status: done
+    tables: [review_actions, review_queue]
+    modules:
+      - src/services/review.py
+      - src/api/v1/review.py
+    tests: [tests/test_review_sla.py]
+    notes: >-
+      Approve, reject, modify, reclassify, reassign, escalate, regenerate
+      or comment. Every action writes a row carrying the before and after
+      values. An action that changed nothing is recorded but is not an
+      override, because inflating the override rate would corrupt the
+      signal it exists to give.
+    columns: [review_actions.action, review_actions.comment]
+    srs_step: 58
+
+  FR-lxiii:
+    name: Reviewer Override
+    status: done
+    tables: [review_actions, escalations, complaints]
+    modules:
+      - src/services/review.py
+    tests: [tests/test_review_sla.py]
+    notes: >-
+      A reviewer may raise an escalation and may not lower it below the
+      mandatory floor. The refusal is explicit and names the floor,
+      because a reviewer who believes they lowered an escalation and did
+      not is worse off than one who was told no (SRS 1.8 #7). This is the
+      first place the floor is enforced against a human rather than a
+      model.
+    columns: [review_actions.is_override, review_actions.original_value, review_actions.new_value]
+    srs_step: 59
+
+  FR-lxiv:
+    name: Audit Trail
+    status: done
+    tables: [audit_log]
+    columns: [audit_log.before, audit_log.after, audit_log.actor_id, audit_log.request_id]
+    modules: [src/services/audit.py]
+    tests: [tests/test_auth.py]
+
+  FR-lxv:
+    name: Complaint Status Tracking
+    status: done
+    tables: [complaint_status_history, audit_log]
+    columns: [complaint_status_history.from_status, complaint_status_history.to_status,
+              complaint_status_history.changed_by, complaint_status_history.reason]
+    modules: [src/services/lifecycle.py]
+    api: ["GET /api/complaints/{ref}/lifecycle", "POST /api/complaints/{ref}/status"]
+    tests: [tests/test_lifecycle.py]
+    srs_step: 60
+    notes: >-
+      Permitted transitions are declared as a graph, and a move outside it is
+      refused with 422 naming what is permitted instead. Without that, a
+      complaint reaches CLOSED without anyone resolving it and every dashboard
+      counts it as handled. The pipeline goes through the same door, so the
+      history is the whole account of how a complaint reached its status rather
+      than only the part a human touched; a machine transition reads as
+      "pipeline" rather than as an unknown actor. force is used in exactly two
+      places, both principled: FAILED, because a refusal would lose a complaint
+      rather than record the problem, and ESCALATED, because an escalation may
+      always be raised -- a lifecycle graph able to veto one would be a second,
+      quieter way to lower it.
+
+  FR-lxvi:
+    name: Customer Dashboard
+    status: done
+    tables: [complaints, clarification_questions]
+    columns: [complaints.public_ref, complaints.status, complaints.summary]
+    modules: [src/api/v1/complaints.py]
+    api: ["GET /api/complaints/mine", "GET /api/complaints/{ref}/status"]
+    tests: [tests/test_complaints_api.py]
+    srs_step: 61
+    notes: >-
+      A list of the customer's own complaints and a tracking view of one, both
+      built from a single customer-safe projection so they cannot drift. That
+      projection is a separate Pydantic model rather than a filtered agent
+      view: internal guidance, rule references, eligibility reasoning and the
+      pipeline comparison are not fields of it at all, so no future serialiser
+      change can leak them. Escalation is reported as a fact, never as a level.
+      Ownership is matched on the submitter and on the customer record, because
+      an agent taking a complaint by phone files it for somebody else --
+      checking the submitter alone would hide a customer's own complaint from
+      them. An unowned reference returns the same 404 an unknown one does, so
+      walking the numbers reveals nothing.
+
+  FR-lxvii:
+    name: Agent Dashboard
+    status: done
+    tables: [complaints]
+    modules:
+      - src/api/v1/analytics.py
+    tests: [tests/test_analytics_reports.py]
+    notes: >-
+      An agent's own workload, scoped to the caller rather than taking a
+      user id, so one agent cannot read another's queue by guessing an
+      identifier.
+    srs_step: 62
+
+  FR-lxviii:
+    name: Administrator Dashboard
+    status: done
+    tables: [complaints, review_queue, injection_events, verification_decisions]
+    modules:
+      - src/services/analytics.py
+      - src/api/v1/analytics.py
+    tests: [tests/test_analytics_reports.py]
+    notes: >-
+      Ten panels assembled server-side in one query pass. Panels fetched
+      at different instants can show figures that do not add up, and 'why
+      does the total not match' is an expensive question during a demo.
+    srs_step: 63
+
+  FR-lxix:
+    name: Complaint Analytics
+    status: done
+    tables: [complaints, escalations, sla_events]
+    modules:
+      - src/services/analytics.py
+    tests: [tests/test_analytics_reports.py]
+    notes: >-
+      Volume, category distribution, department load with open backlog,
+      escalation rate by level and trigger, and SLA compliance. Every
+      figure is an aggregate over stored rows and every percentage carries
+      its numerator and denominator; a ratio with no denominator is null,
+      never 0 or 100, so an empty system reports 'nothing to measure'
+      rather than 'perfect compliance' (SRS 1.8 #17).
+    srs_step: 64
+
+  FR-lxx:
+    name: Trend Detection
+    status: done
+    tables: [trend_snapshots]
+    modules:
+      - src/services/trends.py
+      - src/api/v1/analytics.py
+    tests: [tests/test_analytics_reports.py]
+    notes: >-
+      A trend is a change between two periods, stored with its own
+      previous value so it can be compared against history rather than
+      recomputed per page load. Periods are day-aligned, which is what
+      makes a snapshot idempotent. A percentage change from a zero
+      baseline is null rather than infinite, and a spike needs both a
+      material swing and a real base before it is raised as an anomaly.
+    columns: [trend_snapshots.delta_pct, trend_snapshots.direction, trend_snapshots.is_anomaly]
+    srs_step: 65
+
+  FR-lxxi:
+    name: Search and Filtering
+    status: done
+    tables: [complaints]
+    modules:
+      - src/api/v1/complaints.py
+    tests: [tests/test_complaints_api.py]
+    notes: >-
+      Filter by status, category, department, urgency, priority,
+      verification outcome, dataset tag and review state, with text search
+      across title, body and reference. The review filter reads the stored
+      decision rather than guessing from status, so the queue cannot drift
+      from what the comparison engine concluded.
+    api: ["GET /api/complaints"]
+    srs_step: 66
+
+  FR-lxxii:
+    name: Reports
+    status: done
+    tables: [report_exports, comparisons, sla_events, review_actions]
+    modules:
+      - src/services/reports.py
+      - src/api/v1/analytics.py
+    tests: [tests/test_analytics_reports.py]
+    notes: >-
+      Six reports, each assembled from stored rows. COMPARISON is
+      Deliverable 8: one row per compared field per complaint with both
+      readings, which prevailed and why, read back from the comparisons
+      table rather than recomputed, so it shows what the system decided at
+      the time.
+    columns: [report_exports.report_type, report_exports.filters]
+    srs_step: 67
+
+  FR-lxxiii:
+    name: Export
+    status: done
+    tables: [report_exports]
+    modules:
+      - src/services/reports.py
+    tests: [tests/test_analytics_reports.py]
+    notes: >-
+      CSV (UTF-8 with a BOM so Excel on Windows does not mangle currency
+      symbols), XLSX with a frozen styled header, and landscape PDF with a
+      repeating header row. Every export writes a report_exports row with
+      its type, format, filters and row count: 'who pulled what data,
+      when' is an audit question a traceless download cannot answer.
+    columns: [report_exports.format, report_exports.file_path]
+    srs_step: 68
+
+  FR-lxxiv:
+    name: Error Handling
+    status: done
+    modules: [src/core/errors.py, src/core/middleware.py]
+    notes: >-
+      Uniform error envelope with request_id on every failure; API, parsing,
+      validation and database errors each have a dedicated handler.
+
+  FR-lxxv:
+    name: Responsive Web Interface
+    status: frontend
+    modules: [frontend/]
+    notes: Next.js + TypeScript client, built against this OpenAPI schema.
+
+# ══════════════════════════════════════════════════════════════════════════
+# 1.2 DEVELOPMENT STEPS  (1 – 68)
+# Terser than the FR block: each step points at the artefacts that realise it.
+# ══════════════════════════════════════════════════════════════════════════
+development_steps:
+  1:  { name: Fictional Organisation Creation,       status: done,    artefacts: [config/taxonomy.yaml] }
+  2:  { name: Knowledge-Base Document Creation,      status: planned, artefacts: [../dataset/] }
+  3:  { name: Mandatory Input Formats PDF and DOCX,  status: done, artefacts: [document_processing/pdf_parser.py, document_processing/docx_parser.py] }
+  4:  { name: Document Validation,                   status: done, artefacts: [document_validation_issues] }
+  5:  { name: Document Parsing,                      status: done, artefacts: [document_sections] }
+  6:  { name: Document Chunking,                     status: done, artefacts: [chunks] }
+  7:  { name: Policy Version Control,                status: done,    artefacts: [document_versions] }
+  8:  { name: Complaint Resolution Rule Matrix,      status: done, artefacts: [rules, complaint_rules/] }
+  9: { name: Complaint Submission,                  status: done,    artefacts: [complaints] }
+  10: { name: Complaint Validation,                 status: done,    artefacts: [complaint_validation_issues] }
+  11: { name: Complaint Pre-processing,             status: done,    artefacts: [complaint_processing/preprocess.py] }
+  12: { name: Complaint Issue Identification,       status: done,    artefacts: [complaints.primary_issue] }
+  13: { name: Secondary Issue Identification,       status: done,    artefacts: [complaints.secondary_issue] }
+  14: { name: Complaint Category Classification,     status: done,    artefacts: [categories] }
+  15: { name: Subcategory Classification,            status: done,    artefacts: [subcategories] }
+  16: { name: Entity Extraction,                    status: done,    artefacts: [complaint_entities] }
+  17: { name: Sentiment Analysis,                   status: done,    artefacts: [complaints.sentiment] }
+  18: { name: Emotion and Tone Indicators,          status: done,    artefacts: [complaints.emotion_indicators] }
+  19: { name: Urgency Classification,                status: done, artefacts: [validation_runs.derived_urgency] }
+  20: { name: Priority Assignment,                   status: done,    artefacts: [priority_levels] }
+  21:
+    name: Tricky Priority Cases
+    status: partial
+    artefacts: [complaint_rules/, lexicon_terms]
+    gap: >-
+      The priority ladder, its rules and the tie-breaks are complete and
+      tested. The named tricky cases from the SRS are exercised
+      individually once the 500-complaint dataset exists.
+  22: { name: Department Routing,                    status: done,    artefacts: [departments] }
+  23: { name: Routing Validation,                    status: done, artefacts: [python_validation/rule_engine.py] }
+  24: { name: Multi-Department Complaint Detection, status: done,    artefacts: [complaints.support_department_id, routing_rules/departments.yaml] }
+  25: { name: Policy Retrieval,                      status: done, artefacts: [knowledge_base/retrieval.py] }
+  26: { name: Policy Applicability Validation,     status: done,    artefacts: [complaint_policy_refs.applicability, knowledge_base/versioning.py, hallucination_checks/citation_validator.py] }
+  27: { name: Resolution Step Generation,           status: done,    artefacts: [resolution_steps] }
+  28: { name: Resolution Validation,                 status: done,    artefacts: [resolution_steps.status, resolution_steps.explanation, python_validation/resolution.py, tests/test_completion.py] }
+  29: { name: Refund Eligibility,                   status: done,    artefacts: [eligibility_decisions, eligibility_decisions.python_outcome, complaint_rules/eligibility.yaml] }
+  30: { name: Replacement Eligibility,              status: done,    artefacts: [eligibility_decisions.conditions_evaluated, complaint_rules/eligibility.yaml] }
+  31:
+    name: Compensation Validation
+    status: done
+    artefacts: [eligibility_decisions.max_amount, eligibility_decisions.currency,
+                security/response_guard.py, tests/test_response_guard.py]
+    note: >-
+      The ceiling is enforced, not merely carried. An amount above the cap is
+      the failure the outcome check cannot catch: eligibility says yes, so only
+      the number is wrong.
+  32: { name: Customer Response Generation,          status: done,    artefacts: [responses, genai_pipeline/response.py, prompt_templates/customer_response/] }
+  33: { name: Response Tone,                         status: done,    artefacts: [responses.tone] }
+  34:
+    name: Unsupported Promise Detection
+    status: done
+    artefacts: [promise_patterns, response_flags, security/response_guard.py]
+  35: { name: Hallucination Detection,               status: done,    artefacts: [hallucination_checks/, complaint_policy_refs, response_flags] }
+  36: { name: Escalation Detection,                 status: done,    artefacts: [escalations] }
+  37: { name: Escalation Level,                     status: done,    artefacts: [escalation_levels] }
+  38: { name: Escalation Notes Generation,           status: done,    artefacts: [escalations.notes, genai_pipeline/escalation_notes.py, prompt_templates/escalation_note/v1.0.j2] }
+  39: { name: Escalation Validation,                 status: done, artefacts: [validation_runs.escalation_floor_code] }
+  40: { name: Follow-Up Communication,               status: done,    artefacts: [follow_ups, follow_ups.message, complaint_processing/followup.py] }
+  41: { name: Follow-Up Scheduling,                  status: done,    artefacts: [follow_ups.due_at, sla_policies.first_response_mins, tests/test_completion.py] }
+  42: { name: Missing Information Detection,        status: done,    artefacts: [complaints.missing_information] }
+  43: { name: Clarification Question Generation,    status: done,    artefacts: [clarification_questions] }
+  44: { name: Complaint Summary Generation,         status: done,    artefacts: [complaints.summary] }
+  45: { name: Agent Guidance,                       status: done,    artefacts: [agent_guidance] }
+  46: { name: GenAI JSON Schema Validation,         status: done,    artefacts: [genai_pipeline/validator.py, genai_runs.schema_errors] }
+  47: { name: Invalid GenAI Response Handling,      status: done,    artefacts: [genai_runs.status, genai_pipeline/intelligence.py] }
+  48: { name: Prompt Template Management,            status: done,    artefacts: [prompt_versions, prompt_templates/, genai_pipeline/prompts.py] }
+  49: { name: Prompt Version Logging,                status: done,    artefacts: [genai_runs.prompt_version, genai_runs.knowledge_base_version, genai_runs.policy_snapshot] }
+  50: { name: Prompt Injection Protection,           status: done,    artefacts: [injection_patterns, injection_events, security/injection_defense.py] }
+  51: { name: Adversarial Complaint Detection,      status: done,    artefacts: [injection_events] }
+  52: { name: Duplicate Complaint Detection,        status: done,    artefacts: [complaint_links] }
+  53: { name: Complaint History,                     status: done,    artefacts: [complaints.previous_complaint_id] }
+  54: { name: Repeat Complaint Detection,           status: done,    artefacts: [complaints.repeat_count] }
+  55: { name: SLA Tracking,                         status: done,    artefacts: [sla_policies] }
+  56: { name: SLA Risk Detection,                   status: done,    artefacts: [sla_events.at_risk] }
+  57: { name: Manual Review Queue,                  status: done,    artefacts: [review_queue] }
+  58: { name: Reviewer Actions,                     status: done,    artefacts: [review_actions] }
+  59: { name: Reviewer Override,                    status: done,    artefacts: [review_actions.original_value] }
+  60: { name: Complaint Status Management,        status: done,    artefacts: [complaint_status_history, src/services/lifecycle.py, tests/test_lifecycle.py] }
+  61: { name: Customer Dashboard,                   status: done,    artefacts: [src/api/v1/complaints.py] }
+  62: { name: Agent Dashboard,                      status: done,    artefacts: [src/api/v1/complaints.py] }
+  63: { name: Administrator Dashboard,              status: done,    artefacts: [src/api/v1/analytics.py] }
+  64: { name: Complaint Analytics,                  status: done,    artefacts: [src/services/analytics.py] }
+  65: { name: Trend Detection,                      status: done,    artefacts: [trend_snapshots] }
+  66: { name: Search and Filtering,                 status: done,    artefacts: [src/api/v1/complaints.py] }
+  67: { name: Reports,                              status: done,    artefacts: [report_exports] }
+  68: { name: Export,                               status: done,    artefacts: [src/services/reports.py] }
+non_functional_requirements:
+  NFR-1:
+    name: Performance
+    target: Analyse, validate and generate an initial recommendation within 20 seconds.
+    status: partial
+    gap: >-
+      Per-complaint latency is measured and reported as mean, p50, p95 and
+      max by the benchmark runner, alongside per-pipeline timings on every
+      stored run. p95 rather than a mean, because NFR 1 caps each
+      complaint and a mean hides the tail that would breach it. The figure
+      against the 20-second target is quoted once the 500-complaint
+      dataset exists to measure it over.
+    evidence: [genai_runs.latency_ms, validation_runs.latency_ms]
+    approach: >-
+      Latency is recorded per pipeline run and surfaced in the benchmark
+      console and the X-Response-Time-ms header, so the claim is measured
+      rather than asserted.
+
+  NFR-2:
+    name: Scalable
+    target: 10000 complaints, 100 categories and subcategories, 1000 knowledge-base documents.
+    status: partial
+    evidence: [ix_comp_status_created, ix_comp_queue, ix_chunks_embedding, ix_comp_fts]
+    approach: Indexed query paths, pagination on every list endpoint, batch job runner.
+    gap: >-
+      Batch processing is designed around a ThreadPoolExecutor with pre-loaded
+      rules and taxonomy, and both pipelines accept hoisted configuration so a
+      long run does not reload them per complaint. The 500-complaint benchmark
+      that evidences the throughput target needs the dataset.
+
+  NFR-3:
+    name: Usable
+    target: Intuitive interface for customers, agents, reviewers, managers and administrators.
+    status: frontend
+
+  NFR-4:
+    name: Accuracy and Compliance
+    target: >-
+      All mandatory escalation conditions and critical routing rules enforced
+      before final verification; policy-based recommendations carry valid
+      source references.
+    status: partial
+    evidence: [validation_runs.escalation_floor_code, complaint_policy_refs.was_active,
+               benchmark_runs.metrics, src/services/benchmark.py]
+    approach: >-
+      Mandatory escalation recall is a headline benchmark metric with a target
+      of 100 percent; prohibited-action violations target zero.
+    gap: >-
+      The scoring machinery is complete and tested: per-field accuracy against
+      the ground-truth labels, guard compliance reported with its numerator and
+      denominator, and the structural guarantee that no pipeline package can
+      read an expected_* column. A percentage with no denominator renders as
+      null rather than as 0 or 100, so an unmeasured figure is never displayed
+      as a passing one. The numbers themselves are quoted once the authored
+      dataset exists to measure them over.
+
+  NFR-5:
+    name: Available
+    target: 99 percent uptime during evaluation, excluding external GenAI API outages.
+    status: partial
+    evidence: [health_endpoint]
+    approach: >-
+      Health endpoint plus an external uptime pinger to keep the free-tier
+      instance warm. The application stays fully functional with the GenAI API
+      unavailable, because Pipeline 2 is deterministic.
+    gap: >-
+      The degraded path is implemented and tested end to end: with no provider
+      reachable, Pipeline 2 still classifies, routes, escalates and produces a
+      persisted verification decision labelled INCOMPLETE rather than a
+      fabricated agreement. The uptime figure itself is measured over the
+      evaluation window and cannot be claimed in advance.
+
+# ══════════════════════════════════════════════════════════════════════════
+# 1.8 COMPETITION INTEGRITY AND ANTI-SHORTCUT REQUIREMENTS
+# ══════════════════════════════════════════════════════════════════════════
+integrity_requirements:
+  1:  { name: Unique Organisation Scenario,    status: done,    evidence: [config/taxonomy.yaml] }
+  2:
+    name: Unique Complaint Dataset
+    status: partial
+    evidence: [complaints.dataset_tag, complaints.expected_category_code, benchmark_runs]
+    gap: >-
+      The import path, the ground-truth label columns and the scoring
+      runner are complete and tested, including the structural guarantee
+      that no pipeline can read a label. The 500 authored complaints are
+      being written; the runner scores whatever is loaded.
+  3:
+    name: Hidden Complaint Dataset
+    status: done
+    evidence: [complaints.dataset_tag, complaint_validation_issues]
+    notes: >-
+      An evaluator uploads a CSV or XLSX under a new tag and runs the
+      benchmark against it, with no code change and no administrator
+      token. The hidden path is the same code the authored dataset uses,
+      on purpose: a separate importer for the hidden case would be the one
+      that had never been run. Unlabelled complaints process normally and
+      are reported as unscored rather than counted wrong.
+  4:
+    name: Hidden Policy Update
+    status: done
+    evidence: [document_versions.status, document_versions.superseded_by_id,
+               document_versions.superseded_at, complaint_policy_refs.document_version_id,
+               knowledge_base/versioning.py, src/services/policy_update.py,
+               tests/test_policy_update.py]
+    note: >-
+      A policy dropped in mid-evaluation is picked up with no redeployment:
+      activating the new version demotes the old one to SUPERSEDED, retrieval
+      stops returning it from that moment, and the next analysis is grounded in
+      the new text. Proved end to end in tests/test_policy_update.py -- the
+      corpus answers with the old figure, an admin activates v2 through the
+      API, and the corpus answers with the new one, in a single test with no
+      restart between the two.
+
+      The old version is demoted, never deleted. Contradiction detection needs
+      the superseded text to compare against, and every decision taken while it
+      governed would otherwise become unexplainable. A citation to it now
+      resolves but scores OUTDATED, which is the distinction that matters: a
+      reply grounded in last year's policy looks perfectly well-cited, and the
+      applicability verdict is the only thing that tells them apart.
+
+      Activation also answers the question an administrator asks the moment
+      they press the button -- what did I just invalidate? Every complaint that
+      cited the superseded version is listed, read from stored citations rather
+      than recomputed, with open ones counted separately because a closed
+      complaint decided under the old policy is history and an open one is a
+      decision somebody is still about to act on. Nothing is re-analysed
+      automatically: re-running hundreds of complaints would spend the
+      free-tier quota in one click, and silently rewriting a decision an agent
+      has already acted on is worse than leaving it visibly stale.
+  5:  { name: Hidden Complaint Category,       status: done,    evidence: [categories],
+        note: "Categories are database rows, not code. A new one needs no deploy." }
+  6:  { name: Sentiment-Urgency Trap,          status: done, evidence: [lexicon_terms],
+        note: "Emotional signals are recorded but forbidden from urgency rules; enforced by test." }
+  7:  { name: Escalation Trap,                 status: done, evidence: [validation_runs.escalation_floor_code, rules.is_mandatory_escalation] }
+  8:
+    name: Prompt Injection Challenge
+    status: partial
+    evidence: [injection_patterns, injection_events]
+    gap: >-
+      All four defence layers are implemented and tested, and Pipeline 2
+      is structurally immune. The end-to-end demonstration against the
+      evaluators' adversarial pack needs the intake API and the hidden
+      dataset drop-zone.
+  9:
+    name: Unsupported Promise Challenge
+    status: done
+    evidence: [promise_patterns, response_flags, responses.guard_status, responses.version]
+    notes: >-
+      A promise is authorised only by an ELIGIBLE eligibility decision from
+      Pipeline 2. A draft promising a refund on a complaint whose refund
+      eligibility is REQUIRES_VERIFICATION is blocked, regenerated once with
+      the offending phrase quoted back, and - if still non-compliant - routed
+      to a human. The rejected draft is stored alongside the accepted one with
+      its flagged spans, so the demonstration is a query against two rows
+      rather than a claim.
+  10:
+    name: Contradictory Policy Challenge
+    status: done
+    evidence: [complaint_policy_refs.conflict_with_ref, complaint_policy_refs.precedence_tier,
+               hallucination_checks/policy_conflict.py, knowledge_base/versioning.py,
+               config/policy.yaml, tests/test_policy_conflict.py]
+    note: >-
+      Two policies that disagree are detected, the documented precedence order
+      is applied, and the resolution is recorded rather than taken silently.
+      That last part is the whole requirement: retrieval and precedence already
+      made the system follow the higher policy, but a system that quietly
+      follows the right one looks identical to a system that never noticed the
+      wrong one existed, and the second is worth nothing to anybody auditing it.
+
+      What counts as a disagreement is the claim checker's own definition,
+      imported rather than restated: two sentences, one from each document,
+      that share most of their vocabulary in BOTH directions -- so they are
+      about the same thing -- and then either negate one another or state
+      different figures in the same unit. A one-way containment test matches a
+      short sentence against a long one that merely contains its words, and a
+      detector that fires on agreeing policies floods the trace view until an
+      agent stops reading it; the mutual test and the 0.60 floor in
+      policy.yaml are what keep it quiet enough to be believed.
+
+      Comparison is over each document's whole active version, not the two
+      chunks that happened to be retrieved: a planted contradiction rarely
+      sits in the two passages retrieval picked. The overruled reference is
+      marked, never deleted -- conflict_with_ref names what beat it and the
+      reason names the governing precedence tier -- because removing it would
+      leave no evidence the conflict was ever found. Surfaced on
+      GET /api/complaints/{ref}/explain as policy_conflicts.
+
+  11:
+    name: Missing Information Challenge
+    status: partial
+    evidence: [complaints.missing_information, clarification_questions,
+               complaint_processing/followup.py, tests/test_completion.py]
+    gap: >-
+      A complaint that omits what the rules need is accepted, not rejected, and
+      the gap is recorded three ways: the missing fields on the complaint, a
+      clarification question per outstanding item, and a CLARIFICATION
+      follow-up so somebody is scheduled to chase it. Eligibility that cannot
+      be settled without the missing fact resolves to REQUIRES_VERIFICATION
+      rather than to a guess, and the response guard refuses to promise on it.
+      The end-to-end demonstration against the evaluators' pack needs the
+      hidden dataset drop.
+  12:
+    name: Multi-Issue Complaint Challenge
+    status: partial
+    evidence: [complaints.primary_issue, complaints.secondary_issue,
+               complaints.support_department_id, routing_rules/departments.yaml]
+    gap: >-
+      A complaint carrying two issues keeps both: a primary and a secondary
+      issue, an owning department and a supporting one, and every eligibility
+      type the rules matched rather than only the first. Ownership stays
+      singular on purpose -- two owners is the same as none, and the SLA clock
+      has to belong to somebody. The demonstration against the evaluators' pack
+      needs the hidden dataset drop.
+  13:
+    name: Repeat Complaint Challenge
+    status: partial
+    evidence: [complaints.repeat_count, complaints.previous_complaint_id,
+               complaint_links, escalation_rules/mandatory.yaml,
+               complaint_processing/dedupe.py]
+    gap: >-
+      The repeat count is derived from stored prior complaints for that
+      customer, never from the complaint claiming to be a repeat -- a claim is
+      exactly what an adversarial submission would forge. Only unresolved prior
+      contacts count, duplicates are linked rather than merged, and the
+      escalation matrix raises the floor on repeat_count thresholds. The
+      demonstration against the evaluators' pack needs the hidden dataset drop.
+  14:
+    name: Live Modification Challenge
+    status: done
+    evidence: [rules, categories, departments, sla_policies, app_config,
+               lexicon_terms, prompt_versions, audit_log,
+               src/services/admin_config.py, src/api/v1/admin.py,
+               tests/test_admin_config.py]
+    note: >-
+      Taxonomy, rules, lexicons, thresholds, comparison weights, SLA targets
+      and prompt versions are all database rows read at evaluation time, and
+      all of them are editable through /api/admin with no redeployment.
+      POST /api/admin/rules/test is what makes the demonstration legible: it
+      runs Pipeline 2 alone over a piece of text and returns what the rules
+      conclude right now, deterministically, with no provider call and nothing
+      written -- so an evaluator can edit a rule, post the same text again and
+      see the difference in two requests, as often as they like, without
+      spending the free-tier quota or filling the register with test rows.
+      POST /api/admin/rules/reload is the undo, restoring the committed matrix
+      so the next demonstration starts from a known state.
+
+      Three guards keep the surface from becoming a back door. A rule that
+      sets a mandatory escalation may have its level raised but never lowered,
+      and cannot be deactivated at all: the floor is already enforced against
+      the model, the comparison engine and a human reviewer, and an admin API
+      able to switch off the rule that sets it would be a fourth way through
+      and the quietest of the four, because it leaves no override on any
+      complaint to notice. A change is refused at save time rather than at
+      evaluation time, with every problem named at once -- a malformed
+      condition, a signal no active lexicon term raises, an outcome naming a
+      code that does not exist -- because a rule that saves cleanly and then
+      silently never fires looks exactly like the system ignoring the
+      evaluator. And every rule change re-stamps the ruleset version, so a
+      validation_run recorded before the edit stays attributable to the rules
+      that actually produced it.
+  15:
+    name: Deliberate Defect Challenge
+    status: done
+    evidence: [security/deliberate_defect.py, security/response_guard.py,
+               comparison_engine/decision.py, tests/test_deliberate_defect.py]
+    note: >-
+      Four documented defects, each run through the production detector that
+      should catch it, all four caught: a reply promising a refund no ELIGIBLE
+      decision authorises (response guard, CRITICAL); an authorised
+      compensation for ten times its ceiling -- the expensive one, because
+      eligibility genuinely says yes, every other gate passes and only the
+      number is wrong; a citation to a policy that does not exist; and a model
+      downgrading a mandatory safety escalation to NONE, which the floor raises
+      back to CRITICAL_MGMT.
+
+      The defect is never installed. There is no flag that makes SupportNova
+      behave badly and no configuration row that degrades it: each
+      demonstration builds its faulty artefact inside one request, checks it
+      and discards it. A switch that could break the running system in exchange
+      for a better demo can be left on, and then the defect is not deliberate
+      any more. One test asserts that isolation directly -- a demonstration
+      persists nothing -- and a second asserts that no file in any of the six
+      pipeline packages so much as mentions the module, so there is no path by
+      which a demonstration could reach a real complaint.
+
+      The detectors are the real ones: scan_response is the same function that
+      guards every customer reply and build_reconciled the same one that
+      enforces the floor on every complaint. A simplified checker written here
+      would demonstrate only that the demonstration works. Served at
+      GET /api/admin/defects and POST /api/admin/defects/demonstrate.
+  16: { name: GitHub Activity,                 status: planned, evidence: [.github/workflows/ci.yml] }
+  17: { name: No Hard-Coded Outputs,           status: done,    evidence: [genai_runs, validation_runs, rule_hits, comparisons],
+        note: "Every displayed value traces to a stored run record or rule hit." }
+  18: { name: GenAI API Restriction,           status: done, evidence: [python_validation/],
+        note: "Pipeline 2 imports no provider client; its CLI runs with no API key set." }
+  19: { name: AI Tool Usage Declaration,       status: done,    evidence: [../AI_USAGE.md] }

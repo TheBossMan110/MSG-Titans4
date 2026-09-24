@@ -1,0 +1,34 @@
+# ========================================================================
+# RaftarXpress - ROUTING FALLBACK
+#
+# Destination of last resort. Every other routing decision is made by
+# the classification rule that matched, which carries its own
+# department straight from the authored matrix.
+#
+# GENERATED from dataset/raftarxpress by scripts/convert_raftarxpress.py.
+# Edit the dataset and re-run. Tune live at /api/admin/rules, which
+# refuses a condition naming a signal no lexicon term raises.
+# ========================================================================
+
+version: "1.0"
+ruleset: routing
+
+rules:
+
+  - rule_ref: RTE-0001
+    name: Unrecognised complaint
+    rule_type: ROUTING
+    precedence: 5
+    catch_all: true
+    rationale: >-
+      Nothing in the matrix matched. The complaint still needs an owner,
+      so it goes to Customer Relations -- but `unmatched` stays set, and
+      the verification outcome routes it to a human. A catch-all that
+      cleared the flag would turn every gap in the matrix into a
+      confident wrong answer.
+    when:
+      always: true
+    then:
+      department: CUSTOMER_RELATIONS
+      urgency: MEDIUM
+      priority: P2

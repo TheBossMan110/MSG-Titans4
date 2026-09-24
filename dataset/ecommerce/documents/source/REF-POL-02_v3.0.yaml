@@ -1,0 +1,107 @@
+# Zenithra — Refund and Cancellation Policy, version 3.0 (ACTIVE)
+#
+# DOCX-only on purpose: it exercises the DOCX parser's table handling, which
+# the routing and SLA matrices in this corpus depend on.
+formats: [docx]
+
+metadata:
+  doc_ref: REF-POL-02
+  title: Refund and Cancellation Policy
+  version: "3.0"
+  doc_type: POLICY
+  department: Billing and Payments
+  category: POLICY
+  effective_date: "2026-06-01"
+  owner: Head of Billing
+
+header_text: "Zenithra Commerce — Internal Policy"
+footer_text: "REF-POL-02 v3.0 — Confidential"
+
+sections:
+  - ref: "1"
+    heading: Scope
+    body:
+      - >-
+        This policy governs refunds, cancellations and replacement eligibility
+        for all Zenithra orders. It supersedes Refund and Cancellation Policy
+        version 2.2 in its entirety.
+
+  - ref: "2"
+    heading: Refund Eligibility Window
+    body:
+      - >-
+        A refund may be requested within fourteen calendar days of delivery for
+        general merchandise, and within seven calendar days of delivery for
+        opened consumable accessories.
+      - >-
+        Large appliances are eligible for refund within ten calendar days of
+        delivery, provided the item has been installed by a Zenithra-authorised
+        engineer and the installation report records a fault.
+      - >-
+        A refund request received outside the applicable window is not eligible.
+        Agents must not grant an exception to the window. Exceptions require
+        Department Manager approval recorded against the complaint.
+    tables:
+      - rows:
+          - [Product Category, Refund Window, Replacement Window, Condition Required]
+          - [General merchandise, 14 days, 14 days, Unused and repackaged]
+          - [Opened consumables, 7 days, Not eligible, Fault demonstrated]
+          - [Large appliances, 10 days, 30 days, Engineer fault report]
+          - [Software and licences, 48 hours, Not eligible, Licence unactivated]
+
+  - ref: "3"
+    heading: Refund Processing Times
+    body:
+      - >-
+        Approved refunds are returned to the original payment method. Card
+        refunds are credited within five to seven business days of approval.
+        Bank transfer refunds are credited within seven to ten business days.
+      - >-
+        Agents may quote these ranges. Agents must not quote a specific calendar
+        date for a refund credit, because settlement timing is controlled by the
+        customer's issuing bank and not by Zenithra.
+
+  - ref: "4"
+    heading: Non-Refundable Items
+    body:
+      - >-
+        Gift cards, digital top-ups, activated software licences, and items
+        returned without their original serial-numbered packaging are not
+        refundable.
+
+  - ref: "5"
+    heading: Replacement Eligibility
+    body:
+      - >-
+        A replacement is available where the item is faulty on arrival, where an
+        incorrect item was despatched, or where a delivery investigation has
+        confirmed non-delivery under Delivery and Shipment Policy section 4.
+      - >-
+        A second replacement for the same order line requires Supervisor Review.
+        A third requires Department Manager approval.
+
+  - ref: "6"
+    heading: Compensation and Goodwill
+    body:
+      - >-
+        Goodwill credit is discretionary and capped at five hundred rupees or
+        the local currency equivalent per complaint. Any goodwill above this cap
+        requires Department Manager approval before it is offered to the
+        customer.
+      - >-
+        Agents must not describe goodwill credit as compensation, and must not
+        offer it where a refund has already been approved for the same order
+        line.
+
+  - ref: "7"
+    heading: Duplicate and Incorrect Charges
+    body:
+      - >-
+        A confirmed duplicate charge is refunded in full without reference to
+        the refund window in section 2, because the charge itself was made in
+        error. Confirmation requires a matching transaction pair in the payment
+        ledger.
+      - >-
+        Where a duplicate charge is reported but not yet confirmed, the agent
+        must open a billing investigation and must not confirm the refund to the
+        customer until the ledger check completes.

@@ -1,0 +1,1325 @@
+# ========================================================================
+# RaftarXpress - MANDATORY ESCALATION RULES
+#
+# The floor. Separate from classification on purpose: if the floor
+# lived on the classification rule, editing that rule to fix a
+# department could move the floor as a side effect. This is the only
+# file that may set is_mandatory_escalation.
+#
+# GENERATED from dataset/raftarxpress by scripts/convert_raftarxpress.py.
+# Edit the dataset and re-run. Tune live at /api/admin/rules, which
+# refuses a condition naming a signal no lexicon term raises.
+# ========================================================================
+
+version: "1.0"
+ruleset: escalation
+
+rules:
+
+  - rule_ref: ESC-002
+    name: "Transit delay exceeding 72 hours with repeated customer inquiries (>2 times)"
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-002 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: delayed_delivery_terms
+        - signal: rule_002_evidence
+    then:
+      escalation: SUPERVISOR
+      department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "1" }
+
+  - rule_ref: ESC-003
+    name: Delayed delivery containing urgent medical supplies, life-saving drugs or temperature-sensitive goods
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-003 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: delayed_delivery_terms
+        - signal: rule_003_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: LOGISTICS_OPS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-018, section_ref: "1" }
+
+  - rule_ref: ESC-005
+    name: Consignee alleges fake delivery attempt / rider marked delivered or attempted without visiting
+    rule_type: ESCALATION
+    precedence: 106
+    mandatory_escalation: true
+    rationale: "RULE-005 makes this escalation mandatory. The floor may be raised above DEPT_MANAGER, never lowered below it."
+    when:
+      all_of:
+        - signal: missed_delivery_attempt_terms
+        - signal: rule_005_evidence
+    then:
+      escalation: DEPT_MANAGER
+      department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-020, section_ref: "1" }
+
+  - rule_ref: ESC-009
+    name: "Package left unattended without consent and subsequently stolen or missing (value > PKR 50,000)"
+    rule_type: ESCALATION
+    precedence: 106
+    mandatory_escalation: true
+    rationale: "RULE-009 makes this escalation mandatory. The floor may be raised above DEPT_MANAGER, never lowered below it."
+    when:
+      all_of:
+        - signal: package_left_unattended_terms
+        - signal: rule_009_evidence
+    then:
+      escalation: DEPT_MANAGER
+      department: LOGISTICS_OPS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "3" }
+
+  - rule_ref: ESC-011
+    name: Parcel dispatched to incorrect province/city (e.g., booked for Lahore, dispatched to Multan)
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-011 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: wrong_route_dispatch_terms
+        - signal: rule_011_evidence
+    then:
+      escalation: SUPERVISOR
+      department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-011, section_ref: "1" }
+
+  - rule_ref: ESC-012
+    name: "Repeated routing error on same consignment note (>2 misdirections)"
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-012 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: wrong_route_dispatch_terms
+        - signal: rule_012_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: LOGISTICS_OPS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-014
+    name: Insured shipment lost in transit with declared value between PKR 15,000 and PKR 100,000
+    rule_type: ESCALATION
+    precedence: 106
+    mandatory_escalation: true
+    rationale: "RULE-014 makes this escalation mandatory. The floor may be raised above DEPT_MANAGER, never lowered below it."
+    when:
+      all_of:
+        - signal: lost_parcel_terms
+        - signal: rule_014_evidence
+    then:
+      escalation: DEPT_MANAGER
+      department: WARRANTY_CLAIMS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "3" }
+
+  - rule_ref: ESC-015
+    name: High-value consignment lost in transit (declared value exceeding PKR 100,000 or corporate freight)
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-015 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: lost_parcel_terms
+        - signal: rule_015_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: WARRANTY_CLAIMS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-017
+    name: Partial loss confirmed stolen from damaged outer master carton
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-017 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: partial_shipment_missing_terms
+        - signal: rule_017_evidence
+    then:
+      escalation: SUPERVISOR
+      department: WARRANTY_CLAIMS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "4" }
+
+  - rule_ref: ESC-018
+    name: "High-value partial theft with total missing item value > PKR 100,000"
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-018 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: partial_shipment_missing_terms
+        - signal: rule_018_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: WARRANTY_CLAIMS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-021
+    name: Catastrophic damage to commercial freight / industrial equipment exceeding PKR 100,000
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-021 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: damaged_parcel_terms
+        - signal: rule_021_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: WARRANTY_CLAIMS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-022
+    name: Wrong parcel delivered due to courier label swap at last-mile delivery point
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-022 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: wrong_item_delivered_terms
+        - signal: rule_022_evidence
+    then:
+      escalation: SUPERVISOR
+      department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-011, section_ref: "1" }
+
+  - rule_ref: ESC-024
+    name: Misdelivered parcel contains confidential corporate data or restricted goods
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-024 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: wrong_item_delivered_terms
+        - signal: rule_024_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: LOGISTICS_OPS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: ESC-026
+    name: Parcel cut open and high-value item replaced with dummy weight / counterfeit goods
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-026 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: tampered_packaging_terms
+        - signal: rule_026_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: ACCOUNT_SECURITY
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-006, section_ref: "1" }
+
+  - rule_ref: ESC-027
+    name: Merchant reports repeated tampered packages from a specific regional dispatch route
+    rule_type: ESCALATION
+    precedence: 109
+    mandatory_escalation: true
+    rationale: RULE-027 makes this escalation mandatory. The floor may be raised above SPECIALIST, never lowered below it.
+    when:
+      all_of:
+        - signal: tampered_packaging_terms
+        - signal: rule_027_evidence
+    then:
+      escalation: SPECIALIST
+      department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "3" }
+
+  - rule_ref: ESC-028
+    name: Rider demands higher COD cash than printed on official digital consignment manifest
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-028 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: cod_amount_mismatch_terms
+        - signal: rule_028_evidence
+    then:
+      escalation: SUPERVISOR
+      department: BILLING
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "3" }
+
+  - rule_ref: ESC-030
+    name: "COD cash discrepancy resulting in customer overpayment of > PKR 10,000"
+    rule_type: ESCALATION
+    precedence: 106
+    mandatory_escalation: true
+    rationale: "RULE-030 makes this escalation mandatory. The floor may be raised above DEPT_MANAGER, never lowered below it."
+    when:
+      all_of:
+        - signal: cod_amount_mismatch_terms
+        - signal: rule_030_evidence
+    then:
+      escalation: DEPT_MANAGER
+      department: BILLING
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "3" }
+
+  - rule_ref: ESC-032
+    name: Merchant corporate freight account billed twice on monthly consolidated billing statement
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-032 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: duplicate_charge_terms
+        - signal: rule_032_evidence
+    then:
+      escalation: SUPERVISOR
+      department: BILLING
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "3" }
+
+  - rule_ref: ESC-033
+    name: "Repeated duplicate deductions causing severe bank overdraft / penalties (> PKR 50,000)"
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-033 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: duplicate_charge_terms
+        - signal: rule_033_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: BILLING
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-035
+    name: Systemic fuel surcharge applied at expired higher rate across monthly merchant invoice
+    rule_type: ESCALATION
+    precedence: 106
+    mandatory_escalation: true
+    rationale: "RULE-035 makes this escalation mandatory. The floor may be raised above DEPT_MANAGER, never lowered below it."
+    when:
+      all_of:
+        - signal: incorrect_charge_terms
+        - signal: rule_035_evidence
+    then:
+      escalation: DEPT_MANAGER
+      department: BILLING
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "2" }
+
+  - rule_ref: ESC-036
+    name: Freight overcharge dispute on enterprise bulk contract exceeding PKR 100,000
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-036 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: incorrect_charge_terms
+        - signal: rule_036_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: BILLING
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-038
+    name: "Merchant COD remittance overdue by >7 days with balance between PKR 20,000 and PKR 100,000"
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-038 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: cod_remittance_delay_terms
+        - signal: rule_038_evidence
+    then:
+      escalation: SUPERVISOR
+      department: BILLING
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "2" }
+
+  - rule_ref: ESC-039
+    name: Unresolved COD remittance withheld exceeding PKR 100,000 with legal threat from merchant
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-039 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: cod_remittance_delay_terms
+        - signal: rule_039_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: BILLING
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-041
+    name: Refund request submitted on day 8 (past 7-day window) citing genuine medical emergency
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-041 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: refund_not_processed_terms
+        - signal: rule_041_evidence
+    then:
+      escalation: SUPERVISOR
+      department: RETURNS_REFUNDS
+      urgency: MEDIUM
+      priority: P2
+      policy_refs:
+        - { doc_ref: DOC-001, section_ref: "2" }
+
+  - rule_ref: ESC-042
+    name: Refund approved over 14 days ago but never disbursed due to banking IBFT batch drop
+    rule_type: ESCALATION
+    precedence: 106
+    mandatory_escalation: true
+    rationale: "RULE-042 makes this escalation mandatory. The floor may be raised above DEPT_MANAGER, never lowered below it."
+    when:
+      all_of:
+        - signal: refund_not_processed_terms
+        - signal: rule_042_evidence
+    then:
+      escalation: DEPT_MANAGER
+      department: RETURNS_REFUNDS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-001, section_ref: "4" }
+
+  - rule_ref: ESC-045
+    name: Bulk merchant refund batch delayed across 50+ accounts due to core banking portal outage
+    rule_type: ESCALATION
+    precedence: 109
+    mandatory_escalation: true
+    rationale: RULE-045 makes this escalation mandatory. The floor may be raised above SPECIALIST, never lowered below it.
+    when:
+      all_of:
+        - signal: refund_delay_terms
+        - signal: rule_045_evidence
+    then:
+      escalation: SPECIALIST
+      department: RETURNS_REFUNDS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-018, section_ref: "1" }
+
+  - rule_ref: ESC-047
+    name: "RTO package stalled at regional transit hub for >10 days without movement scan"
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-047 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: rto_processing_delay_terms
+        - signal: rule_047_evidence
+    then:
+      escalation: SUPERVISOR
+      department: RETURNS_REFUNDS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-010, section_ref: "2" }
+
+  - rule_ref: ESC-048
+    name: Merchant alleges high-value RTO parcel swapped with inferior merchandise during reverse transit
+    rule_type: ESCALATION
+    precedence: 106
+    mandatory_escalation: true
+    rationale: "RULE-048 makes this escalation mandatory. The floor may be raised above DEPT_MANAGER, never lowered below it."
+    when:
+      all_of:
+        - signal: rto_processing_delay_terms
+        - signal: rule_048_evidence
+    then:
+      escalation: DEPT_MANAGER
+      department: RETURNS_REFUNDS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-009, section_ref: "3" }
+
+  - rule_ref: ESC-050
+    name: High-volume merchant account locked during peak sales festival (e.g. 11.11 / Eid)
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-050 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: account_locked_terms
+        - signal: rule_050_evidence
+    then:
+      escalation: SUPERVISOR
+      department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-018, section_ref: "1" }
+
+  - rule_ref: ESC-051
+    name: Merchant account locked due to suspicious automated bot scraping / API abuse
+    rule_type: ESCALATION
+    precedence: 109
+    mandatory_escalation: true
+    rationale: RULE-051 makes this escalation mandatory. The floor may be raised above SPECIALIST, never lowered below it.
+    when:
+      all_of:
+        - signal: account_locked_terms
+        - signal: rule_051_evidence
+    then:
+      escalation: SPECIALIST
+      department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: ESC-052
+    name: Customer reports suspicious login alert from unfamiliar city/IP address, no funds diverted
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-052 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: unauthorized_account_access_terms
+        - signal: rule_052_evidence
+    then:
+      escalation: SUPERVISOR
+      department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: ESC-053
+    name: Merchant portal compromised and bank disbursement details altered to fraudulent account
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-053 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: unauthorized_account_access_terms
+        - signal: rule_053_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: ACCOUNT_SECURITY
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: ESC-054
+    name: Widespread credential-stuffing attack targeting corporate freight customer accounts
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-054 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: unauthorized_account_access_terms
+        - signal: rule_054_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: ACCOUNT_SECURITY
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: ESC-057
+    name: Merchant requests critical change in corporate bank account for COD remittances
+    rule_type: ESCALATION
+    precedence: 106
+    mandatory_escalation: true
+    rationale: "RULE-057 makes this escalation mandatory. The floor may be raised above DEPT_MANAGER, never lowered below it."
+    when:
+      all_of:
+        - signal: merchant_profile_update_terms
+        - signal: rule_057_evidence
+    then:
+      escalation: DEPT_MANAGER
+      department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "2" }
+
+  - rule_ref: ESC-059
+    name: "Tracking scan frozen at origin hub for >48 hours without departure event"
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-059 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: tracking_not_updating_terms
+        - signal: rule_059_evidence
+    then:
+      escalation: SUPERVISOR
+      department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-010, section_ref: "2" }
+
+  - rule_ref: ESC-060
+    name: Public tracking portal shows internal system error code (500) for all merchant shipments
+    rule_type: ESCALATION
+    precedence: 109
+    mandatory_escalation: true
+    rationale: RULE-060 makes this escalation mandatory. The floor may be raised above SPECIALIST, never lowered below it.
+    when:
+      all_of:
+        - signal: tracking_not_updating_terms
+        - signal: rule_060_evidence
+    then:
+      escalation: SPECIALIST
+      department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "2" }
+
+  - rule_ref: ESC-062
+    name: Courier mobile dispatch app crashes repeatedly across entire Lahore hub fleet
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-062 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: app_crash_terms
+        - signal: rule_062_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: CUSTOMER_RELATIONS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-018, section_ref: "1" }
+
+  - rule_ref: ESC-066
+    name: Enterprise corporate client API gateway completely down, blocking all nationwide bookings
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-066 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: api_webhook_failure_terms
+        - signal: rule_066_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: CUSTOMER_RELATIONS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-068
+    name: Rider used profanity, verbal threats, or aggressive harassment towards customer
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-068 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: rude_rider_driver_behavior_terms
+        - signal: rule_068_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: LOGISTICS_OPS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-020, section_ref: "1" }
+
+  - rule_ref: ESC-069
+    name: "Repeated behavioral complaints (>3) against same delivery courier within 30 days"
+    rule_type: ESCALATION
+    precedence: 106
+    mandatory_escalation: true
+    rationale: "RULE-069 makes this escalation mandatory. The floor may be raised above DEPT_MANAGER, never lowered below it."
+    when:
+      all_of:
+        - signal: rude_rider_driver_behavior_terms
+        - signal: rule_069_evidence
+    then:
+      escalation: DEPT_MANAGER
+      department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "2" }
+
+  - rule_ref: ESC-071
+    name: Rider refuses to release prepaid parcel unless customer pays unauthorized cash fee
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-071 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: rider_demanding_cash_tip_terms
+        - signal: rule_071_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: ACCOUNT_SECURITY
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "2" }
+
+  - rule_ref: ESC-072
+    name: Rider forged customer signature and pocketed change balance from large COD banknote
+    rule_type: ESCALATION
+    precedence: 106
+    mandatory_escalation: true
+    rationale: "RULE-072 makes this escalation mandatory. The floor may be raised above DEPT_MANAGER, never lowered below it."
+    when:
+      all_of:
+        - signal: rider_demanding_cash_tip_terms
+        - signal: rule_072_evidence
+    then:
+      escalation: DEPT_MANAGER
+      department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "3" }
+
+  - rule_ref: ESC-074
+    name: Warranty claim denied due to filing on day 15 (1 day past 14-day window) due to hospital stay
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-074 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: warranty_claim_denied_terms
+        - signal: rule_074_evidence
+    then:
+      escalation: SUPERVISOR
+      department: WARRANTY_CLAIMS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "1" }
+
+  - rule_ref: ESC-075
+    name: Corporate VIP client claims denial on PKR 250,000 shipment threatening contract termination
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-075 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: warranty_claim_denied_terms
+        - signal: rule_075_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: WARRANTY_CLAIMS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-077
+    name: Insured payout delayed past 30 days due to missing underwriter surveyor sign-off
+    rule_type: ESCALATION
+    precedence: 109
+    mandatory_escalation: true
+    rationale: RULE-077 makes this escalation mandatory. The floor may be raised above SPECIALIST, never lowered below it.
+    when:
+      all_of:
+        - signal: insurance_payout_delay_terms
+        - signal: rule_077_evidence
+    then:
+      escalation: SPECIALIST
+      department: WARRANTY_CLAIMS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "3" }
+
+  - rule_ref: ESC-078
+    name: Insurance payout withheld for enterprise cargo loss exceeding PKR 500,000
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-078 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: insurance_payout_delay_terms
+        - signal: rule_078_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: WARRANTY_CLAIMS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-079
+    name: Customer reports courier sent unsolicited personal message on WhatsApp after delivery
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-079 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: data_privacy_breach_terms
+        - signal: rule_079_evidence
+    then:
+      escalation: SUPERVISOR
+      department: ACCOUNT_SECURITY
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: ESC-080
+    name: Merchant manifests containing 500+ customer names and phone numbers leaked online or sent to wrong client
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-080 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: data_privacy_breach_terms
+        - signal: rule_080_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: ACCOUNT_SECURITY
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: ESC-083
+    name: Customer receives spam SMS originating from rogue third-party claiming to be company partner
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-083 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: unsolicited_marketing_sms_terms
+        - signal: rule_083_evidence
+    then:
+      escalation: SUPERVISOR
+      department: COMPLIANCE
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "3" }
+
+  - rule_ref: ESC-084
+    name: Enterprise client alleges unauthorized marketing outreach to their confidential customer list
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-084 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: unsolicited_marketing_sms_terms
+        - signal: rule_084_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-085
+    name: Citizen reports courier van driving recklessly / speeding in residential neighborhood
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-085 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: reckless_driving_safety_risk_terms
+        - signal: rule_085_evidence
+    then:
+      escalation: SUPERVISOR
+      department: SAFETY
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-025, section_ref: "2" }
+
+  - rule_ref: ESC-086
+    name: Company delivery vehicle involved in road traffic accident resulting in property damage
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-086 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: reckless_driving_safety_risk_terms
+        - signal: rule_086_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-025, section_ref: "2" }
+
+  - rule_ref: ESC-087
+    name: Severe fleet collision involving bodily injury or fatality
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-087 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: reckless_driving_safety_risk_terms
+        - signal: rule_087_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-089
+    name: Consignment of undeclared lithium batteries catches fire / emits smoke in regional sortation center
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-089 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: hazardous_material_mishandling_terms
+        - signal: rule_089_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-025, section_ref: "2" }
+
+  - rule_ref: ESC-090
+    name: Commercial freight shipment found to contain undeclared toxic industrial chemicals / acids
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-090 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: hazardous_material_mishandling_terms
+        - signal: rule_090_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "1" }
+
+  - rule_ref: ESC-092
+    name: Shipment held at provincial check-post due to missing provincial sales tax / e-way bill
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-092 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: missing_customs_documents_terms
+        - signal: rule_092_evidence
+    then:
+      escalation: SUPERVISOR
+      department: COMPLIANCE
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-024, section_ref: "1" }
+
+  - rule_ref: ESC-093
+    name: Corporate freight fleet impounded at customs terminal due to falsified commercial manifests
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-093 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: missing_customs_documents_terms
+        - signal: rule_093_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-095
+    name: Customer shipment seized by customs due to suspicion of counterfeit trademark goods
+    rule_type: ESCALATION
+    precedence: 109
+    mandatory_escalation: true
+    rationale: RULE-095 makes this escalation mandatory. The floor may be raised above SPECIALIST, never lowered below it.
+    when:
+      all_of:
+        - signal: regulatory_impoundment_hold_terms
+        - signal: rule_095_evidence
+    then:
+      escalation: SPECIALIST
+      department: COMPLIANCE
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "1" }
+
+  - rule_ref: ESC-096
+    name: "Mass regulatory seizure of entire linehaul container valued at > PKR 5,000,000"
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-096 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: regulatory_impoundment_hold_terms
+        - signal: rule_096_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-098
+    name: Corporate client contract expiring in 7 days with disputed volume tier discounts
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-098 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: subscription_contract_renewal_terms
+        - signal: rule_098_evidence
+    then:
+      escalation: SUPERVISOR
+      department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "2" }
+
+  - rule_ref: ESC-099
+    name: "Top-tier corporate account (annual freight > PKR 10M) serves 30-day termination notice over service quality"
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-099 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: subscription_contract_renewal_terms
+        - signal: rule_099_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: CUSTOMER_RELATIONS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-100
+    name: VIP consumer shipment misses guaranteed overnight delivery commitment by 4 hours
+    rule_type: ESCALATION
+    precedence: 103
+    mandatory_escalation: true
+    rationale: RULE-100 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
+    when:
+      all_of:
+        - signal: executive_sla_breach_terms
+        - signal: rule_100_evidence
+    then:
+      escalation: SUPERVISOR
+      department: MGMT_ESCALATIONS
+      urgency: HIGH
+      priority: P1
+      policy_refs:
+        - { doc_ref: DOC-014, section_ref: "2" }
+
+  - rule_ref: ESC-101
+    name: Nationwide severe linehaul breakdown causing systemic SLA failure across 1,000+ consignments
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-101 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: executive_sla_breach_terms
+        - signal: rule_101_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-102
+    name: "Formal legal notice served by corporate client for systemic breach of SLA contract (> PKR 1,000,000)"
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-102 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: executive_sla_breach_terms
+        - signal: rule_102_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-103
+    name: Cargo inspection reveals unregistered pharmaceutical narcotics hidden inside commercial parcel
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-103 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: missing_customs_documents_terms
+        - signal: rule_103_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "1" }
+
+  - rule_ref: ESC-104
+    name: "Customer video of courier throwing fragile parcels goes viral on social media (>100k views)"
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-104 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: executive_sla_breach_terms
+        - signal: rule_104_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: ESC-105
+    name: "Nationwide highway flooding closes national transit artery for >5 days"
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: "RULE-105 makes this escalation mandatory. The floor may be raised above CRITICAL_MGMT, never lowered below it."
+    when:
+      all_of:
+        - signal: delayed_delivery_terms
+        - signal: rule_105_evidence
+    then:
+      escalation: CRITICAL_MGMT
+      department: LOGISTICS_OPS
+      urgency: CRITICAL
+      priority: P0
+      policy_refs:
+        - { doc_ref: DOC-014, section_ref: "3" }
+
+  - rule_ref: ESC-SAF-0001
+    name: Physical hazard reported, however calmly
+    rule_type: ESCALATION
+    precedence: 140
+    mandatory_escalation: true
+    rationale: "A hazard is a hazard at any volume. SRS 1.8 #6: a calmly worded safety report must reach P0, and a furious one about a late parcel must not. Tone is recorded and structurally cannot reach this rule."
+    when:
+      signal: safety_lexicon_hit
+    then:
+      escalation: CRITICAL_MGMT
+      department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+
+  - rule_ref: ESC-SAF-0002
+    name: Hazard that has already caused injury or damage
+    rule_type: ESCALATION
+    precedence: 145
+    mandatory_escalation: true
+    rationale: A danger that has already hurt somebody is not the same complaint as one that has not. Ranked above SAF-0001 so the more serious reading wins when both match.
+    when:
+      all_of:
+        - signal: safety_lexicon_hit
+        - signal: injury_mention
+    then:
+      escalation: CRITICAL_MGMT
+      department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+
+  - rule_ref: LEG-0001
+    name: Legal or regulatory exposure raised by the customer
+    rule_type: ESCALATION
+    precedence: 120
+    mandatory_escalation: true
+    rationale: Once a customer has mentioned a lawyer, a court or a regulator, a reply that commits the company to anything is a liability. Compliance owns it and the floor is raised before any promise can be drafted.
+    when:
+      signal: legal_threat
+    then:
+      escalation: COMPLIANCE_REVIEW
+      department: COMPLIANCE
+      urgency: HIGH
+      priority: P1
+
+  - rule_ref: REG-0001
+    name: A regulator or enforcement agency is already involved
+    rule_type: ESCALATION
+    precedence: 125
+    mandatory_escalation: true
+    rationale: "A seizure or an agency notice is not the customer being angry: a third party with statutory power is already involved, and the company's answer is on a record it does not control."
+    when:
+      signal: regulatory_body
+    then:
+      escalation: COMPLIANCE_REVIEW
+      department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+
+  - rule_ref: URG-0001
+    name: Time-critical contents make the delay dangerous
+    rule_type: ESCALATION
+    precedence: 128
+    mandatory_escalation: true
+    rationale: "What is inside changes what the delay costs. A late parcel is an inconvenience; late insulin is not, and the difference is legible in the complaint text without any judgement about tone."
+    when:
+      signal: time_critical_contents
+    then:
+      escalation: SPECIALIST
+      department: MGMT_ESCALATIONS
+      urgency: CRITICAL
+      priority: P0
+
+  - rule_ref: INJ-0001
+    name: Intake flagged a suspected prompt injection
+    rule_type: ESCALATION
+    precedence: 122
+    mandatory_escalation: true
+    rationale: "SRS 1.8 #8. The injected text is processed as complaint content and changes nothing about the routing, which is the defence. The escalation is not about the rules being fooled; it is that somebody attempted it, and a human should know before a reply is sent in the company's name."
+    when:
+      field: injection_suspected
+      eq: true
+    then:
+      escalation: SUPERVISOR
+      department: COMPLIANCE
+      urgency: HIGH
+      priority: P1
+
+  - rule_ref: REP-0001
+    name: A third unresolved contact about the same matter
+    rule_type: ESCALATION
+    precedence: 118
+    mandatory_escalation: true
+    rationale: Three unresolved contacts is a failure of the process, not of the complaint. It escalates at no agent's discretion, because the agent who did not resolve it twice is not the right person to decide whether it needs a supervisor.
+    when:
+      fact: repeat_count
+      gte: 3
+    then:
+      escalation: SUPERVISOR
+      department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1

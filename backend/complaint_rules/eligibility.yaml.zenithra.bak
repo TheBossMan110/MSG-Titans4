@@ -1,0 +1,295 @@
+# ══════════════════════════════════════════════════════════════════════════
+# Zenithra — ELIGIBILITY RULES
+#
+# SRS Steps 29-31 (refund, replacement, compensation eligibility) and the
+# Unsupported Promise Challenge (SRS 1.8 #9).
+#
+# SRS Step 29 is explicit: "The final determination must be based on approved
+# rules, not merely GenAI opinion." These rules are that determination.
+#
+# Each carries an `eligibility` block naming the decision type and outcome.
+# The validation pipeline turns those into `eligibility_decisions` rows, and
+# the response guard uses the resulting permitted-action set to decide whether
+# a generated sentence such as "your refund is approved" is allowed to stand.
+#
+# Precedence 46-49 — above resolution obligations, below routing, because an
+# eligibility finding constrains the reply without deciding who owns it.
+# ══════════════════════════════════════════════════════════════════════════
+
+version: "1.0"
+ruleset: eligibility
+default_precedence: 47
+
+rules:
+
+  # ── REFUND ────────────────────────────────────────────────────────────
+  - rule_ref: ELG-0001
+    name: Refund requires verification before approval
+    rule_type: ELIGIBILITY
+    precedence: 47
+    rationale: >-
+      The default position for any refund request. Nothing is approved at the
+      desk until the purchase date has been checked against REF-POL-02 s2.
+    when:
+      signal: refund_terms
+    eligibility:
+      type: REFUND
+      outcome: REQUIRES_VERIFICATION
+      conditions:
+        - Purchase date within the applicable refund window
+        - Item not on the non-refundable list
+      policy_ref: { doc_ref: REF-POL-02, section_ref: "2" }
+    then:
+      prohibited_actions:
+        - Confirm a refund before eligibility is verified
+
+  - rule_ref: ELG-0002
+    name: Confirmed duplicate charge is refundable in full
+    rule_type: ELIGIBILITY
+    precedence: 49
+    rationale: >-
+      REF-POL-02 s7 refunds a confirmed duplicate without reference to the
+      refund window, because the charge itself was made in error. The ledger
+      check is still required, so the outcome is conditional rather than
+      approved outright.
+    when:
+      signal: billing_error
+    eligibility:
+      type: REFUND
+      outcome: CONDITIONAL
+      conditions:
+        - A matching transaction pair exists in the payment ledger
+      policy_ref: { doc_ref: REF-POL-02, section_ref: "7" }
+    then:
+      required_actions:
+        - Confirm the duplicate against the payment ledger before refunding
+
+  - rule_ref: ELG-0003
+    name: Refund outside the eligibility window is not approvable at the desk
+    rule_type: ELIGIBILITY
+    precedence: 48
+    rationale: >-
+      REF-POL-02 s2 states agents must not grant an exception to the window;
+      exceptions require Department Manager approval recorded on the complaint.
+    when:
+      all_of:
+        - signal: refund_terms
+        - fact: complaint_age_hours
+          gt: 336
+    eligibility:
+      type: REFUND
+      outcome: NOT_ELIGIBLE
+      requires_human_approval: true
+      conditions:
+        - Refund window has elapsed
+        - Department Manager approval required for any exception
+      policy_ref: { doc_ref: REF-POL-02, section_ref: "2" }
+    then:
+      prohibited_actions:
+        - Grant a refund-window exception
+        - Confirm a refund outside the eligibility window
+
+  - rule_ref: ELG-0004
+    name: Refund after confirmed non-delivery
+    rule_type: ELIGIBILITY
+    precedence: 48
+    rationale: >-
+      DEL-POL-04 s4 makes a refund available where an investigation confirms
+      non-delivery and the item is unavailable. The investigation is the
+      condition.
+    when:
+      all_of:
+        - signal: refund_terms
+        - signal: delivery_failure
+    eligibility:
+      type: REFUND
+      outcome: CONDITIONAL
+      conditions:
+        - Delivery investigation confirms non-delivery
+        - Item is no longer available for replacement
+      policy_ref: { doc_ref: DEL-POL-04, section_ref: "4" }
+    then:
+      prohibited_actions:
+        - Confirm a refund before the delivery investigation concludes
+
+  # ── REPLACEMENT ───────────────────────────────────────────────────────
+  - rule_ref: ELG-0010
+    name: Replacement requires eligibility verification
+    rule_type: ELIGIBILITY
+    precedence: 47
+    rationale: REF-POL-02 s5 limits replacement to specific, checkable circumstances.
+    when:
+      signal: replacement_demand
+    eligibility:
+      type: REPLACEMENT
+      outcome: REQUIRES_VERIFICATION
+      conditions:
+        - Item faulty on arrival, incorrect item despatched, or non-delivery confirmed
+        - Within the applicable replacement window
+      policy_ref: { doc_ref: REF-POL-02, section_ref: "5" }
+    then:
+      prohibited_actions:
+        - Confirm a replacement before eligibility is verified
+
+  - rule_ref: ELG-0011
+    name: Second replacement requires supervisor review
+    rule_type: ELIGIBILITY
+    precedence: 48
+    rationale: >-
+      REF-POL-02 s5 escalates a second replacement on the same order line, and
+      a third to Department Manager.
+    when:
+      all_of:
+        - signal: replacement_demand
+        - fact: repeat_count
+          gte: 2
+    eligibility:
+      type: REPLACEMENT
+      outcome: CONDITIONAL
+      requires_human_approval: true
+      conditions:
+        - Supervisor review of the replacement history for this order line
+      policy_ref: { doc_ref: REF-POL-02, section_ref: "5" }
+    then:
+      prohibited_actions:
+        - Issue a second replacement without supervisor review
+
+  - rule_ref: ELG-0012
+    name: Replacement is not available pending a safety assessment
+    rule_type: ELIGIBILITY
+    precedence: 49
+    rationale: >-
+      SAF-POL-02 s4 forbids promising a replacement before Product Safety has
+      assessed the incident. Replacing a hazardous unit with an identical one
+      would repeat the hazard.
+    when:
+      signal: safety_lexicon_hit
+    eligibility:
+      type: REPLACEMENT
+      outcome: NOT_ELIGIBLE
+      requires_human_approval: true
+      conditions:
+        - Product Safety assessment must complete first
+      policy_ref: { doc_ref: SAF-POL-02, section_ref: "4" }
+    then:
+      prohibited_actions:
+        - Promise a replacement before Product Safety assessment
+
+  # ── COMPENSATION ──────────────────────────────────────────────────────
+  - rule_ref: ELG-0020
+    name: Compensation is capped and discretionary
+    rule_type: ELIGIBILITY
+    precedence: 48
+    rationale: >-
+      REF-POL-02 s6 caps goodwill at five hundred rupees or local equivalent
+      and requires Department Manager approval above it.
+    when:
+      signal: compensation_demand
+    eligibility:
+      type: COMPENSATION
+      outcome: REQUIRES_VERIFICATION
+      requires_human_approval: true
+      max_amount: 500
+      currency: INR
+      conditions:
+        - Within the standard goodwill cap
+        - Not already refunded for the same order line
+      policy_ref: { doc_ref: REF-POL-02, section_ref: "6" }
+    then:
+      prohibited_actions:
+        - Promise compensation
+        - Describe goodwill credit as compensation
+        - Offer goodwill above the standard cap without manager approval
+
+  - rule_ref: ELG-0021
+    name: Delivery compensation has three cumulative conditions
+    rule_type: ELIGIBILITY
+    precedence: 49
+    rationale: >-
+      DEL-POL-04 s5 requires all three conditions together: over seven days
+      late, at least two prior contacts, and the delay not caused by an
+      incorrect address. Any one of them failing makes compensation
+      unavailable.
+    when:
+      all_of:
+        - signal: delivery_terms
+        - signal: compensation_demand
+    eligibility:
+      type: COMPENSATION
+      outcome: CONDITIONAL
+      requires_human_approval: true
+      max_amount: 500
+      currency: INR
+      conditions:
+        - Delay exceeds the committed window by more than seven calendar days
+        - Customer has contacted Zenithra at least twice about this order
+        - Delay not attributable to an incorrect or incomplete address
+      policy_ref: { doc_ref: DEL-POL-04, section_ref: "5" }
+    then:
+      prohibited_actions:
+        - Offer compensation before all three conditions are verified
+        - Offer compensation for a force majeure or customs delay
+
+  - rule_ref: ELG-0022
+    name: Compensation is never offered on an open safety incident
+    rule_type: ELIGIBILITY
+    precedence: 49
+    rationale: >-
+      SAF-POL-02 s4 prohibits any financial promise before assessment. An
+      early offer also prejudices the incident investigation.
+    when:
+      all_of:
+        - signal: safety_lexicon_hit
+        - signal: compensation_demand
+    eligibility:
+      type: COMPENSATION
+      outcome: NOT_ELIGIBLE
+      requires_human_approval: true
+      conditions:
+        - Product Safety assessment must complete first
+      policy_ref: { doc_ref: SAF-POL-02, section_ref: "4" }
+    then:
+      prohibited_actions:
+        - Offer compensation on an open safety incident
+
+  # ── REPAIR AND EXCEPTIONS ─────────────────────────────────────────────
+  - rule_ref: ELG-0030
+    name: In-warranty repair eligibility
+    rule_type: ELIGIBILITY
+    precedence: 47
+    rationale: Entitlement follows the purchase record and the warranty period.
+    when:
+      signal: warranty_terms
+    eligibility:
+      type: REPAIR
+      outcome: REQUIRES_VERIFICATION
+      conditions:
+        - Purchase date within the warranty period
+        - Fault not caused by misuse or unauthorised repair
+    then:
+      prohibited_actions:
+        - Confirm warranty coverage before the purchase date is verified
+
+  - rule_ref: ELG-0031
+    name: Policy exceptions are never granted at the desk
+    rule_type: ELIGIBILITY
+    precedence: 49
+    rationale: >-
+      SRS 1.8 #9 tests whether the system can be talked into a policy
+      exception. The answer is recorded as a rule so the guard enforces it on
+      generated text, rather than relying on the model to decline.
+    when:
+      any_of:
+        - signal: escalation_request
+        - signal: compensation_demand
+    eligibility:
+      type: POLICY_EXCEPTION
+      outcome: NOT_ELIGIBLE
+      requires_human_approval: true
+      conditions:
+        - Department Manager approval recorded against the complaint
+    then:
+      prohibited_actions:
+        - Grant a policy exception
+        - State that an exception has been made
+        - Imply that normal policy does not apply to this customer

@@ -1,0 +1,3091 @@
+{
+  "rule_matrix": [
+    {
+      "rule_id": "RULE-001",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-001",
+      "conditions": "Standard domestic transit delay under 24 hours without perishable contents",
+      "department_id": "DEPT-01",
+      "supporting_department_id": null,
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Routine operational delay; priority based on transit SLA standard, not customer agitation level",
+      "policy_reference": {
+        "document_id": "DOC-003",
+        "section_id": "DOC-003-S1"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Check hub GPS scan history",
+        "Notify destination delivery hub",
+        "Send SMS update to consignee"
+      ],
+      "prohibited_actions": [
+        "Guarantee delivery time before hub dispatch confirmation",
+        "Cancel consignment unilaterally"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-002",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-001",
+      "conditions": "Transit delay exceeding 72 hours with repeated customer inquiries (>2 times)",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-05",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Extended SLA breach triggers elevated operational review regardless of initial package value",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Flag consignment as priority linehaul search",
+        "Issue intermediate tracking SMS to consignee",
+        "Request hub physical shelf audit"
+      ],
+      "prohibited_actions": [
+        "Promise compensation before verification",
+        "Mark ticket resolved while parcel remains in transit"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-003",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-001",
+      "conditions": "Delayed delivery containing urgent medical supplies, life-saving drugs or temperature-sensitive goods",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Critical human health and safety impact mandates P0 classification even if customer is calm",
+      "policy_reference": {
+        "document_id": "DOC-018",
+        "section_id": "DOC-018-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Initiate emergency same-day dedicated vehicle dispatch",
+        "Alert Regional Operations Director",
+        "Coordinate direct telephone line with receiving hospital/patient"
+      ],
+      "prohibited_actions": [
+        "Route through standard overnight batch queue",
+        "Dismiss as routine delay"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-004",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-002",
+      "conditions": "First missed delivery attempt due to customer premises locked or phone unattended",
+      "department_id": "DEPT-01",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Standard operational first-attempt failure; low severity under standard delivery workflow",
+      "policy_reference": {
+        "document_id": "DOC-003",
+        "section_id": "DOC-003-S1"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Verify rider GPS proximity at attempt timestamp",
+        "Schedule automated next-day re-attempt",
+        "Send automated rescheduling SMS link"
+      ],
+      "prohibited_actions": [
+        "Charge re-attempt fee on first missed attempt",
+        "Initiate immediate Return to Origin"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-005",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-002",
+      "conditions": "Consignee alleges fake delivery attempt / rider marked delivered or attempted without visiting",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-06",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Integrity breach allegation by field courier warrants P1 priority investigation",
+      "policy_reference": {
+        "document_id": "DOC-020",
+        "section_id": "DOC-020-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Department Manager",
+      "required_actions": [
+        "Cross-reference rider GPS breadcrumb logs with delivery address",
+        "Interview route courier",
+        "Reschedule priority morning delivery window"
+      ],
+      "prohibited_actions": [
+        "Dismiss customer claim without reviewing GPS audit",
+        "Blame consignee for missed call without call log review"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-006",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-002",
+      "conditions": "Third consecutive missed delivery attempt reaching maximum quota threshold",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-03",
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Approaching RTO transition threshold requires structured hold verification",
+      "policy_reference": {
+        "document_id": "DOC-003",
+        "section_id": "DOC-003-S4"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Move parcel to 48-hour hub retention bay",
+        "Call consignee directly from customer support desk",
+        "Notify merchant of impending RTO status"
+      ],
+      "prohibited_actions": [
+        "Dispose of shipment",
+        "Return to origin before mandatory 48h holding period"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-007",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-003",
+      "conditions": "Package left on porch or with building guard with prior verbal consignee permission",
+      "department_id": "DEPT-01",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Routine delivery variation with customer consent; low operational risk",
+      "policy_reference": {
+        "document_id": "DOC-003",
+        "section_id": "DOC-003-S3"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Confirm digital delivery receipt note",
+        "Archive consignee acknowledgment timestamp"
+      ],
+      "prohibited_actions": [
+        "Penalize courier when explicit consent is documented"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-008",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-003",
+      "conditions": "Package left unattended at gate/street without customer consent, package intact",
+      "department_id": "DEPT-01",
+      "supporting_department_id": null,
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Delivery policy violation without asset loss; corrective feedback required",
+      "policy_reference": {
+        "document_id": "DOC-003",
+        "section_id": "DOC-003-S3"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Issue written compliance warning to courier",
+        "Verify safe receipt of package with customer",
+        "Record rider delivery infraction on internal profile"
+      ],
+      "prohibited_actions": [
+        "Ignore rider policy non-compliance",
+        "Disclose rider personal cell number to customer"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-009",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-003",
+      "conditions": "Package left unattended without consent and subsequently stolen or missing (value > PKR 50,000)",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-04",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Courier negligence leading to high-value loss constitutes mandatory escalation",
+      "policy_reference": {
+        "document_id": "DOC-003",
+        "section_id": "DOC-003-S3"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Department Manager",
+      "required_actions": [
+        "Initiate lost parcel indemnity review",
+        "Suspend courier from high-value routes pending probe",
+        "File internal security incident report"
+      ],
+      "prohibited_actions": [
+        "Deny carrier liability when unattended handover lacks OTP verification",
+        "Demand customer bear replacement loss"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-010",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-004",
+      "conditions": "Parcel misrouted to incorrect local branch within same city (e.g. Clifton instead of Gulshan)",
+      "department_id": "DEPT-01",
+      "supporting_department_id": null,
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Internal inter-branch routing error; resolvable within next intra-city shuttle cycle",
+      "policy_reference": {
+        "document_id": "DOC-011",
+        "section_id": "DOC-011-S1"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Re-manifest parcel for immediate intra-city transfer shuttle",
+        "Update real-time tracking destination node",
+        "Inform consignee of corrected ETA"
+      ],
+      "prohibited_actions": [
+        "Reroute manually without updating system barcode scan",
+        "Charge shipper extra transfer freight"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-011",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-004",
+      "conditions": "Parcel dispatched to incorrect province/city (e.g., booked for Lahore, dispatched to Multan)",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-05",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Inter-provincial misdirection adds 48+ hours transit delay, requiring expedited linehaul turnaround",
+      "policy_reference": {
+        "document_id": "DOC-011",
+        "section_id": "DOC-011-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Initiate express return linehaul booking",
+        "Apply express priority barcode tag",
+        "Send proactive delay apology notice with updated tracking"
+      ],
+      "prohibited_actions": [
+        "Wait for standard linehaul weekly batch",
+        "Blame booking merchant if barcode print was clear"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-012",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-004",
+      "conditions": "Repeated routing error on same consignment note (>2 misdirections)",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Severe operational failure indicating system barcode corruption or sorting malfunction",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Conduct physical manual interception at current sorting hub",
+        "Assign dedicated courier for direct destination handover",
+        "Escalate to Hub Operations Director"
+      ],
+      "prohibited_actions": [
+        "Allow automatic re-sorting without manual supervisor inspection"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-013",
+      "category_id": "CAT-02",
+      "subcategory_id": "SUB-005",
+      "conditions": "Standard parcel missing scan for >5 days, declared value under PKR 15,000",
+      "department_id": "DEPT-04",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Loss claim within standard non-insured cap; requires systematic hub search and standard claim validation",
+      "policy_reference": {
+        "document_id": "DOC-007",
+        "section_id": "DOC-007-S1"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Specialist Team",
+      "required_actions": [
+        "Trigger 48-hour all-hub physical inventory search",
+        "Request merchant commercial invoice and packing list",
+        "Initiate standard indemnity processing upon search expiry"
+      ],
+      "prohibited_actions": [
+        "Promise instant cash payout before completing 48h search",
+        "Refuse claim filed within 14-day window"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-014",
+      "category_id": "CAT-02",
+      "subcategory_id": "SUB-005",
+      "conditions": "Insured shipment lost in transit with declared value between PKR 15,000 and PKR 100,000",
+      "department_id": "DEPT-04",
+      "supporting_department_id": "DEPT-02",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Insured asset loss requiring policy payout verification under cargo claims protocol",
+      "policy_reference": {
+        "document_id": "DOC-007",
+        "section_id": "DOC-007-S3"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Department Manager",
+      "required_actions": [
+        "Verify insurance premium payment in booking ledger",
+        "Obtain commercial proof of value and damage inspection declaration",
+        "Authorize 100% invoice reimbursement via IBFT"
+      ],
+      "prohibited_actions": [
+        "Apply 15% restocking fee on lost parcel claims",
+        "Pay via unverified cash voucher"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-015",
+      "category_id": "CAT-02",
+      "subcategory_id": "SUB-005",
+      "conditions": "High-value consignment lost in transit (declared value exceeding PKR 100,000 or corporate freight)",
+      "department_id": "DEPT-04",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "High-value threshold (>PKR 100k) mandates immediate executive management escalation",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Assemble executive claims committee",
+        "Conduct security audit of all handling transit points",
+        "Brief Chief Operating Officer within 4 hours"
+      ],
+      "prohibited_actions": [
+        "Delay investigation beyond 24 hours",
+        "Settle without legal and finance sign-off"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-016",
+      "category_id": "CAT-02",
+      "subcategory_id": "SUB-006",
+      "conditions": "Multi-piece consignment missing 1 of N boxes, standard commercial cargo",
+      "department_id": "DEPT-04",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Partial loss in multi-piece freight; requires immediate split-manifest tracking",
+      "policy_reference": {
+        "document_id": "DOC-007",
+        "section_id": "DOC-007-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Specialist Team",
+      "required_actions": [
+        "Locate missing box piece-identifier barcode across transit nodes",
+        "Deliver available boxes with partial delivery notation",
+        "Reconcile weight differences on POD"
+      ],
+      "prohibited_actions": [
+        "Hold complete shipment indefinitely while searching for missing piece",
+        "Force consignee to sign clean POD for full delivery"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-017",
+      "category_id": "CAT-02",
+      "subcategory_id": "SUB-006",
+      "conditions": "Partial loss confirmed stolen from damaged outer master carton",
+      "department_id": "DEPT-04",
+      "supporting_department_id": "DEPT-06",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Cargo pilferage in transit involves security assessment alongside loss compensation",
+      "policy_reference": {
+        "document_id": "DOC-007",
+        "section_id": "DOC-007-S4"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Photograph damaged master carton and record net weight loss",
+        "Initiate fraud inquiry into handling linehaul team",
+        "Authorize pro-rata item value settlement"
+      ],
+      "prohibited_actions": [
+        "Blame consignee for open box inspection",
+        "Alter weighbridge logs"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-018",
+      "category_id": "CAT-02",
+      "subcategory_id": "SUB-006",
+      "conditions": "High-value partial theft with total missing item value > PKR 100,000",
+      "department_id": "DEPT-04",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "High financial threshold combined with cargo tampering requires executive intervention",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Seal remaining cargo in secure vault",
+        "Trigger corporate risk investigation",
+        "Notify corporate client account executive"
+      ],
+      "prohibited_actions": [
+        "Release damaged shipment without formal survey"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-019",
+      "category_id": "CAT-03",
+      "subcategory_id": "SUB-007",
+      "conditions": "Minor outer carton denting with internal goods completely undamaged",
+      "department_id": "DEPT-04",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Superficial aesthetic damage without product defect; standard inquiry closure",
+      "policy_reference": {
+        "document_id": "DOC-007",
+        "section_id": "DOC-007-S4"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Inspect customer unboxing photographic evidence",
+        "Log delivery feedback for packing improvement",
+        "Close inquiry with polite reassurance"
+      ],
+      "prohibited_actions": [
+        "Authorize product replacement when contents are 100% intact"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-020",
+      "category_id": "CAT-03",
+      "subcategory_id": "SUB-007",
+      "conditions": "Total breakage of fragile contents due to rough transit handling (value < PKR 15,000)",
+      "department_id": "DEPT-04",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Verified transit destruction within standard liability limits",
+      "policy_reference": {
+        "document_id": "DOC-007",
+        "section_id": "DOC-007-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Specialist Team",
+      "required_actions": [
+        "Verify Fragile label was affixed at origin booking",
+        "Examine unboxing photos and broken seals",
+        "Approve compensation up to policy limit within 7 days"
+      ],
+      "prohibited_actions": [
+        "Reject claim if customer reported within 14-day window with evidence",
+        "Demand customer return shards of broken glass"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-021",
+      "category_id": "CAT-03",
+      "subcategory_id": "SUB-007",
+      "conditions": "Catastrophic damage to commercial freight / industrial equipment exceeding PKR 100,000",
+      "department_id": "DEPT-04",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Severe property loss (>PKR 100,000) requiring mandatory executive management escalation",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Dispatch certified surveyor to customer location within 24h",
+        "Impound transit container for safety inspection",
+        "Prepare executive claims memorandum"
+      ],
+      "prohibited_actions": [
+        "Deny claim without technical survey",
+        "Offer token compensation under standard cap without insurance check"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-022",
+      "category_id": "CAT-03",
+      "subcategory_id": "SUB-008",
+      "conditions": "Wrong parcel delivered due to courier label swap at last-mile delivery point",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-03",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Direct courier swap error; urgent recovery required to protect privacy and deliver correct goods",
+      "policy_reference": {
+        "document_id": "DOC-011",
+        "section_id": "DOC-011-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Contact both recipients immediately to freeze unboxing",
+        "Dispatch senior courier for immediate same-day parcel exchange",
+        "Inspect package seals upon retrieval"
+      ],
+      "prohibited_actions": [
+        "Leave misdelivered parcel with wrong recipient",
+        "Disclose both customers details to each other"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-023",
+      "category_id": "CAT-03",
+      "subcategory_id": "SUB-008",
+      "conditions": "Merchant packed wrong SKU / manifest matches parcel contents but merchant made error",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-05",
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Merchant fulfillment mistake outside courier liability; customer guided to merchant return flow",
+      "policy_reference": {
+        "document_id": "DOC-023",
+        "section_id": "DOC-023-S1"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Verify booked SKU description against shipping manifest",
+        "Advise consignee to initiate merchant return portal request",
+        "Offer subsidized reverse logistics pickup"
+      ],
+      "prohibited_actions": [
+        "Accept carrier liability for merchant packing mistakes",
+        "Issue carrier refund for merchant error"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-024",
+      "category_id": "CAT-03",
+      "subcategory_id": "SUB-008",
+      "conditions": "Misdelivered parcel contains confidential corporate data or restricted goods",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-06",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Security and privacy emergency created by wrong delivery handover",
+      "policy_reference": {
+        "document_id": "DOC-015",
+        "section_id": "DOC-015-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Execute emergency immediate secure retrieval within 2 hours",
+        "Obtain signed non-disclosure acknowledgment from recipient",
+        "Notify Chief Information Security Officer"
+      ],
+      "prohibited_actions": [
+        "Delay recovery until routine evening run-sheet",
+        "Treat as standard routine swap"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-025",
+      "category_id": "CAT-03",
+      "subcategory_id": "SUB-009",
+      "conditions": "Parcel received with broken security tape but all items accounted for and intact",
+      "department_id": "DEPT-06",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Security seal compromise without financial loss; internal handling review required",
+      "policy_reference": {
+        "document_id": "DOC-009",
+        "section_id": "DOC-009-S3"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Log security tape breach in hub quality audit log",
+        "Review sorter conveyor CCTV footage",
+        "Send advisory note to originating dispatch hub"
+      ],
+      "prohibited_actions": [
+        "Ignore security seal violation report"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-026",
+      "category_id": "CAT-03",
+      "subcategory_id": "SUB-009",
+      "conditions": "Parcel cut open and high-value item replaced with dummy weight / counterfeit goods",
+      "department_id": "DEPT-06",
+      "supporting_department_id": "DEPT-04",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Internal organized theft/fraud pattern mandates immediate security escalation",
+      "policy_reference": {
+        "document_id": "DOC-006",
+        "section_id": "DOC-006-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Quarantine parcel packaging for forensic inspection",
+        "Conduct immediate audit of linehaul drivers and hub handlers",
+        "File formal internal anti-fraud incident report"
+      ],
+      "prohibited_actions": [
+        "Return tampered box to shipper without photographing evidence",
+        "Accuse customer of self-tampering without proof"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-027",
+      "category_id": "CAT-03",
+      "subcategory_id": "SUB-009",
+      "conditions": "Merchant reports repeated tampered packages from a specific regional dispatch route",
+      "department_id": "DEPT-06",
+      "supporting_department_id": "DEPT-08",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Systemic route theft pattern threatening route security and client retention",
+      "policy_reference": {
+        "document_id": "DOC-021",
+        "section_id": "DOC-021-S3"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Specialist Team",
+      "required_actions": [
+        "Audit specific transit route linehaul escorts",
+        "Implement tamper-evident serialized bag locks",
+        "Provide merchant weekly security summary report"
+      ],
+      "prohibited_actions": [
+        "Dismiss recurring trend as isolated incidents"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-028",
+      "category_id": "CAT-04",
+      "subcategory_id": "SUB-010",
+      "conditions": "Rider demands higher COD cash than printed on official digital consignment manifest",
+      "department_id": "DEPT-02",
+      "supporting_department_id": "DEPT-06",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Field extortion or overcharging allegation requires strict compliance intervention",
+      "policy_reference": {
+        "document_id": "DOC-005",
+        "section_id": "DOC-005-S3"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Verify system manifest COD amount against booking database",
+        "Instruct consignee to pay only exact system manifest amount",
+        "Summon rider to hub for disciplinary inquiry"
+      ],
+      "prohibited_actions": [
+        "Instruct customer to pay extra cash to rider",
+        "Refuse delivery if rider demands unauthorized tip"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-029",
+      "category_id": "CAT-04",
+      "subcategory_id": "SUB-010",
+      "conditions": "Merchant booked wrong COD amount on portal and requests in-transit correction",
+      "department_id": "DEPT-02",
+      "supporting_department_id": null,
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Merchant booking correction before delivery handover; routine administrative adjustment",
+      "policy_reference": {
+        "document_id": "DOC-005",
+        "section_id": "DOC-005-S3"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Verify merchant account credentials and booking ownership",
+        "Update system COD invoice value on rider mobile application",
+        "Send confirmation SMS to consignee with revised amount"
+      ],
+      "prohibited_actions": [
+        "Amend COD amount without verified merchant portal request",
+        "Collect old amount after merchant update confirmation"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-030",
+      "category_id": "CAT-04",
+      "subcategory_id": "SUB-010",
+      "conditions": "COD cash discrepancy resulting in customer overpayment of > PKR 10,000",
+      "department_id": "DEPT-02",
+      "supporting_department_id": "DEPT-05",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Material financial overcharge requiring immediate excess refund reconciliation",
+      "policy_reference": {
+        "document_id": "DOC-005",
+        "section_id": "DOC-005-S3"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Department Manager",
+      "required_actions": [
+        "Reconcile hub cash drawer logs against physical receipt",
+        "Initiate same-day IBFT refund of excess collected amount",
+        "Issue official written apology to customer"
+      ],
+      "prohibited_actions": [
+        "Force customer to take company credit coupon instead of cash return",
+        "Delay refund until end of month"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-031",
+      "category_id": "CAT-04",
+      "subcategory_id": "SUB-011",
+      "conditions": "Customer online portal shows two identical invoice charges for a single consignment booking",
+      "department_id": "DEPT-02",
+      "supporting_department_id": null,
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Technical payment gateway double-deduction; verified via transaction reference",
+      "policy_reference": {
+        "document_id": "DOC-013",
+        "section_id": "DOC-013-S3"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Verify payment gateway transaction logs against CN number",
+        "Confirm second charge is a duplicate capture",
+        "Trigger automated gateway refund reversal within 48 hours"
+      ],
+      "prohibited_actions": [
+        "Force customer to dispute charge through external bank chargeback",
+        "Deny duplicate charge when transaction IDs match"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-032",
+      "category_id": "CAT-04",
+      "subcategory_id": "SUB-011",
+      "conditions": "Merchant corporate freight account billed twice on monthly consolidated billing statement",
+      "department_id": "DEPT-02",
+      "supporting_department_id": null,
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Corporate billing error impacting B2B client relationship and credit limits",
+      "policy_reference": {
+        "document_id": "DOC-013",
+        "section_id": "DOC-013-S3"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Issue immediate revised corporate billing statement",
+        "Post credit note to merchant ledger balance",
+        "Reconcile automated invoicing batch scripts with IT"
+      ],
+      "prohibited_actions": [
+        "Charge late payment penalties on disputed duplicate invoice items"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-033",
+      "category_id": "CAT-04",
+      "subcategory_id": "SUB-011",
+      "conditions": "Repeated duplicate deductions causing severe bank overdraft / penalties (> PKR 50,000)",
+      "department_id": "DEPT-02",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Severe financial distress caused by billing engine defect mandates executive escalation",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Execute emergency manual IBFT reimbursement within 4 hours",
+        "Compensate verified bank overdraft fees with Finance approval",
+        "Initiate emergency engineering patch for payment hook"
+      ],
+      "prohibited_actions": [
+        "Refuse to reimburse bank penalty fees caused directly by company error"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-034",
+      "category_id": "CAT-04",
+      "subcategory_id": "SUB-012",
+      "conditions": "Dispute over volumetric vs dead weight calculation resulting in minor overcharge (< PKR 1,000)",
+      "department_id": "DEPT-02",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Standard dimensional weight inquiry; priority remains low regardless of customer frustration",
+      "policy_reference": {
+        "document_id": "DOC-013",
+        "section_id": "DOC-013-S1"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Retrieve automated hub laser dimension scan photos",
+        "Explain (L x W x H)/5000 formula clearly to customer",
+        "Adjust invoice if hub laser scan shows calibration discrepancy"
+      ],
+      "prohibited_actions": [
+        "Waive valid dimensional charges arbitrarily without scan proof"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-035",
+      "category_id": "CAT-04",
+      "subcategory_id": "SUB-012",
+      "conditions": "Systemic fuel surcharge applied at expired higher rate across monthly merchant invoice",
+      "department_id": "DEPT-02",
+      "supporting_department_id": "DEPT-07",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Regulatory and contractual tariff discrepancy affecting broad client billing accuracy",
+      "policy_reference": {
+        "document_id": "DOC-013",
+        "section_id": "DOC-013-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Department Manager",
+      "required_actions": [
+        "Re-run batch invoice calculation with prevailing approved fuel index",
+        "Issue bulk ledger credit adjustment to impacted accounts",
+        "Notify Head of Financial Operations"
+      ],
+      "prohibited_actions": [
+        "Enforce payment of unapproved tariff rates"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-036",
+      "category_id": "CAT-04",
+      "subcategory_id": "SUB-012",
+      "conditions": "Freight overcharge dispute on enterprise bulk contract exceeding PKR 100,000",
+      "department_id": "DEPT-02",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Major contract dispute exceeding PKR 100k threshold requires executive review",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Review customized Service Level Agreement tariff annexure",
+        "Hold collection calls pending executive billing review",
+        "Meet with corporate client CFO / procurement head"
+      ],
+      "prohibited_actions": [
+        "Threaten corporate freight service suspension during active billing review"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-037",
+      "category_id": "CAT-04",
+      "subcategory_id": "SUB-013",
+      "conditions": "Merchant COD remittance delayed past standard Wednesday cycle due to bank holiday",
+      "department_id": "DEPT-02",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Banking holiday calendar postponement; routine automated notification workflow",
+      "policy_reference": {
+        "document_id": "DOC-005",
+        "section_id": "DOC-005-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Verify merchant bank IBFT queue status",
+        "Send automated broadcast notification regarding holiday processing schedule"
+      ],
+      "prohibited_actions": [
+        "Manually override bank batch during scheduled banking downtime"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-038",
+      "category_id": "CAT-04",
+      "subcategory_id": "SUB-013",
+      "conditions": "Merchant COD remittance overdue by >7 days with balance between PKR 20,000 and PKR 100,000",
+      "department_id": "DEPT-02",
+      "supporting_department_id": "DEPT-05",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Extended financial remittance delay disrupts merchant cash-flow; requires senior accountant intervention",
+      "policy_reference": {
+        "document_id": "DOC-005",
+        "section_id": "DOC-005-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Audit un-reconciled rider cash collections for merchant shipments",
+        "Release expedited individual IBFT payment within 24 hours",
+        "Provide merchant with detailed reconciliation ledger statement"
+      ],
+      "prohibited_actions": [
+        "Blame merchant for company reconciliation backlogs",
+        "Withhold legitimate COD funds without audit justification"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-039",
+      "category_id": "CAT-04",
+      "subcategory_id": "SUB-013",
+      "conditions": "Unresolved COD remittance withheld exceeding PKR 100,000 with legal threat from merchant",
+      "department_id": "DEPT-02",
+      "supporting_department_id": "DEPT-07",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Legal threat combined with high-value financial retention (>PKR 100k) mandates P0 escalation",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Conduct emergency financial audit with Finance Director",
+        "Engage Legal Counsel (DEPT-07) for merchant dialogue",
+        "Execute verified funds transfer within 12 hours"
+      ],
+      "prohibited_actions": [
+        "Engage in informal arguments with merchant legal counsel",
+        "Freeze merchant account out of retaliation"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-040",
+      "category_id": "CAT-05",
+      "subcategory_id": "SUB-014",
+      "conditions": "Customer refund requested within 7-day policy window, all documentation verified",
+      "department_id": "DEPT-03",
+      "supporting_department_id": "DEPT-02",
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Standard authorized refund processing within standard 5-7 business day window",
+      "policy_reference": {
+        "document_id": "DOC-001",
+        "section_id": "DOC-001-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Verify CN delivery status and original payment mode",
+        "Submit IBFT payment voucher to Finance queue",
+        "Notify customer of 5-7 banking days disbursement timeline"
+      ],
+      "prohibited_actions": [
+        "Promise same-day cash payout",
+        "Require unnecessary in-person hub visits"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-041",
+      "category_id": "CAT-05",
+      "subcategory_id": "SUB-014",
+      "conditions": "Refund request submitted on day 8 (past 7-day window) citing genuine medical emergency",
+      "department_id": "DEPT-03",
+      "supporting_department_id": "DEPT-05",
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Policy exception request requiring supervisor discretionary review under customer care guidelines",
+      "policy_reference": {
+        "document_id": "DOC-001",
+        "section_id": "DOC-001-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Review customer exemption rationale and supporting documents",
+        "Submit one-time policy exception request to Customer Experience Director",
+        "Process refund if authorized under discretionary allowance"
+      ],
+      "prohibited_actions": [
+        "Grant policy exception without documented supervisor approval",
+        "Rudely reject without evaluating circumstances"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-042",
+      "category_id": "CAT-05",
+      "subcategory_id": "SUB-014",
+      "conditions": "Refund approved over 14 days ago but never disbursed due to banking IBFT batch drop",
+      "department_id": "DEPT-03",
+      "supporting_department_id": "DEPT-02",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Company processing failure resulting in severe SLA breach on customer funds",
+      "policy_reference": {
+        "document_id": "DOC-001",
+        "section_id": "DOC-001-S4"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Department Manager",
+      "required_actions": [
+        "Investigate bank drop transaction error code",
+        "Re-issue instant direct IBFT transfer with priority bank token",
+        "Provide customer with verified bank transaction UTR reference"
+      ],
+      "prohibited_actions": [
+        "Falsely claim funds were credited without UTR proof",
+        "Ask customer to re-apply from scratch"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-043",
+      "category_id": "CAT-05",
+      "subcategory_id": "SUB-015",
+      "conditions": "Customer inquiry regarding refund status currently on day 3 of 5-7 day standard SLA",
+      "department_id": "DEPT-03",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Inquiry within standard SLA window; low priority reassurance and status sharing",
+      "policy_reference": {
+        "document_id": "DOC-001",
+        "section_id": "DOC-001-S4"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Check IBFT batch stage in Finance portal",
+        "Reassure customer with confirmed target settlement date",
+        "Send automated status tracker link"
+      ],
+      "prohibited_actions": [
+        "Escalate to finance managers prematurely within normal SLA window"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-044",
+      "category_id": "CAT-05",
+      "subcategory_id": "SUB-015",
+      "conditions": "Refund delayed due to customer providing incorrect IBFT account number / title mismatch",
+      "department_id": "DEPT-03",
+      "supporting_department_id": null,
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "External banking data mismatch; requires prompt customer contact for account correction",
+      "policy_reference": {
+        "document_id": "DOC-001",
+        "section_id": "DOC-001-S4"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Notify customer via SMS and portal of bank title mismatch",
+        "Collect verified copy of bank check / account statement",
+        "Re-queue IBFT with corrected 24-digit IBAN"
+      ],
+      "prohibited_actions": [
+        "Attempt repeated transfers to unverified invalid bank accounts"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-045",
+      "category_id": "CAT-05",
+      "subcategory_id": "SUB-015",
+      "conditions": "Bulk merchant refund batch delayed across 50+ accounts due to core banking portal outage",
+      "department_id": "DEPT-03",
+      "supporting_department_id": "DEPT-02",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Widespread financial distribution failure impacting multiple merchant partnerships",
+      "policy_reference": {
+        "document_id": "DOC-018",
+        "section_id": "DOC-018-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Specialist Team",
+      "required_actions": [
+        "Coordinate with partner commercial bank tech desk",
+        "Post broadcast merchant operational advisory",
+        "Execute split-batch processing via backup banking portal"
+      ],
+      "prohibited_actions": [
+        "Keep merchants uninformed while funds are stalled"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-046",
+      "category_id": "CAT-05",
+      "subcategory_id": "SUB-016",
+      "conditions": "Failed delivery consignment held in hub awaiting scheduled weekly RTO consolidation",
+      "department_id": "DEPT-03",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Normal reverse logistics transit timeline; low priority operational update",
+      "policy_reference": {
+        "document_id": "DOC-003",
+        "section_id": "DOC-003-S4"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Confirm parcel is safely tagged in hub RTO retention bay",
+        "Update RTO linehaul manifest ETA on merchant dashboard"
+      ],
+      "prohibited_actions": [
+        "Expedite individual standard RTOs at company expense without merchant contract"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-047",
+      "category_id": "CAT-05",
+      "subcategory_id": "SUB-016",
+      "conditions": "RTO package stalled at regional transit hub for >10 days without movement scan",
+      "department_id": "DEPT-03",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Extended reverse transit stall risks inventory obsolescence and merchant loss",
+      "policy_reference": {
+        "document_id": "DOC-010",
+        "section_id": "DOC-010-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Conduct physical search of hub RTO staging racks",
+        "Assign priority reverse linehaul dispatch tag",
+        "Notify merchant of expedited return delivery date"
+      ],
+      "prohibited_actions": [
+        "Assume parcel is lost without initiating hub search",
+        "Charge merchant multiple RTO fees for delayed return"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-048",
+      "category_id": "CAT-05",
+      "subcategory_id": "SUB-016",
+      "conditions": "Merchant alleges high-value RTO parcel swapped with inferior merchandise during reverse transit",
+      "department_id": "DEPT-03",
+      "supporting_department_id": "DEPT-06",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Reverse logistics cargo tampering and fraud allegation requires security escalation",
+      "policy_reference": {
+        "document_id": "DOC-009",
+        "section_id": "DOC-009-S3"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Department Manager",
+      "required_actions": [
+        "Quarantine RTO parcel and compare unboxing video with origin dispatch logs",
+        "Review reverse rider and hub intake CCTV footage",
+        "Authorize merchant inventory claim upon fraud verification"
+      ],
+      "prohibited_actions": [
+        "Force merchant to accept opened/tampered RTO without formal survey"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-049",
+      "category_id": "CAT-06",
+      "subcategory_id": "SUB-017",
+      "conditions": "Consumer portal account locked after 5 consecutive incorrect password attempts",
+      "department_id": "DEPT-05",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Standard automated security lockout; low priority self-service or basic verification reset",
+      "policy_reference": {
+        "document_id": "DOC-023",
+        "section_id": "DOC-023-S1"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Verify registered mobile number and CNIC details",
+        "Send automated password reset OTP to registered mobile",
+        "Unlock account profile in identity management portal"
+      ],
+      "prohibited_actions": [
+        "Unlock account without verifying phone/email ownership",
+        "Disclose old password over telephone"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-050",
+      "category_id": "CAT-06",
+      "subcategory_id": "SUB-017",
+      "conditions": "High-volume merchant account locked during peak sales festival (e.g. 11.11 / Eid)",
+      "department_id": "DEPT-05",
+      "supporting_department_id": "DEPT-06",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Severe business impact on active corporate client; urgent priority resolution required",
+      "policy_reference": {
+        "document_id": "DOC-018",
+        "section_id": "DOC-018-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Perform expedited merchant verification via registered business authorized contact",
+        "Reset portal credentials and restore bulk booking API access within 30 minutes",
+        "Monitor account for abnormal API activity"
+      ],
+      "prohibited_actions": [
+        "Leave merchant locked during critical trading hours without explanation"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-051",
+      "category_id": "CAT-06",
+      "subcategory_id": "SUB-017",
+      "conditions": "Merchant account locked due to suspicious automated bot scraping / API abuse",
+      "department_id": "DEPT-06",
+      "supporting_department_id": "DEPT-05",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Security risk mitigation; requires technical security audit before access restoration",
+      "policy_reference": {
+        "document_id": "DOC-015",
+        "section_id": "DOC-015-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Specialist Team",
+      "required_actions": [
+        "Analyze IP request rates and endpoint access logs with InfoSec",
+        "Contact merchant technical lead to resolve bot looping script",
+        "Issue new secured API token with rate-limiting rules"
+      ],
+      "prohibited_actions": [
+        "Re-enable unrestricted API access without fixing abusive script"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-052",
+      "category_id": "CAT-06",
+      "subcategory_id": "SUB-018",
+      "conditions": "Customer reports suspicious login alert from unfamiliar city/IP address, no funds diverted",
+      "department_id": "DEPT-06",
+      "supporting_department_id": null,
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Security threat detected; requires immediate credential revocation to prevent breach",
+      "policy_reference": {
+        "document_id": "DOC-015",
+        "section_id": "DOC-015-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Terminate all active session tokens immediately",
+        "Enforce mandatory two-factor authentication (2FA) reset",
+        "Audit recent profile modification logs"
+      ],
+      "prohibited_actions": [
+        "Ignore suspicious login notification when customer reports it"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-053",
+      "category_id": "CAT-06",
+      "subcategory_id": "SUB-018",
+      "conditions": "Merchant portal compromised and bank disbursement details altered to fraudulent account",
+      "department_id": "DEPT-06",
+      "supporting_department_id": "DEPT-02",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Critical financial security breach and active fraud attempt mandates P0 escalation",
+      "policy_reference": {
+        "document_id": "DOC-015",
+        "section_id": "DOC-015-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Freeze all outgoing COD remittances instantly",
+        "Lock merchant profile and restore verified banking records",
+        "Alert Head of Information Security and Banking Operations"
+      ],
+      "prohibited_actions": [
+        "Allow pending IBFT payouts to proceed while bank details are contested",
+        "Blame merchant before securing financial assets"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-054",
+      "category_id": "CAT-06",
+      "subcategory_id": "SUB-018",
+      "conditions": "Widespread credential-stuffing attack targeting corporate freight customer accounts",
+      "department_id": "DEPT-06",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Systemic cyber-attack threatening enterprise infrastructure and customer security",
+      "policy_reference": {
+        "document_id": "DOC-015",
+        "section_id": "DOC-015-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Deploy cloud firewall rate-limiting and IP geo-blocking rules",
+        "Trigger enterprise-wide forced password reset for affected user pool",
+        "Brief Chief Operating Officer and General Counsel"
+      ],
+      "prohibited_actions": [
+        "Keep security breach hidden from affected enterprise clients"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-055",
+      "category_id": "CAT-06",
+      "subcategory_id": "SUB-019",
+      "conditions": "Merchant requests standard update to pickup warehouse address or contact phone number",
+      "department_id": "DEPT-05",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Routine administrative profile maintenance; low priority standard request",
+      "policy_reference": {
+        "document_id": "DOC-023",
+        "section_id": "DOC-023-S1"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Verify request originated from registered merchant email",
+        "Update pickup address coordinates in dispatch master database",
+        "Confirm update to merchant within 24 hours"
+      ],
+      "prohibited_actions": [
+        "Update pickup address on unverified phone call"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-056",
+      "category_id": "CAT-06",
+      "subcategory_id": "SUB-019",
+      "conditions": "Merchant requests legal company title change and NTN/Sales Tax registration update",
+      "department_id": "DEPT-05",
+      "supporting_department_id": "DEPT-07",
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Legal and tax document verification required before modifying invoicing profile",
+      "policy_reference": {
+        "document_id": "DOC-021",
+        "section_id": "DOC-021-S1"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Compliance Review",
+      "required_actions": [
+        "Collect updated FBR NTN certificate and SECP incorporation form",
+        "Submit legal documents to Compliance (DEPT-07) for validation",
+        "Update ERP billing ledger title upon compliance sign-off"
+      ],
+      "prohibited_actions": [
+        "Update tax entity details without verified FBR documentation"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-057",
+      "category_id": "CAT-06",
+      "subcategory_id": "SUB-019",
+      "conditions": "Merchant requests critical change in corporate bank account for COD remittances",
+      "department_id": "DEPT-05",
+      "supporting_department_id": "DEPT-06",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "High-risk financial profile update requiring multi-party verification to prevent fraud",
+      "policy_reference": {
+        "document_id": "DOC-005",
+        "section_id": "DOC-005-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Department Manager",
+      "required_actions": [
+        "Execute dual-factor verification with registered company director",
+        "Obtain stamped bank maintenance certificate on official letterhead",
+        "Impose mandatory 48-hour cooling-off freeze on new bank details"
+      ],
+      "prohibited_actions": [
+        "Update bank account details without verifying company authorization letter",
+        "Disburse funds to unverified account within cooling period"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-058",
+      "category_id": "CAT-07",
+      "subcategory_id": "SUB-020",
+      "conditions": "Consignment tracking scan stationary for 12 hours during overnight inter-city linehaul",
+      "department_id": "DEPT-05",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Normal transit interval between major hub scans; low priority customer inquiry",
+      "policy_reference": {
+        "document_id": "DOC-019",
+        "section_id": "DOC-019-S1"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Verify linehaul truck departure and estimated hub arrival time",
+        "Explain linehaul transit scan cycle to customer",
+        "Provide estimated timestamp for next destination scan"
+      ],
+      "prohibited_actions": [
+        "Declare parcel lost prematurely during routine linehaul transit"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-059",
+      "category_id": "CAT-07",
+      "subcategory_id": "SUB-020",
+      "conditions": "Tracking scan frozen at origin hub for >48 hours without departure event",
+      "department_id": "DEPT-05",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Hub dwell time SLA breach indicates staging backlog or misplaced parcel",
+      "policy_reference": {
+        "document_id": "DOC-010",
+        "section_id": "DOC-010-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Issue physical search ticket to origin hub floor manager",
+        "Force barcode status update in SupportNova within 4 hours",
+        "Send SMS tracking update to sender and consignee"
+      ],
+      "prohibited_actions": [
+        "Mark tracking updated without physical verification of parcel location"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-060",
+      "category_id": "CAT-07",
+      "subcategory_id": "SUB-020",
+      "conditions": "Public tracking portal shows internal system error code (500) for all merchant shipments",
+      "department_id": "DEPT-05",
+      "supporting_department_id": "DEPT-05",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Public API / web tracking outage affecting customer self-service visibility",
+      "policy_reference": {
+        "document_id": "DOC-023",
+        "section_id": "DOC-023-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Specialist Team",
+      "required_actions": [
+        "Notify IT Infrastructure engineering of API tracking service degradation",
+        "Activate backup CDN caching layer",
+        "Post status banner on public portal"
+      ],
+      "prohibited_actions": [
+        "Direct customers to non-existent manual phone lines without resolving API"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-061",
+      "category_id": "CAT-07",
+      "subcategory_id": "SUB-021",
+      "conditions": "Single user reports mobile tracking app crashes on specific older Android OS version",
+      "department_id": "DEPT-05",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Isolated device compatibility issue; standard bug logging workflow",
+      "policy_reference": {
+        "document_id": "DOC-023",
+        "section_id": "DOC-023-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Collect device model, OS version, and app build number",
+        "Forward crash log to Mobile Development team",
+        "Advise customer to use mobile web portal as interim solution"
+      ],
+      "prohibited_actions": [
+        "Dismiss user bug report without logging ticket"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-062",
+      "category_id": "CAT-07",
+      "subcategory_id": "SUB-021",
+      "conditions": "Courier mobile dispatch app crashes repeatedly across entire Lahore hub fleet",
+      "department_id": "DEPT-05",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Field operational stoppage impacting hundreds of deliveries requires emergency IT fix",
+      "policy_reference": {
+        "document_id": "DOC-018",
+        "section_id": "DOC-018-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Roll back last mobile app update to previous stable APK release",
+        "Authorize emergency paper run-sheet protocol to prevent delivery halt",
+        "Engage lead mobile software architect"
+      ],
+      "prohibited_actions": [
+        "Allow courier deliveries to halt completely during app troubleshooting"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-063",
+      "category_id": "CAT-07",
+      "subcategory_id": "SUB-021",
+      "conditions": "Merchant bulk manifest generator crashes on CSV uploads exceeding 500 rows",
+      "department_id": "DEPT-05",
+      "supporting_department_id": null,
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Feature performance bug affecting merchant batch booking productivity",
+      "policy_reference": {
+        "document_id": "DOC-023",
+        "section_id": "DOC-023-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Specialist Team",
+      "required_actions": [
+        "Provide merchant temporary split-CSV upload workaround",
+        "Re-index backend database bulk upload parser",
+        "Deploy memory optimization patch within 24 hours"
+      ],
+      "prohibited_actions": [
+        "Force merchant to manually input 500 orders one by one"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-064",
+      "category_id": "CAT-07",
+      "subcategory_id": "SUB-022",
+      "conditions": "Merchant reports webhook delivery notification latency of 15 minutes during peak hours",
+      "department_id": "DEPT-05",
+      "supporting_department_id": null,
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Non-fatal queue latency; performance tuning required on message broker",
+      "policy_reference": {
+        "document_id": "DOC-023",
+        "section_id": "DOC-023-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Inspect Redis queue worker throughput and consumer lag",
+        "Scale webhook worker containers dynamically",
+        "Confirm queue clearance with merchant developer"
+      ],
+      "prohibited_actions": [
+        "Disable webhook retries to clear queue artificially"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-065",
+      "category_id": "CAT-07",
+      "subcategory_id": "SUB-022",
+      "conditions": "E-commerce merchant webhook endpoint failing due to TLS certificate / SSL handshake error",
+      "department_id": "DEPT-05",
+      "supporting_department_id": null,
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Endpoint configuration failure; technical diagnostics required",
+      "policy_reference": {
+        "document_id": "DOC-023",
+        "section_id": "DOC-023-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Specialist Team",
+      "required_actions": [
+        "Verify SSL handshake logs from outbound webhook gateway",
+        "Advise merchant technical team on supported cipher suites",
+        "Trigger manual replay of missed webhook events upon SSL fix"
+      ],
+      "prohibited_actions": [
+        "Purge failed webhook queue without replaying events to merchant"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-066",
+      "category_id": "CAT-07",
+      "subcategory_id": "SUB-022",
+      "conditions": "Enterprise corporate client API gateway completely down, blocking all nationwide bookings",
+      "department_id": "DEPT-05",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Enterprise B2B integration failure causing total revenue and operational standstill",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Activate enterprise failover API endpoint and bypass proxy",
+        "Convene emergency bridge with Enterprise Client CTO",
+        "Execute automated retroactive sync once gateway is restored"
+      ],
+      "prohibited_actions": [
+        "Leave enterprise bookings queued without executive alert"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-067",
+      "category_id": "CAT-08",
+      "subcategory_id": "SUB-023",
+      "conditions": "Customer reports rider spoke discourteously or showed impatient attitude during delivery",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-05",
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Customer service quality lapse; requires coaching and formal record on rider file",
+      "policy_reference": {
+        "document_id": "DOC-020",
+        "section_id": "DOC-020-S1"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Call customer to convey formal company apology",
+        "Counsel courier regarding professional service standards",
+        "Log behavioral warning in rider performance scorecard"
+      ],
+      "prohibited_actions": [
+        "Confront customer aggressively to defend rider",
+        "Share customer contact with rider for private argument"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-068",
+      "category_id": "CAT-08",
+      "subcategory_id": "SUB-023",
+      "conditions": "Rider used profanity, verbal threats, or aggressive harassment towards customer",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-08",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Zero-tolerance safety and harassment violation mandates emergency P0 escalation",
+      "policy_reference": {
+        "document_id": "DOC-020",
+        "section_id": "DOC-020-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Suspend courier immediately from all field duties pending disciplinary hearing",
+        "Executive Customer Relations lead to contact victimized customer within 1 hour",
+        "Preserve call recordings and CCTV for potential legal review"
+      ],
+      "prohibited_actions": [
+        "Permit courier to continue delivery routes",
+        "Minimize or dismiss harassment complaint"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-069",
+      "category_id": "CAT-08",
+      "subcategory_id": "SUB-023",
+      "conditions": "Repeated behavioral complaints (>3) against same delivery courier within 30 days",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-07",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Persistent behavioral non-compliance threatening brand reputation and customer safety",
+      "policy_reference": {
+        "document_id": "DOC-021",
+        "section_id": "DOC-021-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Department Manager",
+      "required_actions": [
+        "Initiate formal HR termination inquiry under employment code",
+        "Reassign route to senior certified delivery courier",
+        "Send follow-up satisfaction survey to impacted route customers"
+      ],
+      "prohibited_actions": [
+        "Transfer problem courier to another route without disciplinary action"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-070",
+      "category_id": "CAT-08",
+      "subcategory_id": "SUB-024",
+      "conditions": "Rider verbally asks for tip / round-up change on prepaid shipment, customer refused and received parcel",
+      "department_id": "DEPT-06",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Violation of company ethical standards; rider compliance counseling required",
+      "policy_reference": {
+        "document_id": "DOC-021",
+        "section_id": "DOC-021-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Interview rider and reiterate strict zero-solicitation policy",
+        "Credit PKR 200 goodwill delivery voucher to customer profile",
+        "Document infraction on rider HR profile"
+      ],
+      "prohibited_actions": [
+        "Condone unauthorized cash solicitation as standard practice"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-071",
+      "category_id": "CAT-08",
+      "subcategory_id": "SUB-024",
+      "conditions": "Rider refuses to release prepaid parcel unless customer pays unauthorized cash fee",
+      "department_id": "DEPT-06",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Illegal extortion and unlawful cargo withholding constitutes critical integrity breach",
+      "policy_reference": {
+        "document_id": "DOC-021",
+        "section_id": "DOC-021-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Dispatch supervisor to customer address for immediate parcel handover",
+        "Offboard courier and confiscate company device and cash bag",
+        "Initiate recovery of illicitly collected funds"
+      ],
+      "prohibited_actions": [
+        "Force customer to negotiate cash with rogue courier",
+        "Delay parcel release pending courier interview"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-072",
+      "category_id": "CAT-08",
+      "subcategory_id": "SUB-024",
+      "conditions": "Rider forged customer signature and pocketed change balance from large COD banknote",
+      "department_id": "DEPT-06",
+      "supporting_department_id": "DEPT-02",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Financial fraud and forgery by field representative requiring audit and immediate refund",
+      "policy_reference": {
+        "document_id": "DOC-005",
+        "section_id": "DOC-005-S3"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Department Manager",
+      "required_actions": [
+        "Reimburse withheld cash balance to customer via instant IBFT",
+        "Collect physical delivery manifest for signature handwriting audit",
+        "Issue formal notice of termination to courier"
+      ],
+      "prohibited_actions": [
+        "Require customer to recover cash balance directly from rider"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-073",
+      "category_id": "CAT-09",
+      "subcategory_id": "SUB-025",
+      "conditions": "Customer disputes warranty claim denial on non-insured cargo damaged by improper packaging",
+      "department_id": "DEPT-04",
+      "supporting_department_id": null,
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Standard packaging guideline enforcement; clear policy explanation required",
+      "policy_reference": {
+        "document_id": "DOC-007",
+        "section_id": "DOC-007-S4"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Share packaging audit report showing lack of internal cushioning/bubble-wrap",
+        "Explain merchant packaging responsibility under clause S4",
+        "Offer subsidized re-dispatch rate as customer goodwill gesture"
+      ],
+      "prohibited_actions": [
+        "Change claim decision without supervisor approval",
+        "Rudely dismiss customer without sharing inspection photos"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-074",
+      "category_id": "CAT-09",
+      "subcategory_id": "SUB-025",
+      "conditions": "Warranty claim denied due to filing on day 15 (1 day past 14-day window) due to hospital stay",
+      "department_id": "DEPT-04",
+      "supporting_department_id": "DEPT-05",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Policy exception dispute with extenuating medical circumstances",
+      "policy_reference": {
+        "document_id": "DOC-007",
+        "section_id": "DOC-007-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Verify customer medical admission certificates and booking timeline",
+        "Submit formal 24-hour window waiver request to Chief Claims Assessor",
+        "Re-open claim for standard evidentiary assessment upon waiver approval"
+      ],
+      "prohibited_actions": [
+        "Arbitrarily reject valid extenuating circumstance without senior review"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-075",
+      "category_id": "CAT-09",
+      "subcategory_id": "SUB-025",
+      "conditions": "Corporate VIP client claims denial on PKR 250,000 shipment threatening contract termination",
+      "department_id": "DEPT-04",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "High-value dispute (>PKR 100,000) and major corporate contract risk requires executive intervention",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Convene joint review with Claims Assessor and Corporate Accounts Director",
+        "Examine master transit insurance contract terms",
+        "Present executive commercial settlement proposal within 24 hours"
+      ],
+      "prohibited_actions": [
+        "Allow B2B enterprise contract termination over unreviewed technical claim"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-076",
+      "category_id": "CAT-09",
+      "subcategory_id": "SUB-026",
+      "conditions": "Customer insurance claim approved, awaiting standard 21-day insurer settlement cycle",
+      "department_id": "DEPT-04",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Claim within normal insurance underwriter settlement timeline; status update workflow",
+      "policy_reference": {
+        "document_id": "DOC-007",
+        "section_id": "DOC-007-S3"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Verify insurance underwriter approval reference number",
+        "Provide customer with verified expected disbursement date schedule"
+      ],
+      "prohibited_actions": [
+        "Escalate to insurance underwriter executives prematurely within 21-day cycle"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-077",
+      "category_id": "CAT-09",
+      "subcategory_id": "SUB-026",
+      "conditions": "Insured payout delayed past 30 days due to missing underwriter surveyor sign-off",
+      "department_id": "DEPT-04",
+      "supporting_department_id": "DEPT-02",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Insurance SLA breach requiring active claims department escalation with underwriter",
+      "policy_reference": {
+        "document_id": "DOC-007",
+        "section_id": "DOC-007-S3"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Specialist Team",
+      "required_actions": [
+        "Issue urgent demand letter to third-party insurance underwriter",
+        "Release 50% advance compensation from company reserve if underwriter is stalled",
+        "Update customer weekly with claims tracking log"
+      ],
+      "prohibited_actions": [
+        "Leave customer waiting without tracking or insurance updates"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-078",
+      "category_id": "CAT-09",
+      "subcategory_id": "SUB-026",
+      "conditions": "Insurance payout withheld for enterprise cargo loss exceeding PKR 500,000",
+      "department_id": "DEPT-04",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Major capital loss dispute requiring Chief Operating Officer and Underwriter CEO engagement",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Coordinate executive dispute meeting between company counsel and underwriter",
+        "Provide corporate client daily status briefings from executive office",
+        "Execute bridge settlement if liability is contractually clear"
+      ],
+      "prohibited_actions": [
+        "Default on enterprise cargo commitments"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-079",
+      "category_id": "CAT-10",
+      "subcategory_id": "SUB-027",
+      "conditions": "Customer reports courier sent unsolicited personal message on WhatsApp after delivery",
+      "department_id": "DEPT-06",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Direct violation of customer data privacy and contact masking policy",
+      "policy_reference": {
+        "document_id": "DOC-015",
+        "section_id": "DOC-015-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Investigate courier phone records and application call logs",
+        "Block courier from customer contact details permanently",
+        "Issue formal disciplinary reprimand and safety retraining"
+      ],
+      "prohibited_actions": [
+        "Disclose customer home address to courier during investigation",
+        "Downplay unwanted contact as harmless"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-080",
+      "category_id": "CAT-10",
+      "subcategory_id": "SUB-027",
+      "conditions": "Merchant manifests containing 500+ customer names and phone numbers leaked online or sent to wrong client",
+      "department_id": "DEPT-06",
+      "supporting_department_id": "DEPT-07",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Massive PII data breach mandates immediate critical management and compliance escalation",
+      "policy_reference": {
+        "document_id": "DOC-015",
+        "section_id": "DOC-015-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Execute emergency containment and take down exposed URL / file links",
+        "Notify Chief Information Security Officer and Legal Counsel within 1 hour",
+        "Issue formal statutory breach disclosure and notify affected data subjects"
+      ],
+      "prohibited_actions": [
+        "Conceal data breach from impacted customers and regulators",
+        "Delete audit logs to obscure breach origin"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-081",
+      "category_id": "CAT-10",
+      "subcategory_id": "SUB-027",
+      "conditions": "Customer requests permanent deletion / erasure of shipping history under privacy rights",
+      "department_id": "DEPT-06",
+      "supporting_department_id": "DEPT-07",
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Statutory data retention and erasure request; standard legal compliance workflow",
+      "policy_reference": {
+        "document_id": "DOC-015",
+        "section_id": "DOC-015-S3"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Compliance Review",
+      "required_actions": [
+        "Verify requester identity and CNIC credentials",
+        "Purge PII from marketing databases while retaining tax-mandated 24-month invoices",
+        "Issue formal Data Privacy Certificate of Erasure"
+      ],
+      "prohibited_actions": [
+        "Delete active taxation invoices before mandatory 24-month statutory period"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-082",
+      "category_id": "CAT-10",
+      "subcategory_id": "SUB-028",
+      "conditions": "Customer requests opt-out from promotional broadcast SMS marketing campaigns",
+      "department_id": "DEPT-07",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Standard marketing unsubscribe request; low priority automated workflow",
+      "policy_reference": {
+        "document_id": "DOC-015",
+        "section_id": "DOC-015-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Add phone number to nationwide Do-Not-Call / Do-Not-SMS suppression list",
+        "Send automated opt-out confirmation message within 24 hours"
+      ],
+      "prohibited_actions": [
+        "Continue sending promotional SMS to opted-out numbers"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-083",
+      "category_id": "CAT-10",
+      "subcategory_id": "SUB-028",
+      "conditions": "Customer receives spam SMS originating from rogue third-party claiming to be company partner",
+      "department_id": "DEPT-07",
+      "supporting_department_id": "DEPT-06",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Brand spoofing and potential phishing attack targeting delivery recipients",
+      "policy_reference": {
+        "document_id": "DOC-021",
+        "section_id": "DOC-021-S3"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Collect phishing SMS screenshots and sender shortcodes",
+        "File brand infringement complaint with PTA and telecom operators",
+        "Issue public fraud advisory on SupportNova tracking portal"
+      ],
+      "prohibited_actions": [
+        "Ignore third-party phishing campaigns using company brand"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-084",
+      "category_id": "CAT-10",
+      "subcategory_id": "SUB-028",
+      "conditions": "Enterprise client alleges unauthorized marketing outreach to their confidential customer list",
+      "department_id": "DEPT-07",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Contractual non-solicitation breach and major corporate trust violation",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Conduct internal marketing database origin audit",
+        "Terminate third-party marketing vendor contract if unauthorized scraping occurred",
+        "Provide enterprise client with full forensic compliance report"
+      ],
+      "prohibited_actions": [
+        "Deny cross-marketing without conducting audit of marketing data sources"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-085",
+      "category_id": "CAT-11",
+      "subcategory_id": "SUB-029",
+      "conditions": "Citizen reports courier van driving recklessly / speeding in residential neighborhood",
+      "department_id": "DEPT-08",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Public safety hazard requires immediate telematics review regardless of whether accident occurred",
+      "policy_reference": {
+        "document_id": "DOC-025",
+        "section_id": "DOC-025-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Retrieve vehicle GPS telematics and speed-monitoring logs",
+        "Identify driver and issue formal safety warning and speeding deduction",
+        "Send acknowledgement and appreciation note to reporting citizen"
+      ],
+      "prohibited_actions": [
+        "Ignore reckless driving report if no physical damage was done"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-086",
+      "category_id": "CAT-11",
+      "subcategory_id": "SUB-029",
+      "conditions": "Company delivery vehicle involved in road traffic accident resulting in property damage",
+      "department_id": "DEPT-08",
+      "supporting_department_id": "DEPT-07",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Traffic collision involving third-party property damage requires emergency P0 response",
+      "policy_reference": {
+        "document_id": "DOC-025",
+        "section_id": "DOC-025-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Dispatch regional safety response officer to accident site immediately",
+        "Arrange alternative vehicle to secure customer parcels and resume transit",
+        "Coordinate with local traffic authorities and insurance adjusters"
+      ],
+      "prohibited_actions": [
+        "Flee accident scene or conceal vehicle involvement",
+        "Abandon cargo at accident scene"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "Conditional",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-087",
+      "category_id": "CAT-11",
+      "subcategory_id": "SUB-029",
+      "conditions": "Severe fleet collision involving bodily injury or fatality",
+      "department_id": "DEPT-08",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Catastrophic human safety emergency mandates highest level executive crisis management",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Activate Emergency Executive Crisis Response Team",
+        "Ensure immediate medical care and hospital coordination for injured parties",
+        "Brief Chief Executive Officer and General Legal Counsel within 30 minutes"
+      ],
+      "prohibited_actions": [
+        "Issue public statements without legal clearance",
+        "Attempt informal off-record settlement"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-088",
+      "category_id": "CAT-11",
+      "subcategory_id": "SUB-030",
+      "conditions": "Hub staff identifies parcel emitting pungent odor / small non-toxic cosmetic liquid leak",
+      "department_id": "DEPT-08",
+      "supporting_department_id": null,
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Minor contained spill; standard hazardous isolation and repacking protocol",
+      "policy_reference": {
+        "document_id": "DOC-025",
+        "section_id": "DOC-025-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "Specialist Team",
+      "required_actions": [
+        "Isolate parcel in ventilated hub containment bay",
+        "Inspect contents wearing protective gloves and eye protection",
+        "Repack undamaged items and notify sender of leakage disposal"
+      ],
+      "prohibited_actions": [
+        "Allow leaking parcel to continue onto conveyor belts",
+        "Throw away entire consignment without notifying shipper"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-089",
+      "category_id": "CAT-11",
+      "subcategory_id": "SUB-030",
+      "conditions": "Consignment of undeclared lithium batteries catches fire / emits smoke in regional sortation center",
+      "department_id": "DEPT-08",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Active fire hazard threatening personnel and facility mandates emergency P0 escalation",
+      "policy_reference": {
+        "document_id": "DOC-025",
+        "section_id": "DOC-025-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Evacuate sorting floor and deploy specialized chemical fire extinguishers",
+        "Isolate affected cargo container in outdoor fire-safe zone",
+        "Notify fire department and initiate emergency investigation against shipper"
+      ],
+      "prohibited_actions": [
+        "Attempt to handle smoking lithium batteries with bare hands",
+        "Resume sortation before safety clearance"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-090",
+      "category_id": "CAT-11",
+      "subcategory_id": "SUB-030",
+      "conditions": "Commercial freight shipment found to contain undeclared toxic industrial chemicals / acids",
+      "department_id": "DEPT-08",
+      "supporting_department_id": "DEPT-07",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Illegal contraband and toxic hazard violation requiring regulatory reporting",
+      "policy_reference": {
+        "document_id": "DOC-021",
+        "section_id": "DOC-021-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Quarantine cargo under hazardous materials containment protocol",
+        "Report illegal hazardous transit to Environmental Protection Agency and Police",
+        "Blacklist shipper account across all national booking terminals"
+      ],
+      "prohibited_actions": [
+        "Release toxic chemicals back to shipper without regulatory clearance"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-091",
+      "category_id": "CAT-12",
+      "subcategory_id": "SUB-031",
+      "conditions": "Inter-provincial consignment missing commercial invoice copy in outer pouch; digital copy on file",
+      "department_id": "DEPT-07",
+      "supporting_department_id": null,
+      "urgency": "Medium",
+      "priority": "P2",
+      "priority_logic_note": "Administrative documentation omission resolvable via electronic archive printout",
+      "policy_reference": {
+        "document_id": "DOC-024",
+        "section_id": "DOC-024-S1"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Print digital invoice copy from SupportNova booking database",
+        "Attach reprint to parcel documentation pouch at transit hub",
+        "Authorize shipment release for next linehaul departure"
+      ],
+      "prohibited_actions": [
+        "Hold shipment indefinitely when digital invoice is verified on file"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-092",
+      "category_id": "CAT-12",
+      "subcategory_id": "SUB-031",
+      "conditions": "Shipment held at provincial check-post due to missing provincial sales tax / e-way bill",
+      "department_id": "DEPT-07",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Regulatory checkpoint hold threatens delivery SLA and risks fine",
+      "policy_reference": {
+        "document_id": "DOC-024",
+        "section_id": "DOC-024-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Contact shipper compliance desk to obtain certified e-way bill within 4 hours",
+        "Submit digital clearance token to provincial excise check-post officer",
+        "Expedite linehaul transit upon clearance"
+      ],
+      "prohibited_actions": [
+        "Bribe regulatory officials at check-post",
+        "Abandon parcel at provincial border"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-093",
+      "category_id": "CAT-12",
+      "subcategory_id": "SUB-031",
+      "conditions": "Corporate freight fleet impounded at customs terminal due to falsified commercial manifests",
+      "department_id": "DEPT-07",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Major legal and regulatory impoundment of carrier assets mandates executive intervention",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Deploy senior legal counsel to customs tribunal",
+        "Conduct internal audit of origin booking agent who accepted fraudulent manifest",
+        "Brief Chief Operating Officer and Board of Directors"
+      ],
+      "prohibited_actions": [
+        "Attempt unauthorized removal of impounded freight"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-094",
+      "category_id": "CAT-12",
+      "subcategory_id": "SUB-032",
+      "conditions": "Consignment held for routine random provincial excise vehicle weight and document check",
+      "department_id": "DEPT-07",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Standard regulatory inspection delay outside carrier control; low priority status notice",
+      "policy_reference": {
+        "document_id": "DOC-024",
+        "section_id": "DOC-024-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Log excise inspection timestamp in transit ledger",
+        "Notify consignee of minor statutory inspection transit delay",
+        "Resume delivery immediately upon checkpoint release"
+      ],
+      "prohibited_actions": [
+        "Dispute routine statutory checks without cause"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-095",
+      "category_id": "CAT-12",
+      "subcategory_id": "SUB-032",
+      "conditions": "Customer shipment seized by customs due to suspicion of counterfeit trademark goods",
+      "department_id": "DEPT-07",
+      "supporting_department_id": "DEPT-06",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Intellectual property and customs seizure requires formal compliance handling",
+      "policy_reference": {
+        "document_id": "DOC-021",
+        "section_id": "DOC-021-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Specialist Team",
+      "required_actions": [
+        "Obtain official seizure memo from Customs Authorities",
+        "Notify merchant of legal seizure and request genuine trademark authorization certificates",
+        "Provide documentation to customs within 48-hour statutory window"
+      ],
+      "prohibited_actions": [
+        "Guarantee parcel release to customer when seized under legal court order"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-096",
+      "category_id": "CAT-12",
+      "subcategory_id": "SUB-032",
+      "conditions": "Mass regulatory seizure of entire linehaul container valued at > PKR 5,000,000",
+      "department_id": "DEPT-07",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Massive enterprise operational and legal seizure requiring emergency executive response",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Assemble executive crisis team with General Legal Counsel",
+        "File urgent petition for release of legitimate third-party commercial cargo",
+        "Engage directly with Federal Board of Revenue high commission"
+      ],
+      "prohibited_actions": [
+        "Conceal mass seizure from affected corporate clients"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-097",
+      "category_id": "CAT-13",
+      "subcategory_id": "SUB-033",
+      "conditions": "Corporate freight client requests routine annual rate review and SLA contract renewal",
+      "department_id": "DEPT-05",
+      "supporting_department_id": null,
+      "urgency": "Low",
+      "priority": "P3",
+      "priority_logic_note": "Standard account management lifecycle; low urgency commercial negotiation",
+      "policy_reference": {
+        "document_id": "DOC-020",
+        "section_id": "DOC-020-S2"
+      },
+      "is_mandatory_escalation": false,
+      "escalation_level": "No Escalation",
+      "required_actions": [
+        "Generate annual shipping volume and revenue summary report",
+        "Schedule contract review meeting with corporate account manager",
+        "Draft revised corporate tariff addendum based on standard pricing matrix"
+      ],
+      "prohibited_actions": [
+        "Unilaterally alter contracted rates without signed contract addendum"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-098",
+      "category_id": "CAT-13",
+      "subcategory_id": "SUB-033",
+      "conditions": "Corporate client contract expiring in 7 days with disputed volume tier discounts",
+      "department_id": "DEPT-05",
+      "supporting_department_id": "DEPT-02",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "Imminent contract lapse threatening significant recurring revenue stream",
+      "policy_reference": {
+        "document_id": "DOC-013",
+        "section_id": "DOC-013-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Analyze merchant shipping volume against contracted discount tiers",
+        "Present customized bridge contract extension with verified volume rebates",
+        "Obtain sales director approval for negotiated tariff adjustments"
+      ],
+      "prohibited_actions": [
+        "Allow contract to lapse without proactive account executive outreach"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Conditional"
+    },
+    {
+      "rule_id": "RULE-099",
+      "category_id": "CAT-13",
+      "subcategory_id": "SUB-033",
+      "conditions": "Top-tier corporate account (annual freight > PKR 10M) serves 30-day termination notice over service quality",
+      "department_id": "DEPT-05",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Critical enterprise retention risk mandates immediate executive leadership intervention",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Convene emergency service audit across all client delivery routes",
+        "COO and Customer Experience Director to conduct in-person executive review with client leadership",
+        "Implement dedicated operations taskforce and daily SLA reporting"
+      ],
+      "prohibited_actions": [
+        "Accept multi-million rupee contract cancellation without executive remediation plan"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-100",
+      "category_id": "CAT-13",
+      "subcategory_id": "SUB-034",
+      "conditions": "VIP consumer shipment misses guaranteed overnight delivery commitment by 4 hours",
+      "department_id": "DEPT-09",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "High",
+      "priority": "P1",
+      "priority_logic_note": "VIP tier service level breach requires proactive priority compensation and outreach",
+      "policy_reference": {
+        "document_id": "DOC-014",
+        "section_id": "DOC-014-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Supervisor Review",
+      "required_actions": [
+        "Dispatch senior express rider for immediate priority delivery",
+        "Credit 50% freight fee back to VIP account automatically",
+        "Send personalized apology SMS from Customer Experience Director"
+      ],
+      "prohibited_actions": [
+        "Treat VIP account delays as standard non-priority inquiries"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-101",
+      "category_id": "CAT-13",
+      "subcategory_id": "SUB-034",
+      "conditions": "Nationwide severe linehaul breakdown causing systemic SLA failure across 1,000+ consignments",
+      "department_id": "DEPT-09",
+      "supporting_department_id": "DEPT-01",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Catastrophic network disruption impacting nationwide operations requires executive crisis leadership",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Deploy backup private linehaul fleet on emergency contracts",
+        "Broadcast transparent operational advisory on portal and media channels",
+        "Activate 24/7 emergency incident response desk at Karachi Central Hub"
+      ],
+      "prohibited_actions": [
+        "Conceal systemic network breakdown with false individual delay updates"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-102",
+      "category_id": "CAT-13",
+      "subcategory_id": "SUB-034",
+      "conditions": "Formal legal notice served by corporate client for systemic breach of SLA contract (> PKR 1,000,000)",
+      "department_id": "DEPT-09",
+      "supporting_department_id": "DEPT-07",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Legal notice regarding major financial claim mandates highest priority management escalation",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Transmit legal notice immediately to General Legal Counsel and COO",
+        "Assemble complete delivery scan, SLA audit logs, and communication transcripts",
+        "Schedule formal legal settlement conference within 48 hours"
+      ],
+      "prohibited_actions": [
+        "Ignore legal summons or respond without General Counsel sign-off"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "No",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-103",
+      "category_id": "CAT-12",
+      "subcategory_id": "SUB-031",
+      "conditions": "Cargo inspection reveals unregistered pharmaceutical narcotics hidden inside commercial parcel",
+      "department_id": "DEPT-07",
+      "supporting_department_id": "DEPT-08",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Criminal contraband discovery requires immediate police and regulatory notification",
+      "policy_reference": {
+        "document_id": "DOC-021",
+        "section_id": "DOC-021-S1"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Quarantine parcel in secure law-enforcement evidence vault",
+        "Hand over booking manifest and sender CNIC to Anti-Narcotics Force",
+        "Blacklist booking merchant across nationwide logistics network"
+      ],
+      "prohibited_actions": [
+        "Return contraband to shipper",
+        "Attempt internal disposal of illicit drugs"
+      ],
+      "follow_up_required": false,
+      "refund_eligible": "No",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    },
+    {
+      "rule_id": "RULE-104",
+      "category_id": "CAT-13",
+      "subcategory_id": "SUB-034",
+      "conditions": "Customer video of courier throwing fragile parcels goes viral on social media (>100k views)",
+      "department_id": "DEPT-09",
+      "supporting_department_id": "DEPT-05",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Severe brand reputation crisis mandates immediate executive public relations response",
+      "policy_reference": {
+        "document_id": "DOC-016",
+        "section_id": "DOC-016-S2"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Identify courier and sorting location within 2 hours",
+        "Issue public statement of accountability and remedial training actions",
+        "Contact affected parcel recipients for full replacement and compensation"
+      ],
+      "prohibited_actions": [
+        "Delete critical social media comments without addressing customer concerns",
+        "Deny video authenticity without review"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Yes",
+      "replacement_eligible": "Yes",
+      "compensation_permitted": "Yes"
+    },
+    {
+      "rule_id": "RULE-105",
+      "category_id": "CAT-01",
+      "subcategory_id": "SUB-001",
+      "conditions": "Nationwide highway flooding closes national transit artery for >5 days",
+      "department_id": "DEPT-01",
+      "supporting_department_id": "DEPT-09",
+      "urgency": "Critical",
+      "priority": "P0",
+      "priority_logic_note": "Force majeure crisis affecting all provincial linehaul transit routes",
+      "policy_reference": {
+        "document_id": "DOC-014",
+        "section_id": "DOC-014-S3"
+      },
+      "is_mandatory_escalation": true,
+      "escalation_level": "Critical Management Escalation",
+      "required_actions": [
+        "Activate alternative air-cargo charter routes for critical freight",
+        "Establish emergency dry-ports and secure temporary warehousing",
+        "Post daily transparent route feasibility bulletins for all merchants"
+      ],
+      "prohibited_actions": [
+        "Collect standard express delivery fees during active unserviceable flood conditions"
+      ],
+      "follow_up_required": true,
+      "refund_eligible": "Conditional",
+      "replacement_eligible": "No",
+      "compensation_permitted": "No"
+    }
+  ]
+}

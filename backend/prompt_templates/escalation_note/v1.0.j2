@@ -1,0 +1,97 @@
+{# ══════════════════════════════════════════════════════════════════════
+   escalation_note — v1.0
+
+   The internal handover note (SRS Step 38).
+
+   Design notes for whoever edits this next:
+
+   * This is read by a colleague, not a customer. It should be terse and
+     factual — the specialist picking it up wants to know what happened and
+     what is owed, not to be reassured.
+   * The escalation level and the rules that forced it are INJECTED, not
+     asked for. The model does not decide why a complaint was escalated;
+     Pipeline 2 already did, and restating its own guess would put a second
+     version of the reason into the record.
+   * No promises. The same prohibition as the customer reply, for a harder
+     reason: an internal note saying "refund approved" becomes the basis of
+     someone else's action.
+   ══════════════════════════════════════════════════════════════════════ #}
+You are writing an internal escalation note for {{ organisation.name }}. A
+specialist is about to pick this complaint up cold and needs to know, in under
+a minute, what happened and what is owed.
+
+{{ data_not_instructions_notice }}
+
+## What has already been decided
+
+These came from {{ organisation.name }}'s rules, not from you. Do not
+re-derive them and do not argue with them.
+
+- Category: {{ reconciled.get('category') }}{% if reconciled.get('subcategory') %} / {{ reconciled.get('subcategory') }}{% endif %}
+- Department: {{ reconciled.get('department') }}
+- Urgency: {{ reconciled.get('urgency') }} · Priority: {{ reconciled.get('priority') }}
+- Escalated to: {{ reconciled.get('escalation_level') }}
+{% if escalation_rules %}
+- Forced by rule(s): {{ escalation_rules | join(", ") }}
+{% endif %}
+{% if escalation_reason %}
+- Reason on record: {{ escalation_reason }}
+{% endif %}
+
+{% if eligibility %}
+## Eligibility as it stands
+
+{% for item in eligibility %}
+- **{{ item.get('eligibility_type') }}: {{ item.get('python_outcome') }}**{% if item.get('requires_human_approval') %} (needs human approval){% endif %}
+  {% if item.get('conditions_evaluated') %}
+  Outstanding: {{ item.get('conditions_evaluated') | join("; ") }}
+  {% endif %}
+{% endfor %}
+
+Nothing above that is not **ELIGIBLE** has been approved. Do not write that it
+has.
+{% endif %}
+
+{% if obligations %}
+## Obligations the rules impose
+
+{% for action in obligations %}
+- {{ action }}
+{% endfor %}
+{% endif %}
+
+{% if prohibitions %}
+## Not permitted on this complaint
+
+{% for action in prohibitions %}
+- {{ action }}
+{% endfor %}
+{% endif %}
+
+## The complaint
+
+{% if complaint.get('public_ref') %}Reference: {{ complaint.get('public_ref') }}
+{% endif %}{% if complaint.get('product') %}Product: {{ complaint.get('product') }}
+{% endif %}{% if complaint.get('order_ref') %}Order: {{ complaint.get('order_ref') }}
+{% endif %}{% if complaint.get('repeat_count') %}Prior unresolved contacts: {{ complaint.get('repeat_count') }}
+{% endif %}
+{{ fenced_complaint }}
+
+## Your answer
+
+Return a single JSON object matching the required schema. No prose before or
+after it, and no markdown code fence.
+
+- `complaint_summary` — two or three sentences. What happened, in the order it
+  happened.
+- `key_facts` — the specifics a colleague would otherwise have to dig for:
+  references, dates, amounts, what the customer has already been told. Only
+  facts present in the complaint above.
+- `reason_for_escalation` — why this is above the normal desk. State it in
+  business terms; the rule reference is already on the record.
+- `actions_already_taken` — what the system or the desk has done so far. If
+  nothing, say so plainly rather than inventing activity.
+- `required_next_action` — the single most important thing the specialist must
+  do next, phrased so they can start immediately.
+- `relevant_policy` — the document reference that governs this, if one was
+  retrieved. Otherwise leave it null.

@@ -1,0 +1,2202 @@
+# ========================================================================
+# RaftarXpress - RESOLUTION RULES
+#
+# What each case requires and forbids, straight from the authored
+# matrix. A required step is stored against the complaint as MISSING
+# and stays that way until an agent confirms it: whether 'check hub
+# GPS scan history' actually happened is not readable from any text
+# the system holds, and a checklist that ticked itself would be
+# decorative.
+#
+# GENERATED from dataset/raftarxpress by scripts/convert_raftarxpress.py.
+# Edit the dataset and re-run. Tune live at /api/admin/rules, which
+# refuses a condition naming a signal no lexicon term raises.
+# ========================================================================
+
+version: "1.0"
+ruleset: resolution
+
+rules:
+
+  - rule_ref: RES-001
+    name: Obligations for Standard domestic transit delay under 24 hours without perishable contents
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-001 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: delayed_delivery_terms
+        - signal: rule_001_evidence
+    then:
+      required_actions:
+        - Check hub GPS scan history
+        - Notify destination delivery hub
+        - Send SMS update to consignee
+      prohibited_actions:
+        - Guarantee delivery time before hub dispatch confirmation
+        - Cancel consignment unilaterally
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "1" }
+
+  - rule_ref: RES-002
+    name: "Obligations for Transit delay exceeding 72 hours with repeated customer inquiries (>2 times)"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-002 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: delayed_delivery_terms
+        - signal: rule_002_evidence
+    then:
+      required_actions:
+        - Flag consignment as priority linehaul search
+        - Issue intermediate tracking SMS to consignee
+        - Request hub physical shelf audit
+      prohibited_actions:
+        - Promise compensation before verification
+        - Mark ticket resolved while parcel remains in transit
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "1" }
+
+  - rule_ref: RES-003
+    name: Obligations for Delayed delivery containing urgent medical supplies, life-saving drugs or temperature-sensit
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-003 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: delayed_delivery_terms
+        - signal: rule_003_evidence
+    then:
+      required_actions:
+        - Initiate emergency same-day dedicated vehicle dispatch
+        - Alert Regional Operations Director
+        - Coordinate direct telephone line with receiving hospital/patient
+      prohibited_actions:
+        - Route through standard overnight batch queue
+        - Dismiss as routine delay
+      policy_refs:
+        - { doc_ref: DOC-018, section_ref: "1" }
+
+  - rule_ref: RES-004
+    name: Obligations for First missed delivery attempt due to customer premises locked or phone unattended
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-004 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: missed_delivery_attempt_terms
+        - signal: rule_004_evidence
+    then:
+      required_actions:
+        - Verify rider GPS proximity at attempt timestamp
+        - Schedule automated next-day re-attempt
+        - Send automated rescheduling SMS link
+      prohibited_actions:
+        - Charge re-attempt fee on first missed attempt
+        - Initiate immediate Return to Origin
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "1" }
+
+  - rule_ref: RES-005
+    name: Obligations for Consignee alleges fake delivery attempt / rider marked delivered or attempted without visiti
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-005 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: missed_delivery_attempt_terms
+        - signal: rule_005_evidence
+    then:
+      required_actions:
+        - Cross-reference rider GPS breadcrumb logs with delivery address
+        - Interview route courier
+        - Reschedule priority morning delivery window
+      prohibited_actions:
+        - Dismiss customer claim without reviewing GPS audit
+        - Blame consignee for missed call without call log review
+      policy_refs:
+        - { doc_ref: DOC-020, section_ref: "1" }
+
+  - rule_ref: RES-006
+    name: Obligations for Third consecutive missed delivery attempt reaching maximum quota threshold
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-006 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: missed_delivery_attempt_terms
+        - signal: rule_006_evidence
+    then:
+      required_actions:
+        - Move parcel to 48-hour hub retention bay
+        - Call consignee directly from customer support desk
+        - Notify merchant of impending RTO status
+      prohibited_actions:
+        - Dispose of shipment
+        - Return to origin before mandatory 48h holding period
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "4" }
+
+  - rule_ref: RES-007
+    name: Obligations for Package left on porch or with building guard with prior verbal consignee permission
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-007 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: package_left_unattended_terms
+        - signal: rule_007_evidence
+    then:
+      required_actions:
+        - Confirm digital delivery receipt note
+        - Archive consignee acknowledgment timestamp
+      prohibited_actions:
+        - Penalize courier when explicit consent is documented
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "3" }
+
+  - rule_ref: RES-008
+    name: Obligations for Package left unattended at gate/street without customer consent, package intact
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-008 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: package_left_unattended_terms
+        - signal: rule_008_evidence
+    then:
+      required_actions:
+        - Issue written compliance warning to courier
+        - Verify safe receipt of package with customer
+        - Record rider delivery infraction on internal profile
+      prohibited_actions:
+        - Ignore rider policy non-compliance
+        - Disclose rider personal cell number to customer
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "3" }
+
+  - rule_ref: RES-009
+    name: "Obligations for Package left unattended without consent and subsequently stolen or missing (value > PKR 50,0"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-009 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: package_left_unattended_terms
+        - signal: rule_009_evidence
+    then:
+      required_actions:
+        - Initiate lost parcel indemnity review
+        - Suspend courier from high-value routes pending probe
+        - File internal security incident report
+      prohibited_actions:
+        - Deny carrier liability when unattended handover lacks OTP verification
+        - Demand customer bear replacement loss
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "3" }
+
+  - rule_ref: RES-010
+    name: Obligations for Parcel misrouted to incorrect local branch within same city (e.g. Clifton instead of Gulshan
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-010 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: wrong_route_dispatch_terms
+        - signal: rule_010_evidence
+    then:
+      required_actions:
+        - Re-manifest parcel for immediate intra-city transfer shuttle
+        - Update real-time tracking destination node
+        - Inform consignee of corrected ETA
+      prohibited_actions:
+        - Reroute manually without updating system barcode scan
+        - Charge shipper extra transfer freight
+      policy_refs:
+        - { doc_ref: DOC-011, section_ref: "1" }
+
+  - rule_ref: RES-011
+    name: Obligations for Parcel dispatched to incorrect province/city (e.g., booked for Lahore, dispatched to Multan)
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-011 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: wrong_route_dispatch_terms
+        - signal: rule_011_evidence
+    then:
+      required_actions:
+        - Initiate express return linehaul booking
+        - Apply express priority barcode tag
+        - Send proactive delay apology notice with updated tracking
+      prohibited_actions:
+        - Wait for standard linehaul weekly batch
+        - Blame booking merchant if barcode print was clear
+      policy_refs:
+        - { doc_ref: DOC-011, section_ref: "1" }
+
+  - rule_ref: RES-012
+    name: "Obligations for Repeated routing error on same consignment note (>2 misdirections)"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-012 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: wrong_route_dispatch_terms
+        - signal: rule_012_evidence
+    then:
+      required_actions:
+        - Conduct physical manual interception at current sorting hub
+        - Assign dedicated courier for direct destination handover
+        - Escalate to Hub Operations Director
+      prohibited_actions:
+        - Allow automatic re-sorting without manual supervisor inspection
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-013
+    name: "Obligations for Standard parcel missing scan for >5 days, declared value under PKR 15,000"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-013 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: lost_parcel_terms
+        - signal: rule_013_evidence
+    then:
+      required_actions:
+        - Trigger 48-hour all-hub physical inventory search
+        - Request merchant commercial invoice and packing list
+        - Initiate standard indemnity processing upon search expiry
+      prohibited_actions:
+        - Promise instant cash payout before completing 48h search
+        - Refuse claim filed within 14-day window
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "1" }
+
+  - rule_ref: RES-014
+    name: Obligations for Insured shipment lost in transit with declared value between PKR 15,000 and PKR 100,000
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-014 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: lost_parcel_terms
+        - signal: rule_014_evidence
+    then:
+      required_actions:
+        - Verify insurance premium payment in booking ledger
+        - Obtain commercial proof of value and damage inspection declaration
+        - "Authorize 100% invoice reimbursement via IBFT"
+      prohibited_actions:
+        - "Apply 15% restocking fee on lost parcel claims"
+        - Pay via unverified cash voucher
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "3" }
+
+  - rule_ref: RES-015
+    name: Obligations for High-value consignment lost in transit (declared value exceeding PKR 100,000 or corporate fr
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-015 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: lost_parcel_terms
+        - signal: rule_015_evidence
+    then:
+      required_actions:
+        - Assemble executive claims committee
+        - Conduct security audit of all handling transit points
+        - Brief Chief Operating Officer within 4 hours
+      prohibited_actions:
+        - Delay investigation beyond 24 hours
+        - Settle without legal and finance sign-off
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-016
+    name: Obligations for Multi-piece consignment missing 1 of N boxes, standard commercial cargo
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-016 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: partial_shipment_missing_terms
+        - signal: rule_016_evidence
+    then:
+      required_actions:
+        - Locate missing box piece-identifier barcode across transit nodes
+        - Deliver available boxes with partial delivery notation
+        - Reconcile weight differences on POD
+      prohibited_actions:
+        - Hold complete shipment indefinitely while searching for missing piece
+        - Force consignee to sign clean POD for full delivery
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "2" }
+
+  - rule_ref: RES-017
+    name: Obligations for Partial loss confirmed stolen from damaged outer master carton
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-017 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: partial_shipment_missing_terms
+        - signal: rule_017_evidence
+    then:
+      required_actions:
+        - Photograph damaged master carton and record net weight loss
+        - Initiate fraud inquiry into handling linehaul team
+        - Authorize pro-rata item value settlement
+      prohibited_actions:
+        - Blame consignee for open box inspection
+        - Alter weighbridge logs
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "4" }
+
+  - rule_ref: RES-018
+    name: "Obligations for High-value partial theft with total missing item value > PKR 100,000"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-018 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: partial_shipment_missing_terms
+        - signal: rule_018_evidence
+    then:
+      required_actions:
+        - Seal remaining cargo in secure vault
+        - Trigger corporate risk investigation
+        - Notify corporate client account executive
+      prohibited_actions:
+        - Release damaged shipment without formal survey
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-019
+    name: Obligations for Minor outer carton denting with internal goods completely undamaged
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-019 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: damaged_parcel_terms
+        - signal: rule_019_evidence
+    then:
+      required_actions:
+        - Inspect customer unboxing photographic evidence
+        - Log delivery feedback for packing improvement
+        - Close inquiry with polite reassurance
+      prohibited_actions:
+        - "Authorize product replacement when contents are 100% intact"
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "4" }
+
+  - rule_ref: RES-020
+    name: "Obligations for Total breakage of fragile contents due to rough transit handling (value < PKR 15,000)"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-020 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: damaged_parcel_terms
+        - signal: rule_020_evidence
+    then:
+      required_actions:
+        - Verify Fragile label was affixed at origin booking
+        - Examine unboxing photos and broken seals
+        - Approve compensation up to policy limit within 7 days
+      prohibited_actions:
+        - Reject claim if customer reported within 14-day window with evidence
+        - Demand customer return shards of broken glass
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "2" }
+
+  - rule_ref: RES-021
+    name: Obligations for Catastrophic damage to commercial freight / industrial equipment exceeding PKR 100,000
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-021 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: damaged_parcel_terms
+        - signal: rule_021_evidence
+    then:
+      required_actions:
+        - Dispatch certified surveyor to customer location within 24h
+        - Impound transit container for safety inspection
+        - Prepare executive claims memorandum
+      prohibited_actions:
+        - Deny claim without technical survey
+        - Offer token compensation under standard cap without insurance check
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-022
+    name: Obligations for Wrong parcel delivered due to courier label swap at last-mile delivery point
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-022 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: wrong_item_delivered_terms
+        - signal: rule_022_evidence
+    then:
+      required_actions:
+        - Contact both recipients immediately to freeze unboxing
+        - Dispatch senior courier for immediate same-day parcel exchange
+        - Inspect package seals upon retrieval
+      prohibited_actions:
+        - Leave misdelivered parcel with wrong recipient
+        - Disclose both customers details to each other
+      policy_refs:
+        - { doc_ref: DOC-011, section_ref: "1" }
+
+  - rule_ref: RES-023
+    name: Obligations for Merchant packed wrong SKU / manifest matches parcel contents but merchant made error
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-023 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: wrong_item_delivered_terms
+        - signal: rule_023_evidence
+    then:
+      required_actions:
+        - Verify booked SKU description against shipping manifest
+        - Advise consignee to initiate merchant return portal request
+        - Offer subsidized reverse logistics pickup
+      prohibited_actions:
+        - Accept carrier liability for merchant packing mistakes
+        - Issue carrier refund for merchant error
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "1" }
+
+  - rule_ref: RES-024
+    name: Obligations for Misdelivered parcel contains confidential corporate data or restricted goods
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-024 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: wrong_item_delivered_terms
+        - signal: rule_024_evidence
+    then:
+      required_actions:
+        - Execute emergency immediate secure retrieval within 2 hours
+        - Obtain signed non-disclosure acknowledgment from recipient
+        - Notify Chief Information Security Officer
+      prohibited_actions:
+        - Delay recovery until routine evening run-sheet
+        - Treat as standard routine swap
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RES-025
+    name: Obligations for Parcel received with broken security tape but all items accounted for and intact
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-025 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: tampered_packaging_terms
+        - signal: rule_025_evidence
+    then:
+      required_actions:
+        - Log security tape breach in hub quality audit log
+        - Review sorter conveyor CCTV footage
+        - Send advisory note to originating dispatch hub
+      prohibited_actions:
+        - Ignore security seal violation report
+      policy_refs:
+        - { doc_ref: DOC-009, section_ref: "3" }
+
+  - rule_ref: RES-026
+    name: Obligations for Parcel cut open and high-value item replaced with dummy weight / counterfeit goods
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-026 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: tampered_packaging_terms
+        - signal: rule_026_evidence
+    then:
+      required_actions:
+        - Quarantine parcel packaging for forensic inspection
+        - Conduct immediate audit of linehaul drivers and hub handlers
+        - File formal internal anti-fraud incident report
+      prohibited_actions:
+        - Return tampered box to shipper without photographing evidence
+        - Accuse customer of self-tampering without proof
+      policy_refs:
+        - { doc_ref: DOC-006, section_ref: "1" }
+
+  - rule_ref: RES-027
+    name: Obligations for Merchant reports repeated tampered packages from a specific regional dispatch route
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-027 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: tampered_packaging_terms
+        - signal: rule_027_evidence
+    then:
+      required_actions:
+        - Audit specific transit route linehaul escorts
+        - Implement tamper-evident serialized bag locks
+        - Provide merchant weekly security summary report
+      prohibited_actions:
+        - Dismiss recurring trend as isolated incidents
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "3" }
+
+  - rule_ref: RES-028
+    name: Obligations for Rider demands higher COD cash than printed on official digital consignment manifest
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-028 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: cod_amount_mismatch_terms
+        - signal: rule_028_evidence
+    then:
+      required_actions:
+        - Verify system manifest COD amount against booking database
+        - Instruct consignee to pay only exact system manifest amount
+        - Summon rider to hub for disciplinary inquiry
+      prohibited_actions:
+        - Instruct customer to pay extra cash to rider
+        - Refuse delivery if rider demands unauthorized tip
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "3" }
+
+  - rule_ref: RES-029
+    name: Obligations for Merchant booked wrong COD amount on portal and requests in-transit correction
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-029 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: cod_amount_mismatch_terms
+        - signal: rule_029_evidence
+    then:
+      required_actions:
+        - Verify merchant account credentials and booking ownership
+        - Update system COD invoice value on rider mobile application
+        - Send confirmation SMS to consignee with revised amount
+      prohibited_actions:
+        - Amend COD amount without verified merchant portal request
+        - Collect old amount after merchant update confirmation
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "3" }
+
+  - rule_ref: RES-030
+    name: "Obligations for COD cash discrepancy resulting in customer overpayment of > PKR 10,000"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-030 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: cod_amount_mismatch_terms
+        - signal: rule_030_evidence
+    then:
+      required_actions:
+        - Reconcile hub cash drawer logs against physical receipt
+        - Initiate same-day IBFT refund of excess collected amount
+        - Issue official written apology to customer
+      prohibited_actions:
+        - Force customer to take company credit coupon instead of cash return
+        - Delay refund until end of month
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "3" }
+
+  - rule_ref: RES-031
+    name: Obligations for Customer online portal shows two identical invoice charges for a single consignment booking
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-031 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: duplicate_charge_terms
+        - signal: rule_031_evidence
+    then:
+      required_actions:
+        - Verify payment gateway transaction logs against CN number
+        - Confirm second charge is a duplicate capture
+        - Trigger automated gateway refund reversal within 48 hours
+      prohibited_actions:
+        - Force customer to dispute charge through external bank chargeback
+        - Deny duplicate charge when transaction IDs match
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "3" }
+
+  - rule_ref: RES-032
+    name: Obligations for Merchant corporate freight account billed twice on monthly consolidated billing statement
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-032 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: duplicate_charge_terms
+        - signal: rule_032_evidence
+    then:
+      required_actions:
+        - Issue immediate revised corporate billing statement
+        - Post credit note to merchant ledger balance
+        - Reconcile automated invoicing batch scripts with IT
+      prohibited_actions:
+        - Charge late payment penalties on disputed duplicate invoice items
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "3" }
+
+  - rule_ref: RES-033
+    name: "Obligations for Repeated duplicate deductions causing severe bank overdraft / penalties (> PKR 50,000)"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-033 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: duplicate_charge_terms
+        - signal: rule_033_evidence
+    then:
+      required_actions:
+        - Execute emergency manual IBFT reimbursement within 4 hours
+        - Compensate verified bank overdraft fees with Finance approval
+        - Initiate emergency engineering patch for payment hook
+      prohibited_actions:
+        - Refuse to reimburse bank penalty fees caused directly by company error
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-034
+    name: "Obligations for Dispute over volumetric vs dead weight calculation resulting in minor overcharge (< PKR 1,00"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-034 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: incorrect_charge_terms
+        - signal: rule_034_evidence
+    then:
+      required_actions:
+        - Retrieve automated hub laser dimension scan photos
+        - Explain (L x W x H)/5000 formula clearly to customer
+        - Adjust invoice if hub laser scan shows calibration discrepancy
+      prohibited_actions:
+        - Waive valid dimensional charges arbitrarily without scan proof
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "1" }
+
+  - rule_ref: RES-035
+    name: Obligations for Systemic fuel surcharge applied at expired higher rate across monthly merchant invoice
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-035 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: incorrect_charge_terms
+        - signal: rule_035_evidence
+    then:
+      required_actions:
+        - Re-run batch invoice calculation with prevailing approved fuel index
+        - Issue bulk ledger credit adjustment to impacted accounts
+        - Notify Head of Financial Operations
+      prohibited_actions:
+        - Enforce payment of unapproved tariff rates
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "2" }
+
+  - rule_ref: RES-036
+    name: Obligations for Freight overcharge dispute on enterprise bulk contract exceeding PKR 100,000
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-036 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: incorrect_charge_terms
+        - signal: rule_036_evidence
+    then:
+      required_actions:
+        - Review customized Service Level Agreement tariff annexure
+        - Hold collection calls pending executive billing review
+        - Meet with corporate client CFO / procurement head
+      prohibited_actions:
+        - Threaten corporate freight service suspension during active billing review
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-037
+    name: Obligations for Merchant COD remittance delayed past standard Wednesday cycle due to bank holiday
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-037 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: cod_remittance_delay_terms
+        - signal: rule_037_evidence
+    then:
+      required_actions:
+        - Verify merchant bank IBFT queue status
+        - Send automated broadcast notification regarding holiday processing schedule
+      prohibited_actions:
+        - Manually override bank batch during scheduled banking downtime
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "2" }
+
+  - rule_ref: RES-038
+    name: "Obligations for Merchant COD remittance overdue by >7 days with balance between PKR 20,000 and PKR 100,000"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-038 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: cod_remittance_delay_terms
+        - signal: rule_038_evidence
+    then:
+      required_actions:
+        - Audit un-reconciled rider cash collections for merchant shipments
+        - Release expedited individual IBFT payment within 24 hours
+        - Provide merchant with detailed reconciliation ledger statement
+      prohibited_actions:
+        - Blame merchant for company reconciliation backlogs
+        - Withhold legitimate COD funds without audit justification
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "2" }
+
+  - rule_ref: RES-039
+    name: Obligations for Unresolved COD remittance withheld exceeding PKR 100,000 with legal threat from merchant
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-039 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: cod_remittance_delay_terms
+        - signal: rule_039_evidence
+    then:
+      required_actions:
+        - Conduct emergency financial audit with Finance Director
+        - Engage Legal Counsel (DEPT-07) for merchant dialogue
+        - Execute verified funds transfer within 12 hours
+      prohibited_actions:
+        - Engage in informal arguments with merchant legal counsel
+        - Freeze merchant account out of retaliation
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-040
+    name: Obligations for Customer refund requested within 7-day policy window, all documentation verified
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-040 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: refund_not_processed_terms
+        - signal: rule_040_evidence
+    then:
+      required_actions:
+        - Verify CN delivery status and original payment mode
+        - Submit IBFT payment voucher to Finance queue
+        - Notify customer of 5-7 banking days disbursement timeline
+      prohibited_actions:
+        - Promise same-day cash payout
+        - Require unnecessary in-person hub visits
+      policy_refs:
+        - { doc_ref: DOC-001, section_ref: "2" }
+
+  - rule_ref: RES-041
+    name: Obligations for Refund request submitted on day 8 (past 7-day window) citing genuine medical emergency
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-041 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: refund_not_processed_terms
+        - signal: rule_041_evidence
+    then:
+      required_actions:
+        - Review customer exemption rationale and supporting documents
+        - Submit one-time policy exception request to Customer Experience Director
+        - Process refund if authorized under discretionary allowance
+      prohibited_actions:
+        - Grant policy exception without documented supervisor approval
+        - Rudely reject without evaluating circumstances
+      policy_refs:
+        - { doc_ref: DOC-001, section_ref: "2" }
+
+  - rule_ref: RES-042
+    name: Obligations for Refund approved over 14 days ago but never disbursed due to banking IBFT batch drop
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-042 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: refund_not_processed_terms
+        - signal: rule_042_evidence
+    then:
+      required_actions:
+        - Investigate bank drop transaction error code
+        - Re-issue instant direct IBFT transfer with priority bank token
+        - Provide customer with verified bank transaction UTR reference
+      prohibited_actions:
+        - Falsely claim funds were credited without UTR proof
+        - Ask customer to re-apply from scratch
+      policy_refs:
+        - { doc_ref: DOC-001, section_ref: "4" }
+
+  - rule_ref: RES-043
+    name: Obligations for Customer inquiry regarding refund status currently on day 3 of 5-7 day standard SLA
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-043 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: refund_delay_terms
+        - signal: rule_043_evidence
+    then:
+      required_actions:
+        - Check IBFT batch stage in Finance portal
+        - Reassure customer with confirmed target settlement date
+        - Send automated status tracker link
+      prohibited_actions:
+        - Escalate to finance managers prematurely within normal SLA window
+      policy_refs:
+        - { doc_ref: DOC-001, section_ref: "4" }
+
+  - rule_ref: RES-044
+    name: Obligations for Refund delayed due to customer providing incorrect IBFT account number / title mismatch
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-044 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: refund_delay_terms
+        - signal: rule_044_evidence
+    then:
+      required_actions:
+        - Notify customer via SMS and portal of bank title mismatch
+        - Collect verified copy of bank check / account statement
+        - Re-queue IBFT with corrected 24-digit IBAN
+      prohibited_actions:
+        - Attempt repeated transfers to unverified invalid bank accounts
+      policy_refs:
+        - { doc_ref: DOC-001, section_ref: "4" }
+
+  - rule_ref: RES-045
+    name: Obligations for Bulk merchant refund batch delayed across 50+ accounts due to core banking portal outage
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-045 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: refund_delay_terms
+        - signal: rule_045_evidence
+    then:
+      required_actions:
+        - Coordinate with partner commercial bank tech desk
+        - Post broadcast merchant operational advisory
+        - Execute split-batch processing via backup banking portal
+      prohibited_actions:
+        - Keep merchants uninformed while funds are stalled
+      policy_refs:
+        - { doc_ref: DOC-018, section_ref: "1" }
+
+  - rule_ref: RES-046
+    name: Obligations for Failed delivery consignment held in hub awaiting scheduled weekly RTO consolidation
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-046 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: rto_processing_delay_terms
+        - signal: rule_046_evidence
+    then:
+      required_actions:
+        - Confirm parcel is safely tagged in hub RTO retention bay
+        - Update RTO linehaul manifest ETA on merchant dashboard
+      prohibited_actions:
+        - Expedite individual standard RTOs at company expense without merchant contract
+      policy_refs:
+        - { doc_ref: DOC-003, section_ref: "4" }
+
+  - rule_ref: RES-047
+    name: "Obligations for RTO package stalled at regional transit hub for >10 days without movement scan"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-047 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: rto_processing_delay_terms
+        - signal: rule_047_evidence
+    then:
+      required_actions:
+        - Conduct physical search of hub RTO staging racks
+        - Assign priority reverse linehaul dispatch tag
+        - Notify merchant of expedited return delivery date
+      prohibited_actions:
+        - Assume parcel is lost without initiating hub search
+        - Charge merchant multiple RTO fees for delayed return
+      policy_refs:
+        - { doc_ref: DOC-010, section_ref: "2" }
+
+  - rule_ref: RES-048
+    name: Obligations for Merchant alleges high-value RTO parcel swapped with inferior merchandise during reverse tran
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-048 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: rto_processing_delay_terms
+        - signal: rule_048_evidence
+    then:
+      required_actions:
+        - Quarantine RTO parcel and compare unboxing video with origin dispatch logs
+        - Review reverse rider and hub intake CCTV footage
+        - Authorize merchant inventory claim upon fraud verification
+      prohibited_actions:
+        - Force merchant to accept opened/tampered RTO without formal survey
+      policy_refs:
+        - { doc_ref: DOC-009, section_ref: "3" }
+
+  - rule_ref: RES-049
+    name: Obligations for Consumer portal account locked after 5 consecutive incorrect password attempts
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-049 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: account_locked_terms
+        - signal: rule_049_evidence
+    then:
+      required_actions:
+        - Verify registered mobile number and CNIC details
+        - Send automated password reset OTP to registered mobile
+        - Unlock account profile in identity management portal
+      prohibited_actions:
+        - Unlock account without verifying phone/email ownership
+        - Disclose old password over telephone
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "1" }
+
+  - rule_ref: RES-050
+    name: Obligations for High-volume merchant account locked during peak sales festival (e.g. 11.11 / Eid)
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-050 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: account_locked_terms
+        - signal: rule_050_evidence
+    then:
+      required_actions:
+        - Perform expedited merchant verification via registered business authorized contact
+        - Reset portal credentials and restore bulk booking API access within 30 minutes
+        - Monitor account for abnormal API activity
+      prohibited_actions:
+        - Leave merchant locked during critical trading hours without explanation
+      policy_refs:
+        - { doc_ref: DOC-018, section_ref: "1" }
+
+  - rule_ref: RES-051
+    name: Obligations for Merchant account locked due to suspicious automated bot scraping / API abuse
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-051 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: account_locked_terms
+        - signal: rule_051_evidence
+    then:
+      required_actions:
+        - Analyze IP request rates and endpoint access logs with InfoSec
+        - Contact merchant technical lead to resolve bot looping script
+        - Issue new secured API token with rate-limiting rules
+      prohibited_actions:
+        - Re-enable unrestricted API access without fixing abusive script
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RES-052
+    name: Obligations for Customer reports suspicious login alert from unfamiliar city/IP address, no funds diverted
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-052 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: unauthorized_account_access_terms
+        - signal: rule_052_evidence
+    then:
+      required_actions:
+        - Terminate all active session tokens immediately
+        - Enforce mandatory two-factor authentication (2FA) reset
+        - Audit recent profile modification logs
+      prohibited_actions:
+        - Ignore suspicious login notification when customer reports it
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RES-053
+    name: Obligations for Merchant portal compromised and bank disbursement details altered to fraudulent account
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-053 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: unauthorized_account_access_terms
+        - signal: rule_053_evidence
+    then:
+      required_actions:
+        - Freeze all outgoing COD remittances instantly
+        - Lock merchant profile and restore verified banking records
+        - Alert Head of Information Security and Banking Operations
+      prohibited_actions:
+        - Allow pending IBFT payouts to proceed while bank details are contested
+        - Blame merchant before securing financial assets
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RES-054
+    name: Obligations for Widespread credential-stuffing attack targeting corporate freight customer accounts
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-054 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: unauthorized_account_access_terms
+        - signal: rule_054_evidence
+    then:
+      required_actions:
+        - Deploy cloud firewall rate-limiting and IP geo-blocking rules
+        - Trigger enterprise-wide forced password reset for affected user pool
+        - Brief Chief Operating Officer and General Counsel
+      prohibited_actions:
+        - Keep security breach hidden from affected enterprise clients
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RES-055
+    name: Obligations for Merchant requests standard update to pickup warehouse address or contact phone number
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-055 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: merchant_profile_update_terms
+        - signal: rule_055_evidence
+    then:
+      required_actions:
+        - Verify request originated from registered merchant email
+        - Update pickup address coordinates in dispatch master database
+        - Confirm update to merchant within 24 hours
+      prohibited_actions:
+        - Update pickup address on unverified phone call
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "1" }
+
+  - rule_ref: RES-056
+    name: Obligations for Merchant requests legal company title change and NTN/Sales Tax registration update
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-056 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: merchant_profile_update_terms
+        - signal: rule_056_evidence
+    then:
+      required_actions:
+        - Collect updated FBR NTN certificate and SECP incorporation form
+        - Submit legal documents to Compliance (DEPT-07) for validation
+        - Update ERP billing ledger title upon compliance sign-off
+      prohibited_actions:
+        - Update tax entity details without verified FBR documentation
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "1" }
+
+  - rule_ref: RES-057
+    name: Obligations for Merchant requests critical change in corporate bank account for COD remittances
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-057 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: merchant_profile_update_terms
+        - signal: rule_057_evidence
+    then:
+      required_actions:
+        - Execute dual-factor verification with registered company director
+        - Obtain stamped bank maintenance certificate on official letterhead
+        - Impose mandatory 48-hour cooling-off freeze on new bank details
+      prohibited_actions:
+        - Update bank account details without verifying company authorization letter
+        - Disburse funds to unverified account within cooling period
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "2" }
+
+  - rule_ref: RES-058
+    name: Obligations for Consignment tracking scan stationary for 12 hours during overnight inter-city linehaul
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-058 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: tracking_not_updating_terms
+        - signal: rule_058_evidence
+    then:
+      required_actions:
+        - Verify linehaul truck departure and estimated hub arrival time
+        - Explain linehaul transit scan cycle to customer
+        - Provide estimated timestamp for next destination scan
+      prohibited_actions:
+        - Declare parcel lost prematurely during routine linehaul transit
+      policy_refs:
+        - { doc_ref: DOC-019, section_ref: "1" }
+
+  - rule_ref: RES-059
+    name: "Obligations for Tracking scan frozen at origin hub for >48 hours without departure event"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-059 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: tracking_not_updating_terms
+        - signal: rule_059_evidence
+    then:
+      required_actions:
+        - Issue physical search ticket to origin hub floor manager
+        - Force barcode status update in SupportNova within 4 hours
+        - Send SMS tracking update to sender and consignee
+      prohibited_actions:
+        - Mark tracking updated without physical verification of parcel location
+      policy_refs:
+        - { doc_ref: DOC-010, section_ref: "2" }
+
+  - rule_ref: RES-060
+    name: Obligations for Public tracking portal shows internal system error code (500) for all merchant shipments
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-060 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: tracking_not_updating_terms
+        - signal: rule_060_evidence
+    then:
+      required_actions:
+        - Notify IT Infrastructure engineering of API tracking service degradation
+        - Activate backup CDN caching layer
+        - Post status banner on public portal
+      prohibited_actions:
+        - Direct customers to non-existent manual phone lines without resolving API
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "2" }
+
+  - rule_ref: RES-061
+    name: Obligations for Single user reports mobile tracking app crashes on specific older Android OS version
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-061 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: app_crash_terms
+        - signal: rule_061_evidence
+    then:
+      required_actions:
+        - Collect device model, OS version, and app build number
+        - Forward crash log to Mobile Development team
+        - Advise customer to use mobile web portal as interim solution
+      prohibited_actions:
+        - Dismiss user bug report without logging ticket
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "2" }
+
+  - rule_ref: RES-062
+    name: Obligations for Courier mobile dispatch app crashes repeatedly across entire Lahore hub fleet
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-062 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: app_crash_terms
+        - signal: rule_062_evidence
+    then:
+      required_actions:
+        - Roll back last mobile app update to previous stable APK release
+        - Authorize emergency paper run-sheet protocol to prevent delivery halt
+        - Engage lead mobile software architect
+      prohibited_actions:
+        - Allow courier deliveries to halt completely during app troubleshooting
+      policy_refs:
+        - { doc_ref: DOC-018, section_ref: "1" }
+
+  - rule_ref: RES-063
+    name: Obligations for Merchant bulk manifest generator crashes on CSV uploads exceeding 500 rows
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-063 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: app_crash_terms
+        - signal: rule_063_evidence
+    then:
+      required_actions:
+        - Provide merchant temporary split-CSV upload workaround
+        - Re-index backend database bulk upload parser
+        - Deploy memory optimization patch within 24 hours
+      prohibited_actions:
+        - Force merchant to manually input 500 orders one by one
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "2" }
+
+  - rule_ref: RES-064
+    name: Obligations for Merchant reports webhook delivery notification latency of 15 minutes during peak hours
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-064 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: api_webhook_failure_terms
+        - signal: rule_064_evidence
+    then:
+      required_actions:
+        - Inspect Redis queue worker throughput and consumer lag
+        - Scale webhook worker containers dynamically
+        - Confirm queue clearance with merchant developer
+      prohibited_actions:
+        - Disable webhook retries to clear queue artificially
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "2" }
+
+  - rule_ref: RES-065
+    name: Obligations for E-commerce merchant webhook endpoint failing due to TLS certificate / SSL handshake error
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-065 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: api_webhook_failure_terms
+        - signal: rule_065_evidence
+    then:
+      required_actions:
+        - Verify SSL handshake logs from outbound webhook gateway
+        - Advise merchant technical team on supported cipher suites
+        - Trigger manual replay of missed webhook events upon SSL fix
+      prohibited_actions:
+        - Purge failed webhook queue without replaying events to merchant
+      policy_refs:
+        - { doc_ref: DOC-023, section_ref: "2" }
+
+  - rule_ref: RES-066
+    name: Obligations for Enterprise corporate client API gateway completely down, blocking all nationwide bookings
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-066 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: api_webhook_failure_terms
+        - signal: rule_066_evidence
+    then:
+      required_actions:
+        - Activate enterprise failover API endpoint and bypass proxy
+        - Convene emergency bridge with Enterprise Client CTO
+        - Execute automated retroactive sync once gateway is restored
+      prohibited_actions:
+        - Leave enterprise bookings queued without executive alert
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-067
+    name: Obligations for Customer reports rider spoke discourteously or showed impatient attitude during delivery
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-067 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: rude_rider_driver_behavior_terms
+        - signal: rule_067_evidence
+    then:
+      required_actions:
+        - Call customer to convey formal company apology
+        - Counsel courier regarding professional service standards
+        - Log behavioral warning in rider performance scorecard
+      prohibited_actions:
+        - Confront customer aggressively to defend rider
+        - Share customer contact with rider for private argument
+      policy_refs:
+        - { doc_ref: DOC-020, section_ref: "1" }
+
+  - rule_ref: RES-068
+    name: Obligations for Rider used profanity, verbal threats, or aggressive harassment towards customer
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-068 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: rude_rider_driver_behavior_terms
+        - signal: rule_068_evidence
+    then:
+      required_actions:
+        - Suspend courier immediately from all field duties pending disciplinary hearing
+        - Executive Customer Relations lead to contact victimized customer within 1 hour
+        - Preserve call recordings and CCTV for potential legal review
+      prohibited_actions:
+        - Permit courier to continue delivery routes
+        - Minimize or dismiss harassment complaint
+      policy_refs:
+        - { doc_ref: DOC-020, section_ref: "1" }
+
+  - rule_ref: RES-069
+    name: "Obligations for Repeated behavioral complaints (>3) against same delivery courier within 30 days"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-069 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: rude_rider_driver_behavior_terms
+        - signal: rule_069_evidence
+    then:
+      required_actions:
+        - Initiate formal HR termination inquiry under employment code
+        - Reassign route to senior certified delivery courier
+        - Send follow-up satisfaction survey to impacted route customers
+      prohibited_actions:
+        - Transfer problem courier to another route without disciplinary action
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "2" }
+
+  - rule_ref: RES-070
+    name: Obligations for Rider verbally asks for tip / round-up change on prepaid shipment, customer refused and rece
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-070 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: rider_demanding_cash_tip_terms
+        - signal: rule_070_evidence
+    then:
+      required_actions:
+        - Interview rider and reiterate strict zero-solicitation policy
+        - Credit PKR 200 goodwill delivery voucher to customer profile
+        - Document infraction on rider HR profile
+      prohibited_actions:
+        - Condone unauthorized cash solicitation as standard practice
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "2" }
+
+  - rule_ref: RES-071
+    name: Obligations for Rider refuses to release prepaid parcel unless customer pays unauthorized cash fee
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-071 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: rider_demanding_cash_tip_terms
+        - signal: rule_071_evidence
+    then:
+      required_actions:
+        - Dispatch supervisor to customer address for immediate parcel handover
+        - Offboard courier and confiscate company device and cash bag
+        - Initiate recovery of illicitly collected funds
+      prohibited_actions:
+        - Force customer to negotiate cash with rogue courier
+        - Delay parcel release pending courier interview
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "2" }
+
+  - rule_ref: RES-072
+    name: Obligations for Rider forged customer signature and pocketed change balance from large COD banknote
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-072 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: rider_demanding_cash_tip_terms
+        - signal: rule_072_evidence
+    then:
+      required_actions:
+        - Reimburse withheld cash balance to customer via instant IBFT
+        - Collect physical delivery manifest for signature handwriting audit
+        - Issue formal notice of termination to courier
+      prohibited_actions:
+        - Require customer to recover cash balance directly from rider
+      policy_refs:
+        - { doc_ref: DOC-005, section_ref: "3" }
+
+  - rule_ref: RES-073
+    name: Obligations for Customer disputes warranty claim denial on non-insured cargo damaged by improper packaging
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-073 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: warranty_claim_denied_terms
+        - signal: rule_073_evidence
+    then:
+      required_actions:
+        - Share packaging audit report showing lack of internal cushioning/bubble-wrap
+        - Explain merchant packaging responsibility under clause S4
+        - Offer subsidized re-dispatch rate as customer goodwill gesture
+      prohibited_actions:
+        - Change claim decision without supervisor approval
+        - Rudely dismiss customer without sharing inspection photos
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "4" }
+
+  - rule_ref: RES-074
+    name: Obligations for Warranty claim denied due to filing on day 15 (1 day past 14-day window) due to hospital sta
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-074 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: warranty_claim_denied_terms
+        - signal: rule_074_evidence
+    then:
+      required_actions:
+        - Verify customer medical admission certificates and booking timeline
+        - Submit formal 24-hour window waiver request to Chief Claims Assessor
+        - Re-open claim for standard evidentiary assessment upon waiver approval
+      prohibited_actions:
+        - Arbitrarily reject valid extenuating circumstance without senior review
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "1" }
+
+  - rule_ref: RES-075
+    name: Obligations for Corporate VIP client claims denial on PKR 250,000 shipment threatening contract termination
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-075 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: warranty_claim_denied_terms
+        - signal: rule_075_evidence
+    then:
+      required_actions:
+        - Convene joint review with Claims Assessor and Corporate Accounts Director
+        - Examine master transit insurance contract terms
+        - Present executive commercial settlement proposal within 24 hours
+      prohibited_actions:
+        - Allow B2B enterprise contract termination over unreviewed technical claim
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-076
+    name: Obligations for Customer insurance claim approved, awaiting standard 21-day insurer settlement cycle
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-076 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: insurance_payout_delay_terms
+        - signal: rule_076_evidence
+    then:
+      required_actions:
+        - Verify insurance underwriter approval reference number
+        - Provide customer with verified expected disbursement date schedule
+      prohibited_actions:
+        - Escalate to insurance underwriter executives prematurely within 21-day cycle
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "3" }
+
+  - rule_ref: RES-077
+    name: Obligations for Insured payout delayed past 30 days due to missing underwriter surveyor sign-off
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-077 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: insurance_payout_delay_terms
+        - signal: rule_077_evidence
+    then:
+      required_actions:
+        - Issue urgent demand letter to third-party insurance underwriter
+        - "Release 50% advance compensation from company reserve if underwriter is stalled"
+        - Update customer weekly with claims tracking log
+      prohibited_actions:
+        - Leave customer waiting without tracking or insurance updates
+      policy_refs:
+        - { doc_ref: DOC-007, section_ref: "3" }
+
+  - rule_ref: RES-078
+    name: Obligations for Insurance payout withheld for enterprise cargo loss exceeding PKR 500,000
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-078 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: insurance_payout_delay_terms
+        - signal: rule_078_evidence
+    then:
+      required_actions:
+        - Coordinate executive dispute meeting between company counsel and underwriter
+        - Provide corporate client daily status briefings from executive office
+        - Execute bridge settlement if liability is contractually clear
+      prohibited_actions:
+        - Default on enterprise cargo commitments
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-079
+    name: Obligations for Customer reports courier sent unsolicited personal message on WhatsApp after delivery
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-079 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: data_privacy_breach_terms
+        - signal: rule_079_evidence
+    then:
+      required_actions:
+        - Investigate courier phone records and application call logs
+        - Block courier from customer contact details permanently
+        - Issue formal disciplinary reprimand and safety retraining
+      prohibited_actions:
+        - Disclose customer home address to courier during investigation
+        - Downplay unwanted contact as harmless
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RES-080
+    name: Obligations for Merchant manifests containing 500+ customer names and phone numbers leaked online or sent to
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-080 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: data_privacy_breach_terms
+        - signal: rule_080_evidence
+    then:
+      required_actions:
+        - Execute emergency containment and take down exposed URL / file links
+        - Notify Chief Information Security Officer and Legal Counsel within 1 hour
+        - Issue formal statutory breach disclosure and notify affected data subjects
+      prohibited_actions:
+        - Conceal data breach from impacted customers and regulators
+        - Delete audit logs to obscure breach origin
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "1" }
+
+  - rule_ref: RES-081
+    name: Obligations for Customer requests permanent deletion / erasure of shipping history under privacy rights
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-081 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: data_privacy_breach_terms
+        - signal: rule_081_evidence
+    then:
+      required_actions:
+        - Verify requester identity and CNIC credentials
+        - Purge PII from marketing databases while retaining tax-mandated 24-month invoices
+        - Issue formal Data Privacy Certificate of Erasure
+      prohibited_actions:
+        - Delete active taxation invoices before mandatory 24-month statutory period
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "3" }
+
+  - rule_ref: RES-082
+    name: Obligations for Customer requests opt-out from promotional broadcast SMS marketing campaigns
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-082 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: unsolicited_marketing_sms_terms
+        - signal: rule_082_evidence
+    then:
+      required_actions:
+        - Add phone number to nationwide Do-Not-Call / Do-Not-SMS suppression list
+        - Send automated opt-out confirmation message within 24 hours
+      prohibited_actions:
+        - Continue sending promotional SMS to opted-out numbers
+      policy_refs:
+        - { doc_ref: DOC-015, section_ref: "2" }
+
+  - rule_ref: RES-083
+    name: Obligations for Customer receives spam SMS originating from rogue third-party claiming to be company partner
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-083 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: unsolicited_marketing_sms_terms
+        - signal: rule_083_evidence
+    then:
+      required_actions:
+        - Collect phishing SMS screenshots and sender shortcodes
+        - File brand infringement complaint with PTA and telecom operators
+        - Issue public fraud advisory on SupportNova tracking portal
+      prohibited_actions:
+        - Ignore third-party phishing campaigns using company brand
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "3" }
+
+  - rule_ref: RES-084
+    name: Obligations for Enterprise client alleges unauthorized marketing outreach to their confidential customer lis
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-084 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: unsolicited_marketing_sms_terms
+        - signal: rule_084_evidence
+    then:
+      required_actions:
+        - Conduct internal marketing database origin audit
+        - Terminate third-party marketing vendor contract if unauthorized scraping occurred
+        - Provide enterprise client with full forensic compliance report
+      prohibited_actions:
+        - Deny cross-marketing without conducting audit of marketing data sources
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-085
+    name: Obligations for Citizen reports courier van driving recklessly / speeding in residential neighborhood
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-085 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: reckless_driving_safety_risk_terms
+        - signal: rule_085_evidence
+    then:
+      required_actions:
+        - Retrieve vehicle GPS telematics and speed-monitoring logs
+        - Identify driver and issue formal safety warning and speeding deduction
+        - Send acknowledgement and appreciation note to reporting citizen
+      prohibited_actions:
+        - Ignore reckless driving report if no physical damage was done
+      policy_refs:
+        - { doc_ref: DOC-025, section_ref: "2" }
+
+  - rule_ref: RES-086
+    name: Obligations for Company delivery vehicle involved in road traffic accident resulting in property damage
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-086 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: reckless_driving_safety_risk_terms
+        - signal: rule_086_evidence
+    then:
+      required_actions:
+        - Dispatch regional safety response officer to accident site immediately
+        - Arrange alternative vehicle to secure customer parcels and resume transit
+        - Coordinate with local traffic authorities and insurance adjusters
+      prohibited_actions:
+        - Flee accident scene or conceal vehicle involvement
+        - Abandon cargo at accident scene
+      policy_refs:
+        - { doc_ref: DOC-025, section_ref: "2" }
+
+  - rule_ref: RES-087
+    name: Obligations for Severe fleet collision involving bodily injury or fatality
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-087 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: reckless_driving_safety_risk_terms
+        - signal: rule_087_evidence
+    then:
+      required_actions:
+        - Activate Emergency Executive Crisis Response Team
+        - Ensure immediate medical care and hospital coordination for injured parties
+        - Brief Chief Executive Officer and General Legal Counsel within 30 minutes
+      prohibited_actions:
+        - Issue public statements without legal clearance
+        - Attempt informal off-record settlement
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-088
+    name: Obligations for Hub staff identifies parcel emitting pungent odor / small non-toxic cosmetic liquid leak
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-088 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: hazardous_material_mishandling_terms
+        - signal: rule_088_evidence
+    then:
+      required_actions:
+        - Isolate parcel in ventilated hub containment bay
+        - Inspect contents wearing protective gloves and eye protection
+        - Repack undamaged items and notify sender of leakage disposal
+      prohibited_actions:
+        - Allow leaking parcel to continue onto conveyor belts
+        - Throw away entire consignment without notifying shipper
+      policy_refs:
+        - { doc_ref: DOC-025, section_ref: "2" }
+
+  - rule_ref: RES-089
+    name: Obligations for Consignment of undeclared lithium batteries catches fire / emits smoke in regional sortation
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-089 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: hazardous_material_mishandling_terms
+        - signal: rule_089_evidence
+    then:
+      required_actions:
+        - Evacuate sorting floor and deploy specialized chemical fire extinguishers
+        - Isolate affected cargo container in outdoor fire-safe zone
+        - Notify fire department and initiate emergency investigation against shipper
+      prohibited_actions:
+        - Attempt to handle smoking lithium batteries with bare hands
+        - Resume sortation before safety clearance
+      policy_refs:
+        - { doc_ref: DOC-025, section_ref: "2" }
+
+  - rule_ref: RES-090
+    name: Obligations for Commercial freight shipment found to contain undeclared toxic industrial chemicals / acids
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-090 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: hazardous_material_mishandling_terms
+        - signal: rule_090_evidence
+    then:
+      required_actions:
+        - Quarantine cargo under hazardous materials containment protocol
+        - Report illegal hazardous transit to Environmental Protection Agency and Police
+        - Blacklist shipper account across all national booking terminals
+      prohibited_actions:
+        - Release toxic chemicals back to shipper without regulatory clearance
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "1" }
+
+  - rule_ref: RES-091
+    name: "Obligations for Inter-provincial consignment missing commercial invoice copy in outer pouch; digital copy on"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-091 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: missing_customs_documents_terms
+        - signal: rule_091_evidence
+    then:
+      required_actions:
+        - Print digital invoice copy from SupportNova booking database
+        - Attach reprint to parcel documentation pouch at transit hub
+        - Authorize shipment release for next linehaul departure
+      prohibited_actions:
+        - Hold shipment indefinitely when digital invoice is verified on file
+      policy_refs:
+        - { doc_ref: DOC-024, section_ref: "1" }
+
+  - rule_ref: RES-092
+    name: Obligations for Shipment held at provincial check-post due to missing provincial sales tax / e-way bill
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-092 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: missing_customs_documents_terms
+        - signal: rule_092_evidence
+    then:
+      required_actions:
+        - Contact shipper compliance desk to obtain certified e-way bill within 4 hours
+        - Submit digital clearance token to provincial excise check-post officer
+        - Expedite linehaul transit upon clearance
+      prohibited_actions:
+        - Bribe regulatory officials at check-post
+        - Abandon parcel at provincial border
+      policy_refs:
+        - { doc_ref: DOC-024, section_ref: "1" }
+
+  - rule_ref: RES-093
+    name: Obligations for Corporate freight fleet impounded at customs terminal due to falsified commercial manifests
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-093 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: missing_customs_documents_terms
+        - signal: rule_093_evidence
+    then:
+      required_actions:
+        - Deploy senior legal counsel to customs tribunal
+        - Conduct internal audit of origin booking agent who accepted fraudulent manifest
+        - Brief Chief Operating Officer and Board of Directors
+      prohibited_actions:
+        - Attempt unauthorized removal of impounded freight
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-094
+    name: Obligations for Consignment held for routine random provincial excise vehicle weight and document check
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-094 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: regulatory_impoundment_hold_terms
+        - signal: rule_094_evidence
+    then:
+      required_actions:
+        - Log excise inspection timestamp in transit ledger
+        - Notify consignee of minor statutory inspection transit delay
+        - Resume delivery immediately upon checkpoint release
+      prohibited_actions:
+        - Dispute routine statutory checks without cause
+      policy_refs:
+        - { doc_ref: DOC-024, section_ref: "2" }
+
+  - rule_ref: RES-095
+    name: Obligations for Customer shipment seized by customs due to suspicion of counterfeit trademark goods
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-095 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: regulatory_impoundment_hold_terms
+        - signal: rule_095_evidence
+    then:
+      required_actions:
+        - Obtain official seizure memo from Customs Authorities
+        - Notify merchant of legal seizure and request genuine trademark authorization certificates
+        - Provide documentation to customs within 48-hour statutory window
+      prohibited_actions:
+        - Guarantee parcel release to customer when seized under legal court order
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "1" }
+
+  - rule_ref: RES-096
+    name: "Obligations for Mass regulatory seizure of entire linehaul container valued at > PKR 5,000,000"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-096 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: regulatory_impoundment_hold_terms
+        - signal: rule_096_evidence
+    then:
+      required_actions:
+        - Assemble executive crisis team with General Legal Counsel
+        - File urgent petition for release of legitimate third-party commercial cargo
+        - Engage directly with Federal Board of Revenue high commission
+      prohibited_actions:
+        - Conceal mass seizure from affected corporate clients
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-097
+    name: Obligations for Corporate freight client requests routine annual rate review and SLA contract renewal
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-097 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: subscription_contract_renewal_terms
+        - signal: rule_097_evidence
+    then:
+      required_actions:
+        - Generate annual shipping volume and revenue summary report
+        - Schedule contract review meeting with corporate account manager
+        - Draft revised corporate tariff addendum based on standard pricing matrix
+      prohibited_actions:
+        - Unilaterally alter contracted rates without signed contract addendum
+      policy_refs:
+        - { doc_ref: DOC-020, section_ref: "2" }
+
+  - rule_ref: RES-098
+    name: Obligations for Corporate client contract expiring in 7 days with disputed volume tier discounts
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-098 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: subscription_contract_renewal_terms
+        - signal: rule_098_evidence
+    then:
+      required_actions:
+        - Analyze merchant shipping volume against contracted discount tiers
+        - Present customized bridge contract extension with verified volume rebates
+        - Obtain sales director approval for negotiated tariff adjustments
+      prohibited_actions:
+        - Allow contract to lapse without proactive account executive outreach
+      policy_refs:
+        - { doc_ref: DOC-013, section_ref: "2" }
+
+  - rule_ref: RES-099
+    name: "Obligations for Top-tier corporate account (annual freight > PKR 10M) serves 30-day termination notice over "
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-099 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: subscription_contract_renewal_terms
+        - signal: rule_099_evidence
+    then:
+      required_actions:
+        - Convene emergency service audit across all client delivery routes
+        - COO and Customer Experience Director to conduct in-person executive review with client leadership
+        - Implement dedicated operations taskforce and daily SLA reporting
+      prohibited_actions:
+        - Accept multi-million rupee contract cancellation without executive remediation plan
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-100
+    name: Obligations for VIP consumer shipment misses guaranteed overnight delivery commitment by 4 hours
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-100 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: executive_sla_breach_terms
+        - signal: rule_100_evidence
+    then:
+      required_actions:
+        - Dispatch senior express rider for immediate priority delivery
+        - "Credit 50% freight fee back to VIP account automatically"
+        - Send personalized apology SMS from Customer Experience Director
+      prohibited_actions:
+        - Treat VIP account delays as standard non-priority inquiries
+      policy_refs:
+        - { doc_ref: DOC-014, section_ref: "2" }
+
+  - rule_ref: RES-101
+    name: Obligations for Nationwide severe linehaul breakdown causing systemic SLA failure across 1,000+ consignments
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-101 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: executive_sla_breach_terms
+        - signal: rule_101_evidence
+    then:
+      required_actions:
+        - Deploy backup private linehaul fleet on emergency contracts
+        - Broadcast transparent operational advisory on portal and media channels
+        - Activate 24/7 emergency incident response desk at Karachi Central Hub
+      prohibited_actions:
+        - Conceal systemic network breakdown with false individual delay updates
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-102
+    name: "Obligations for Formal legal notice served by corporate client for systemic breach of SLA contract (> PKR 1,"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-102 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: executive_sla_breach_terms
+        - signal: rule_102_evidence
+    then:
+      required_actions:
+        - Transmit legal notice immediately to General Legal Counsel and COO
+        - Assemble complete delivery scan, SLA audit logs, and communication transcripts
+        - Schedule formal legal settlement conference within 48 hours
+      prohibited_actions:
+        - Ignore legal summons or respond without General Counsel sign-off
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-103
+    name: Obligations for Cargo inspection reveals unregistered pharmaceutical narcotics hidden inside commercial parc
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-103 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: missing_customs_documents_terms
+        - signal: rule_103_evidence
+    then:
+      required_actions:
+        - Quarantine parcel in secure law-enforcement evidence vault
+        - Hand over booking manifest and sender CNIC to Anti-Narcotics Force
+        - Blacklist booking merchant across nationwide logistics network
+      prohibited_actions:
+        - Return contraband to shipper
+        - Attempt internal disposal of illicit drugs
+      policy_refs:
+        - { doc_ref: DOC-021, section_ref: "1" }
+
+  - rule_ref: RES-104
+    name: "Obligations for Customer video of courier throwing fragile parcels goes viral on social media (>100k views)"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-104 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: executive_sla_breach_terms
+        - signal: rule_104_evidence
+    then:
+      required_actions:
+        - Identify courier and sorting location within 2 hours
+        - Issue public statement of accountability and remedial training actions
+        - Contact affected parcel recipients for full replacement and compensation
+      prohibited_actions:
+        - Delete critical social media comments without addressing customer concerns
+        - Deny video authenticity without review
+      policy_refs:
+        - { doc_ref: DOC-016, section_ref: "2" }
+
+  - rule_ref: RES-105
+    name: "Obligations for Nationwide highway flooding closes national transit artery for >5 days"
+    rule_type: RESOLUTION
+    precedence: 60
+    rationale: RULE-105 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
+    when:
+      all_of:
+        - signal: delayed_delivery_terms
+        - signal: rule_105_evidence
+    then:
+      required_actions:
+        - Activate alternative air-cargo charter routes for critical freight
+        - Establish emergency dry-ports and secure temporary warehousing
+        - Post daily transparent route feasibility bulletins for all merchants
+      prohibited_actions:
+        - Collect standard express delivery fees during active unserviceable flood conditions
+      policy_refs:
+        - { doc_ref: DOC-014, section_ref: "3" }
+
+  - rule_ref: RES-SAF-0001
+    name: Obligations for Physical hazard reported, however calmly
+    rule_type: RESOLUTION
+    precedence: 130
+    rationale: "A hazard is a hazard at any volume. SRS 1.8 #6: a calmly worded safety report must reach P0, and a furious one about a late parcel must not. Tone is recorded and structurally cannot reach this rule."
+    when:
+      signal: safety_lexicon_hit
+    then:
+      required_actions:
+        - Instruct the customer to stop handling the item immediately
+        - Log a safety incident record
+        - Notify Safety and Risk Management within one hour
+      prohibited_actions:
+        - Ask the customer to test the item again
+        - Close the complaint before a safety assessment is recorded
+        - Confirm a replacement before eligibility is verified
+
+  - rule_ref: RES-SAF-0002
+    name: Obligations for Hazard that has already caused injury or damage
+    rule_type: RESOLUTION
+    precedence: 135
+    rationale: A danger that has already hurt somebody is not the same complaint as one that has not. Ranked above SAF-0001 so the more serious reading wins when both match.
+    when:
+      all_of:
+        - signal: safety_lexicon_hit
+        - signal: injury_mention
+    then:
+      required_actions:
+        - Record the injury or damage reported, verbatim
+        - Escalate to Safety and Risk Management immediately
+        - Preserve the item and all packaging as evidence
+      prohibited_actions:
+        - Offer any settlement before a safety assessment is recorded
+        - Ask the customer to return the item by ordinary courier
+        - Confirm a replacement before eligibility is verified
+
+  - rule_ref: RES-STANCE-refund_not_process
+    name: Obligations for A refund is never approved at the desk
+    rule_type: RESOLUTION
+    precedence: 90
+    rationale: "SRS 1.8 #9. The rule engine may derive REQUIRES_VERIFICATION; turning that into a yes is a person's act, after they have checked the conditions. Wrongly withholding a refund is recoverable by a human; wrongly promising one is not."
+    when:
+      signal: refund_not_processed_terms
+    then:
+      prohibited_actions:
+        - Confirm a refund before eligibility is verified
+        - Give the customer a date for a refund that has not been approved
+
+  - rule_ref: RES-STANCE-refund_delay
+    name: Obligations for A refund is never approved at the desk
+    rule_type: RESOLUTION
+    precedence: 90
+    rationale: "SRS 1.8 #9. The rule engine may derive REQUIRES_VERIFICATION; turning that into a yes is a person's act, after they have checked the conditions. Wrongly withholding a refund is recoverable by a human; wrongly promising one is not."
+    when:
+      signal: refund_delay_terms
+    then:
+      prohibited_actions:
+        - Confirm a refund before eligibility is verified
+        - Give the customer a date for a refund that has not been approved
+
+  - rule_ref: RES-STANCE-rto_processing_del
+    name: Obligations for A refund is never approved at the desk
+    rule_type: RESOLUTION
+    precedence: 90
+    rationale: "SRS 1.8 #9. The rule engine may derive REQUIRES_VERIFICATION; turning that into a yes is a person's act, after they have checked the conditions. Wrongly withholding a refund is recoverable by a human; wrongly promising one is not."
+    when:
+      signal: rto_processing_delay_terms
+    then:
+      prohibited_actions:
+        - Confirm a refund before eligibility is verified
+        - Give the customer a date for a refund that has not been approved
+
+  - rule_ref: RES-LEG-0001
+    name: Obligations for Legal or regulatory exposure raised by the customer
+    rule_type: RESOLUTION
+    precedence: 120
+    rationale: Once a customer has mentioned a lawyer, a court or a regulator, a reply that commits the company to anything is a liability. Compliance owns it and the floor is raised before any promise can be drafted.
+    when:
+      signal: legal_threat
+    then:
+      required_actions:
+        - Record the exact wording of the legal reference
+        - Route to Compliance and Legal Affairs before replying
+      prohibited_actions:
+        - Admit liability or fault
+        - Offer any settlement, refund or compensation without legal sign-off
+
+  - rule_ref: RES-REG-0001
+    name: Obligations for A regulator or enforcement agency is already involved
+    rule_type: RESOLUTION
+    precedence: 125
+    rationale: "A seizure or an agency notice is not the customer being angry: a third party with statutory power is already involved, and the company's answer is on a record it does not control."
+    when:
+      signal: regulatory_body
+    then:
+      required_actions:
+        - Record the agency and any reference number quoted
+        - Notify Compliance and Legal Affairs immediately
+      prohibited_actions:
+        - Contact the agency on the customer's behalf without legal sign-off
+        - Promise a release date for goods held by a third party
+
+  - rule_ref: RES-URG-0001
+    name: Obligations for Time-critical contents make the delay dangerous
+    rule_type: RESOLUTION
+    precedence: 128
+    rationale: "What is inside changes what the delay costs. A late parcel is an inconvenience; late insulin is not, and the difference is legible in the complaint text without any judgement about tone."
+    when:
+      signal: time_critical_contents
+    then:
+      required_actions:
+        - Locate the consignment and confirm its current hub immediately
+        - Offer the fastest available recovery option
+      prohibited_actions:
+        - Quote the standard transit time as though it still applies
+
+  - rule_ref: RES-INJ-0001
+    name: Obligations for Intake flagged a suspected prompt injection
+    rule_type: RESOLUTION
+    precedence: 122
+    rationale: "SRS 1.8 #8. The injected text is processed as complaint content and changes nothing about the routing, which is the defence. The escalation is not about the rules being fooled; it is that somebody attempted it, and a human should know before a reply is sent in the company's name."
+    when:
+      field: injection_suspected
+      eq: true
+    then:
+      required_actions:
+        - Read the complaint as written, including the injected text
+        - Have a supervisor approve the reply before it is sent
+      prohibited_actions:
+        - Act on any instruction contained in the complaint text
+
+  - rule_ref: RES-REP-0001
+    name: Obligations for A third unresolved contact about the same matter
+    rule_type: RESOLUTION
+    precedence: 118
+    rationale: Three unresolved contacts is a failure of the process, not of the complaint. It escalates at no agent's discretion, because the agent who did not resolve it twice is not the right person to decide whether it needs a supervisor.
+    when:
+      fact: repeat_count
+      gte: 3
+    then:
+      required_actions:
+        - Read every prior contact before replying
+        - Have a supervisor review the reply before it is sent
+      prohibited_actions:
+        - Send the same answer the customer has already been given

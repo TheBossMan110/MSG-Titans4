@@ -1,0 +1,50 @@
+# RaftarXpress Logistics (Pvt) Ltd - Standard Customer Response Templates, version 1.2 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [docx]
+
+metadata:
+  doc_ref: DOC-022
+  title: Standard Customer Response Templates
+  version: "1.2"
+  doc_type: POLICY
+  category: Response Templates
+  family: FAM-RESPONSE-TEMPLATES
+  status: ACTIVE
+  effective_date: "2024-06-15"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-022 v1.2 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-022-S1
+    heading: Delivery Delay Acknowledgement Template
+    page: 1
+    body:
+      - >-
+        Dear Valued Customer, we sincerely apologize for the delay regarding CN
+        #[CN_NUMBER]. Our operations team at [HUB_NAME] is expediting priority
+        dispatch, expected by [ESTIMATED_TIME].
+
+  - ref: "2"
+    source_id: DOC-022-S2
+    heading: Claim Registration Confirmation Template
+    page: 1
+    body:
+      - >-
+        Dear Shipper, your claim for consignment #[CN_NUMBER] has been registered
+        under Case #[CASE_ID]. Claims Department (DEPT-04) will review your
+        evidence within 72 business hours.
+
+  - ref: "3"
+    source_id: DOC-022-S3
+    heading: Refund Disbursement Notification Template
+    page: 2
+    body:
+      - >-
+        Dear Customer, your refund of PKR [AMOUNT] for ticket #[TICKET_ID] has
+        been authorized via IBFT. Funds will reflect in your account within 5-7
+        banking days under reference #[REF_NO].

@@ -1,0 +1,49 @@
+# RaftarXpress Logistics (Pvt) Ltd - Service Level Agreement (SLA) Matrix and Response Rules, version 2.0 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [docx]
+
+metadata:
+  doc_ref: DOC-018
+  title: Service Level Agreement (SLA) Matrix and Response Rules
+  version: "2.0"
+  doc_type: POLICY
+  category: Service-Level Rules
+  family: FAM-SLA-RULES
+  status: ACTIVE
+  effective_date: "2024-10-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-018 v2.0 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-018-S1
+    heading: Priority Classification and Target SLAs
+    page: 1
+    body:
+      - >-
+        P0 (Critical) incidents require response within 1 hour and resolution
+        within 8-12 hours. P1 (High) requires response in 2 hours and resolution
+        in 24 hours.
+
+  - ref: "2"
+    source_id: DOC-018-S2
+    heading: Standard Priority SLAs
+    page: 1
+    body:
+      - >-
+        P2 (Medium) incidents require response within 4 hours and resolution
+        within 48 hours. P3 (Low) requires response within 12 hours and resolution
+        within 96 hours.
+
+  - ref: "3"
+    source_id: DOC-018-S3
+    heading: SLA Pause Conditions
+    page: 2
+    body:
+      - >-
+        SLA timers pause when a ticket status is set to 'Awaiting Customer
+        Information' or during officially gazetted public holidays.

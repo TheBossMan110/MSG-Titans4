@@ -1,0 +1,50 @@
+# RaftarXpress Logistics (Pvt) Ltd - Customs and Inter-Provincial Documentation SOP, version 1.0 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [docx]
+
+metadata:
+  doc_ref: DOC-024
+  title: Customs and Inter-Provincial Documentation SOP
+  version: "1.0"
+  doc_type: POLICY
+  category: Other
+  family: FAM-CUSTOMS-SOP
+  status: ACTIVE
+  effective_date: "2024-03-15"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-024 v1.0 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-024-S1
+    heading: Inter-Provincial Transit Documentation
+    page: 1
+    body:
+      - >-
+        Freight moving between Sindh, Punjab, and federal capital territories
+        requires a valid provincial e-way bill, commercial manifest, and sales tax
+        invoice attached to the outer pouch.
+
+  - ref: "2"
+    source_id: DOC-024-S2
+    heading: Customs Impoundment and Hold Procedure
+    page: 1
+    body:
+      - >-
+        If a shipment is held at customs check-posts, Compliance & Legal (DEPT-07)
+        must obtain clearance documents from the shipper within 48 hours to avoid
+        regulatory confiscation.
+
+  - ref: "3"
+    source_id: DOC-024-S3
+    heading: Document Archival Protocol
+    page: 2
+    body:
+      - >-
+        Physical copies of bonded freight documentation must be scanned and
+        archived in the SupportNova compliance vault within 24 hours of inter-city
+        dispatch.

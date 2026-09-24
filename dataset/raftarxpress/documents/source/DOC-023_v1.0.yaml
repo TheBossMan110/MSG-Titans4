@@ -1,0 +1,49 @@
+# RaftarXpress Logistics (Pvt) Ltd - Merchant Portal and Technical Product Support Guidelines, version 1.0 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-023
+  title: Merchant Portal and Technical Product Support Guidelines
+  version: "1.0"
+  doc_type: POLICY
+  category: Product-Support Guidelines
+  family: FAM-PRODUCT-SUPPORT
+  status: ACTIVE
+  effective_date: "2024-02-15"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-023 v1.0 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-023-S1
+    heading: Merchant Portal Access and API Keys
+    page: 1
+    body:
+      - >-
+        Merchants can generate bulk booking manifests, thermal shipping labels,
+        and REST API webhook integration keys via the SupportNova Merchant
+        Dashboard.
+
+  - ref: "2"
+    source_id: DOC-023-S2
+    heading: System Outages and Bug Reporting
+    page: 1
+    body:
+      - >-
+        API errors, barcode generation failures, and tracking sync glitches must
+        be reported with full JSON payload logs to Technical Support.
+
+  - ref: "3"
+    source_id: DOC-023-S3
+    heading: Scheduled Maintenance Windows
+    page: 2
+    body:
+      - >-
+        Routine portal maintenance is conducted every Sunday between 02:00 and
+        04:00 PST. Advance notifications are posted 48 hours prior on merchant
+        dashboards.

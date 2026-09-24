@@ -1,0 +1,49 @@
+# RaftarXpress Logistics (Pvt) Ltd - Standard Last-Mile Delivery Policy (Legacy), version 1.0 (SUPERSEDED)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [docx]
+
+metadata:
+  doc_ref: DOC-004
+  title: Standard Last-Mile Delivery Policy (Legacy)
+  version: "1.0"
+  doc_type: POLICY
+  category: Delivery Policy
+  family: FAM-DELIVERY-POLICY
+  status: SUPERSEDED
+  effective_date: "2023-01-01"
+  expiry_date: "2024-12-31"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-004 v1.0 - SUPERSEDED
+
+sections:
+  - ref: "1"
+    source_id: DOC-004-S1
+    heading: Delivery Attempt Limitations
+    page: 1
+    body:
+      - >-
+        Under the legacy protocol, couriers were required to make exactly two (2)
+        delivery attempts before marking consignments for immediate Return to
+        Origin (RTO). No holding period was observed at regional hubs.
+
+  - ref: "2"
+    source_id: DOC-004-S2
+    heading: Re-attempt Surcharge
+    page: 1
+    body:
+      - >-
+        A flat re-attempt surcharge of PKR 100 was automatically billed to the
+        shipper for every second delivery attempt requested by the consignee.
+
+  - ref: "3"
+    source_id: DOC-004-S3
+    heading: Proof of Delivery Collection
+    page: 2
+    body:
+      - >-
+        Physical paper run-sheets with manual recipient signatures served as the
+        sole proof of delivery, with no digital OTP or geo-tagging requirement.

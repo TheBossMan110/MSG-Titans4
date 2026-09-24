@@ -1,0 +1,248 @@
+# ══════════════════════════════════════════════════════════════════════════
+# SupportNova — TOPICAL lexicons for Pipeline 2.
+#
+# config/signals.yaml carries RISK vocabulary (safety, legal, privacy).
+# This file carries TOPIC vocabulary, and the split is deliberate:
+#
+#   risk  signals answer "how dangerous is this?"  -> urgency, escalation
+#   topic signals answer "what is this about?"     -> category, department
+#
+# Without topic signals the Python pipeline could only ever classify a
+# complaint by how risky it sounded, and would have to take the model's word
+# for what the complaint was *about*.  That would make the ground truth
+# partially derived from the thing it is supposed to check, which defeats the
+# dual-pipeline requirement in SRS 1.2.
+#
+# Loaded into `lexicon_terms` alongside signals.yaml and editable at runtime.
+# ══════════════════════════════════════════════════════════════════════════
+
+lexicon:
+
+  # ── DELIVERY ────────────────────────────────────────────────────────────
+  delivery_terms:
+    description: Shipment, courier and delivery vocabulary.
+    weight: 1.0
+    terms:
+      - { t: "deliver(y|ed|ies)?",        m: REGEX }
+      - { t: "shipment",                  m: WORD }
+      - { t: "shipped",                   m: WORD }
+      - { t: "despatch(ed)?",             m: REGEX }
+      - { t: "dispatch(ed)?",             m: REGEX }
+      - { t: "courier",                   m: WORD }
+      - { t: "parcel",                    m: WORD }
+      - { t: "package",                   m: WORD }
+      - { t: "tracking",                  m: WORD }
+      - { t: "out for delivery",          m: PHRASE }
+      - { t: "in transit",                m: PHRASE }
+      - { t: "delivery date",             m: PHRASE }
+      - { t: "delivery address",          m: PHRASE }
+
+  delivery_failure:
+    description: The delivery specifically went wrong.
+    weight: 2.0
+    terms:
+      - { t: "not (yet )?(been )?deliver(ed)?",     m: REGEX }
+      - { t: "never (arrived|received|came|got)",   m: REGEX }
+      - { t: "still (waiting|not here|hasn'?t)",    m: REGEX }
+      - { t: "marked (as )?delivered",              m: REGEX }
+      - { t: "says delivered",                      m: PHRASE }
+      - { t: "shows (as )?delivered",               m: REGEX }
+      - { t: "hasn'?t (arrived|turned up|shown up)", m: REGEX }
+      - { t: "wrong address",                       m: PHRASE }
+      - { t: "delivered to (the |my )?neighbou?r",  m: REGEX }
+      - { t: "missing (item|parcel|package|box)",   m: REGEX }
+      - { t: "only (part|half|some) of",            m: REGEX }
+      - { t: "partial (delivery|order|shipment)",   m: REGEX }
+
+  delivery_delay:
+    description: Late, but not lost.
+    weight: 1.5
+    terms:
+      - { t: "delay(ed|s)?",                    m: REGEX }
+      - { t: "late",                            m: WORD }
+      - { t: "overdue",                         m: WORD }
+      - { t: "past the (promised|expected|due)", m: REGEX }
+      - { t: "was (supposed|due) to arrive",    m: REGEX }
+      - { t: "taking (too )?long",              m: REGEX }
+      - { t: "still waiting",                   m: PHRASE }
+
+  # ── BILLING ─────────────────────────────────────────────────────────────
+  billing_terms:
+    description: Charges, invoices and payment vocabulary.
+    weight: 1.0
+    terms:
+      - { t: "charg(e|ed|es|ing)",        m: REGEX }
+      - { t: "billed",                    m: WORD }
+      - { t: "billing",                   m: WORD }
+      - { t: "invoice",                   m: WORD }
+      - { t: "payment",                   m: WORD }
+      - { t: "debited",                   m: WORD }
+      - { t: "deducted",                  m: WORD }
+      - { t: "statement",                 m: WORD }
+      - { t: "card (was|got) charged",    m: REGEX }
+      - { t: "subscription",              m: WORD }
+      - { t: "auto.?renew(al|ed)?",       m: REGEX }
+
+  billing_error:
+    description: The charge itself is disputed.
+    weight: 2.0
+    terms:
+      - { t: "charged twice",                 m: PHRASE }
+      - { t: "double charge[d]?",             m: REGEX }
+      - { t: "duplicate (charge|payment|transaction)", m: REGEX }
+      - { t: "incorrect (amount|charge|bill)", m: REGEX }
+      - { t: "wrong (amount|charge|price)",   m: REGEX }
+      - { t: "overcharged",                   m: WORD }
+      - { t: "should not have been charged",  m: PHRASE }
+      - { t: "didn'?t (authorise|authorize|approve) (this|the) (charge|payment)", m: REGEX }
+      - { t: "unexpected charge",             m: PHRASE }
+
+  # ── REFUND ──────────────────────────────────────────────────────────────
+  refund_terms:
+    description: Refund and money-back vocabulary.
+    weight: 1.5
+    terms:
+      - { t: "refund(ed|s|ing)?",             m: REGEX }
+      - { t: "money back",                    m: PHRASE }
+      - { t: "reimburse(d|ment)?",            m: REGEX }
+      - { t: "credit (back|note)",            m: REGEX }
+      - { t: "return (my|the) (money|payment|amount)", m: REGEX }
+      - { t: "cancel(led|lation)? (my )?(order|subscription)", m: REGEX }
+      - { t: "want (my )?money",              m: REGEX }
+
+  refund_failure:
+    description: A refund was promised or expected and has not appeared.
+    weight: 2.0
+    terms:
+      - { t: "refund (has )?(not|never) (been )?(received|processed|credited|arrived)", m: REGEX }
+      - { t: "still (waiting|awaiting) (for )?(my |the )?refund", m: REGEX }
+      - { t: "no refund",                     m: PHRASE }
+      - { t: "refund (is )?(delayed|pending|stuck)", m: REGEX }
+      - { t: "promised (a )?refund",          m: REGEX }
+      - { t: "partial refund",                m: PHRASE }
+      - { t: "refund (was )?(refused|declined|rejected)", m: REGEX }
+
+  # ── PRODUCT DEFECT ──────────────────────────────────────────────────────
+  product_defect_terms:
+    description: The product itself is faulty.
+    weight: 2.0
+    terms:
+      - { t: "faulty",                        m: WORD }
+      - { t: "defect(ive|s)?",                m: REGEX }
+      - { t: "broken",                        m: WORD }
+      - { t: "damaged",                       m: WORD }
+      - { t: "not working",                   m: PHRASE }
+      - { t: "doesn'?t work",                 m: REGEX }
+      - { t: "stopped working",               m: PHRASE }
+      - { t: "dead on arrival",               m: PHRASE }
+      - { t: "\\bdoa\\b",                     m: REGEX }
+      - { t: "malfunction(ing|ed)?",          m: REGEX }
+      - { t: "cracked",                       m: WORD }
+      - { t: "scratched",                     m: WORD }
+      - { t: "missing (parts|accessories|components|cable|charger)", m: REGEX }
+      - { t: "wrong (item|product|model|colour|color|size)", m: REGEX }
+
+  # ── TECHNICAL SUPPORT ───────────────────────────────────────────────────
+  technical_terms:
+    description: Setup, connectivity and software problems.
+    weight: 1.5
+    terms:
+      - { t: "won'?t (connect|pair|turn on|start|boot)", m: REGEX }
+      - { t: "can'?t (connect|pair|install|set ?up|configure)", m: REGEX }
+      - { t: "connectivity",                  m: WORD }
+      - { t: "wi.?fi",                        m: REGEX }
+      - { t: "bluetooth",                     m: WORD }
+      - { t: "firmware",                      m: WORD }
+      - { t: "software update",               m: PHRASE }
+      - { t: "the app",                       m: PHRASE }
+      - { t: "error (code|message)",          m: REGEX }
+      - { t: "keeps (crashing|restarting|disconnecting|freezing)", m: REGEX }
+      - { t: "installation",                  m: WORD }
+      - { t: "engineer visit",                m: PHRASE }
+
+  # ── ACCOUNT ─────────────────────────────────────────────────────────────
+  account_terms:
+    description: Login, profile and account-lifecycle issues.
+    weight: 1.5
+    terms:
+      - { t: "log ?in",                       m: REGEX }
+      - { t: "sign ?in",                      m: REGEX }
+      - { t: "my account",                    m: PHRASE }
+      - { t: "password",                      m: WORD }
+      - { t: "locked out",                    m: PHRASE }
+      - { t: "can'?t access",                 m: REGEX }
+      - { t: "close (my )?account",           m: REGEX }
+      - { t: "delete (my )?account",          m: REGEX }
+      - { t: "two.?factor",                   m: REGEX }
+      - { t: "otp",                           m: WORD }
+
+  # ── WARRANTY ────────────────────────────────────────────────────────────
+  warranty_terms:
+    description: Warranty coverage, claims and repairs.
+    weight: 1.5
+    terms:
+      - { t: "warrant(y|ies)",                m: REGEX }
+      - { t: "guarantee period",              m: PHRASE }
+      - { t: "under (the )?warrant(y|ies)",   m: REGEX }
+      - { t: "repair",                        m: WORD }
+      - { t: "service (cent(re|er)|visit)",   m: REGEX }
+      - { t: "claim (was )?(rejected|denied|refused)", m: REGEX }
+      - { t: "out of warranty",               m: PHRASE }
+      - { t: "extended warranty",             m: PHRASE }
+
+  # ── SERVICE QUALITY ─────────────────────────────────────────────────────
+  service_quality_terms:
+    description: How the customer was handled, not what was sold.
+    weight: 1.0
+    terms:
+      - { t: "no (one|body) (has )?(replied|responded|called|got back)", m: REGEX }
+      - { t: "waiting (for|on) (a )?(reply|response|callback|call back)", m: REGEX }
+      - { t: "on hold for",                   m: PHRASE }
+      - { t: "transferred (me )?(around|between)", m: REGEX }
+      - { t: "poor service",                  m: PHRASE }
+      - { t: "terrible (service|experience|support)", m: REGEX }
+      - { t: "told me (something )?different", m: REGEX }
+      - { t: "misinform(ed|ation)",           m: REGEX }
+      - { t: "wrong information",             m: PHRASE }
+
+  staff_conduct_terms:
+    description: Conduct of an agent, driver or engineer.
+    weight: 2.0
+    terms:
+      - { t: "(the )?(agent|driver|engineer|technician|representative) was", m: REGEX }
+      - { t: "rude",                          m: WORD }
+      - { t: "impolite",                      m: WORD }
+      - { t: "disrespectful",                 m: WORD }
+      - { t: "shouted at",                    m: PHRASE }
+      - { t: "hung up on",                    m: PHRASE }
+      - { t: "unprofessional",                m: WORD }
+      - { t: "refused to help",               m: PHRASE }
+
+  # ── RESOLUTION DEMANDS ──────────────────────────────────────────────────
+  replacement_demand:
+    description: Customer is asking for a replacement specifically.
+    weight: 1.5
+    terms:
+      - { t: "replace(ment|d)?",              m: REGEX }
+      - { t: "send (me )?(a )?new",           m: REGEX }
+      - { t: "exchange",                      m: WORD }
+      - { t: "swap it",                       m: PHRASE }
+
+  cancellation_request:
+    description: Customer wants the order or subscription stopped.
+    weight: 1.5
+    terms:
+      - { t: "cancel",                        m: WORD }
+      - { t: "cancellation",                  m: WORD }
+      - { t: "stop (the |my )?(subscription|order|delivery|renewal)", m: REGEX }
+      - { t: "unsubscribe",                   m: WORD }
+
+  escalation_request:
+    description: Customer is explicitly asking to escalate.
+    weight: 2.0
+    terms:
+      - { t: "speak to (a |your )?(manager|supervisor|someone senior)", m: REGEX }
+      - { t: "escalate",                      m: WORD }
+      - { t: "complain(t)? (to|about)",       m: REGEX }
+      - { t: "higher authority",              m: PHRASE }
+      - { t: "head office",                   m: PHRASE }

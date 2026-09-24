@@ -1,0 +1,62 @@
+# RaftarXpress Logistics (Pvt) Ltd - Standard Last-Mile Delivery Policy, version 2.1 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-003
+  title: Standard Last-Mile Delivery Policy
+  version: "2.1"
+  doc_type: POLICY
+  category: Delivery Policy
+  family: FAM-DELIVERY-POLICY
+  status: ACTIVE
+  effective_date: "2025-01-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-003 v2.1 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-003-S1
+    heading: Delivery Attempt Quota
+    page: 1
+    body:
+      - >-
+        RaftarXpress couriers must perform up to three (3) verified delivery
+        attempts on consecutive business days before classifying a shipment as
+        undeliverable. Each attempt requires GPS logging and recipient contact
+        verification via automated SMS.
+
+  - ref: "2"
+    source_id: DOC-003-S2
+    heading: Recipient Identity Verification & Handover
+    page: 1
+    body:
+      - >-
+        High-value consignments exceeding PKR 25,000 and corporate shipments
+        require digital CNIC verification and a one-time password (OTP)
+        transmitted to the registered consignee phone number prior to physical
+        handover.
+
+  - ref: "3"
+    source_id: DOC-003-S3
+    heading: Unattended Delivery Prohibition
+    page: 2
+    body:
+      - >-
+        Riders are strictly forbidden from leaving parcels unattended at
+        doorsteps, security gates, or with unauthorized third parties without
+        explicit written consent recorded in the SupportNova delivery portal.
+
+  - ref: "4"
+    source_id: DOC-003-S4
+    heading: Return to Origin (RTO) Initiation
+    page: 2
+    body:
+      - >-
+        Following three unsuccessful attempts, the parcel will be held at the
+        destination regional hub for forty-eight (48) hours before initiating
+        automated Return to Origin (RTO) routing back to the shipper.

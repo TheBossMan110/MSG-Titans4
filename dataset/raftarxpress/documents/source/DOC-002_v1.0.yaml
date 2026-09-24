@@ -1,0 +1,51 @@
+# RaftarXpress Logistics (Pvt) Ltd - Customer Refund Policy (Legacy), version 1.0 (SUPERSEDED)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [docx]
+
+metadata:
+  doc_ref: DOC-002
+  title: Customer Refund Policy (Legacy)
+  version: "1.0"
+  doc_type: POLICY
+  category: Refund Policy
+  family: FAM-REFUND-POLICY
+  status: SUPERSEDED
+  effective_date: "2023-01-01"
+  expiry_date: "2025-06-30"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-002 v1.0 - SUPERSEDED
+
+sections:
+  - ref: "1"
+    source_id: DOC-002-S1
+    heading: Scope and Eligibility Window
+    page: 1
+    body:
+      - >-
+        This historical policy applies to all courier shipments booked prior to
+        July 2025. Refund requests were strictly required to be submitted within
+        three (3) calendar days of delivery confirmation.
+
+  - ref: "2"
+    source_id: DOC-002-S2
+    heading: Settlement Channel and Timeframe
+    page: 1
+    body:
+      - >-
+        All approved legacy claims were reimbursed within ten to fourteen (10-14)
+        banking days exclusively via cross-cheque or physical voucher redeemable
+        at designated Karachi and Lahore hub counters.
+
+  - ref: "3"
+    source_id: DOC-002-S3
+    heading: Deductions and Handling Charges
+    page: 2
+    body:
+      - >-
+        A mandatory administrative restocking deduction of 15% was applied to all
+        processed customer refunds regardless of shipment destination or customer
+        account tier.

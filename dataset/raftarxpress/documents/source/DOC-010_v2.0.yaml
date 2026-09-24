@@ -1,0 +1,58 @@
+# RaftarXpress Logistics (Pvt) Ltd - Standard Operating Procedure for Complaint Handling, version 2.0 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [docx]
+
+metadata:
+  doc_ref: DOC-010
+  title: Standard Operating Procedure for Complaint Handling
+  version: "2.0"
+  doc_type: POLICY
+  category: Complaint SOP
+  family: FAM-COMPLAINT-SOP
+  status: ACTIVE
+  effective_date: "2024-06-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-010 v2.0 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-010-S1
+    heading: Ticket Intake and Initial Triage
+    page: 1
+    body:
+      - >-
+        Support representatives must verify the tracking number (CN), caller
+        identity, and merchant account tier before tagging urgency levels in
+        SupportNova.
+
+  - ref: "2"
+    source_id: DOC-010-S2
+    heading: Investigation with Operational Hubs
+    page: 1
+    body:
+      - >-
+        For transit delays and missing parcels, agents must query the regional hub
+        scan logs and dispatch history within two (2) hours of ticket intake.
+
+  - ref: "3"
+    source_id: DOC-010-S3
+    heading: Customer Communication Milestones
+    page: 2
+    body:
+      - >-
+        Customers must receive intermediate progress updates every twelve (12)
+        hours until resolution for High (P1) and Critical (P0) priority incidents.
+
+  - ref: "4"
+    source_id: DOC-010-S4
+    heading: Frontline Agent Compensation Authorization
+    page: 2
+    body:
+      - >-
+        Agents are authorized to issue immediate cash compensations up to PKR
+        2,500 without supervisor approval for urgent customer pacification on
+        delayed deliveries.

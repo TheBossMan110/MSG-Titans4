@@ -1,0 +1,214 @@
+# ══════════════════════════════════════════════════════════════════════════
+# SupportNova — organisation taxonomy
+#
+# Fictional organisation: ZENITHRA  (consumer electronics & appliances
+# e-commerce with in-house logistics, operating in IN/AE/UK).
+#
+# SRS 1.8 #1 requires a unique fictional organisation per team.  SRS Step 14
+# requires categories to be CONFIGURABLE, and SRS 1.8 #5 requires a NEW
+# category to be processable without hard-coded logic — which is why this file
+# is loaded into database tables rather than compiled into Python.
+#
+# Minimums enforced by tests/test_taxonomy_minimums.py:
+#   >= 10 categories, >= 20 subcategories, >= 8 departments
+# ══════════════════════════════════════════════════════════════════════════
+
+organisation:
+  name: Zenithra
+  legal_name: Zenithra Commerce Pvt. Ltd.
+  industry: Consumer electronics & appliances e-commerce
+  regions: [IN, AE, UK]
+  support_hours: "09:00-21:00 IST, Mon-Sat"
+
+# ── departments (10) ──────────────────────────────────────────────────────
+departments:
+  - code: BILLING
+    name: Billing & Payments
+    description: Charges, invoices, duplicate payments, refunds processing.
+  - code: TECH_SUPPORT
+    name: Technical Support
+    description: Device setup, firmware, connectivity and functional faults.
+  - code: LOGISTICS
+    name: Logistics & Delivery
+    description: Shipment tracking, delivery delays, damaged-in-transit cases.
+  - code: RETURNS
+    name: Returns & Replacements
+    description: Return pickups, replacement dispatch, return eligibility.
+  - code: WARRANTY
+    name: Warranty & Repairs
+    description: In-warranty repair, service centre coordination, warranty claims.
+  - code: CUSTOMER_RELATIONS
+    name: Customer Relations
+    description: Service quality, staff conduct, goodwill and relationship recovery.
+  - code: ACCOUNT_SECURITY
+    name: Account Security
+    description: Unauthorised access, credential compromise, fraudulent orders.
+  - code: COMPLIANCE
+    name: Compliance & Data Protection
+    description: Privacy requests, regulatory obligations, legal correspondence.
+  - code: SAFETY
+    name: Product Safety
+    description: Fire, shock, overheating, injury and recall-related reports.
+  - code: MGMT_ESCALATIONS
+    name: Management Escalations
+    description: Critical, reputational and executive-level cases.
+
+# ── priority ladder (rank 0 = most severe) ────────────────────────────────
+priority_levels:
+  - code: P0
+    name: Critical
+    rank: 0
+    description: Safety, security or regulatory risk. Immediate action.
+  - code: P1
+    name: High
+    rank: 1
+    description: Major service failure or high-value dispute.
+  - code: P2
+    name: Medium
+    rank: 2
+    description: Standard service issue with customer impact.
+  - code: P3
+    name: Low
+    rank: 3
+    description: Minor issue, information request or cosmetic complaint.
+
+# ── escalation ladder (rank 0 = no escalation) ────────────────────────────
+# SRS Step 37.  `rank` is what makes the mandatory escalation FLOOR a
+# comparison instead of a hard-coded if-chain.
+escalation_levels:
+  - code: NONE
+    name: No Escalation
+    rank: 0
+    description: Handled by the assigned agent.
+  - code: SUPERVISOR
+    name: Supervisor Review
+    rank: 1
+    description: Team supervisor reviews before the reply is sent.
+  - code: DEPT_MANAGER
+    name: Department Manager
+    rank: 2
+    description: Department manager owns the resolution.
+  - code: SPECIALIST
+    name: Specialist Team
+    rank: 3
+    description: Routed to a specialist function (security, safety, technical).
+  - code: COMPLIANCE_REVIEW
+    name: Compliance Review
+    rank: 4
+    description: Legal/regulatory review required before any commitment.
+  - code: CRITICAL_MGMT
+    name: Critical Management Escalation
+    rank: 5
+    description: Executive notification within the mandated window.
+
+# ── categories (11) ───────────────────────────────────────────────────────
+categories:
+  - code: PRODUCT_DEFECT
+    name: Product Defect
+    default_department: TECH_SUPPORT
+    description: The product is faulty, damaged or not working as specified.
+  - code: BILLING
+    name: Billing
+    default_department: BILLING
+    description: Incorrect, duplicate or unexplained charges and invoices.
+  - code: DELIVERY
+    name: Delivery
+    default_department: LOGISTICS
+    description: Late, missing, partial or mis-delivered shipments.
+  - code: REFUND
+    name: Refund
+    default_department: BILLING
+    description: Refund not received, delayed, partial or refused.
+  - code: ACCOUNT
+    name: Account
+    default_department: ACCOUNT_SECURITY
+    description: Login, profile, unauthorised access and account closure issues.
+  - code: TECHNICAL_SUPPORT
+    name: Technical Support
+    default_department: TECH_SUPPORT
+    description: Setup, configuration, connectivity and software problems.
+  - code: SERVICE_QUALITY
+    name: Service Quality
+    default_department: CUSTOMER_RELATIONS
+    description: Poor handling, long waits, unresolved prior contact.
+  - code: WARRANTY
+    name: Warranty
+    default_department: WARRANTY
+    description: Warranty coverage, repair turnaround and claim disputes.
+  - code: PRIVACY
+    name: Privacy
+    default_department: COMPLIANCE
+    description: Personal-data handling, consent, deletion and disclosure.
+  - code: SAFETY
+    name: Safety
+    default_department: SAFETY
+    description: Fire, smoke, shock, overheating, injury or hazard reports.
+  - code: STAFF_BEHAVIOR
+    name: Staff Behaviour
+    default_department: CUSTOMER_RELATIONS
+    description: Conduct of agents, delivery partners or service engineers.
+
+# ── subcategories (32) ────────────────────────────────────────────────────
+subcategories:
+  PRODUCT_DEFECT:
+    - { code: DOA, name: Dead on Arrival }
+    - { code: DAMAGED_IN_TRANSIT, name: Damaged in Transit }
+    - { code: INTERMITTENT_FAULT, name: Intermittent Fault }
+    - { code: MISSING_PARTS, name: Missing Parts or Accessories }
+    - { code: WRONG_ITEM, name: Wrong Item Shipped }
+  BILLING:
+    - { code: DUPLICATE_CHARGE, name: Duplicate Charge }
+    - { code: INCORRECT_CHARGE, name: Incorrect Charge }
+    - { code: SUBSCRIPTION_RENEWAL, name: Unexpected Subscription Renewal }
+    - { code: INVOICE_DISPUTE, name: Invoice Dispute }
+  DELIVERY:
+    - { code: DELAYED_DELIVERY, name: Delayed Delivery }
+    - { code: NOT_DELIVERED, name: Marked Delivered but Not Received }
+    - { code: PARTIAL_DELIVERY, name: Partial Delivery }
+    - { code: WRONG_ADDRESS, name: Delivered to Wrong Address }
+  REFUND:
+    - { code: REFUND_NOT_RECEIVED, name: Refund Not Received }
+    - { code: REFUND_DELAYED, name: Refund Delayed Beyond SLA }
+    - { code: REFUND_PARTIAL, name: Partial Refund Disputed }
+    - { code: REFUND_REFUSED, name: Refund Refused }
+  ACCOUNT:
+    - { code: LOGIN_FAILURE, name: Unable to Log In }
+    - { code: UNAUTHORISED_ACCESS, name: Unauthorised Account Access }
+    - { code: ACCOUNT_CLOSURE, name: Account Closure Request }
+  TECHNICAL_SUPPORT:
+    - { code: SETUP_ISSUE, name: Installation or Setup Issue }
+    - { code: CONNECTIVITY, name: Connectivity or Pairing Failure }
+    - { code: FIRMWARE, name: Firmware or App Problem }
+  SERVICE_QUALITY:
+    - { code: LONG_WAIT, name: Excessive Wait or No Response }
+    - { code: UNRESOLVED_REPEAT, name: Repeated Unresolved Contact }
+    - { code: MISINFORMATION, name: Incorrect Information Given }
+  WARRANTY:
+    - { code: CLAIM_REJECTED, name: Warranty Claim Rejected }
+    - { code: REPAIR_DELAY, name: Repair Turnaround Exceeded }
+    - { code: COVERAGE_DISPUTE, name: Coverage Dispute }
+  PRIVACY:
+    - { code: DATA_DELETION, name: Data Deletion Request }
+    - { code: DATA_BREACH, name: Suspected Data Exposure }
+    - { code: MARKETING_CONSENT, name: Unwanted Marketing Contact }
+  SAFETY:
+    - { code: OVERHEATING, name: Overheating or Burning Smell }
+    - { code: ELECTRIC_SHOCK, name: Electric Shock Hazard }
+    - { code: INJURY, name: Injury or Property Damage }
+  STAFF_BEHAVIOR:
+    - { code: AGENT_CONDUCT, name: Support Agent Conduct }
+    - { code: DELIVERY_CONDUCT, name: Delivery Partner Conduct }
+
+# ── SLA policies (FR lix; SRS Step 55) ────────────────────────────────────
+# `default` applies when no category-specific row exists.
+sla_policies:
+  default:
+    - { priority: P0, first_response_mins: 30,   resolution_mins: 240 }
+    - { priority: P1, first_response_mins: 120,  resolution_mins: 1440 }
+    - { priority: P2, first_response_mins: 480,  resolution_mins: 4320 }
+    - { priority: P3, first_response_mins: 1440, resolution_mins: 10080 }
+  overrides:
+    - { category: SAFETY,  priority: P0, first_response_mins: 15, resolution_mins: 120 }
+    - { category: PRIVACY, priority: P0, first_response_mins: 30, resolution_mins: 180 }
+    - { category: ACCOUNT, priority: P0, first_response_mins: 30, resolution_mins: 240 }
+  risk_threshold_pct: 75   # flag as AT RISK once this % of the window has elapsed

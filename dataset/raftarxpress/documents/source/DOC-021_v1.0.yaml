@@ -1,0 +1,49 @@
+# RaftarXpress Logistics (Pvt) Ltd - Regulatory Compliance and Trade Ethics Guidelines, version 1.0 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-021
+  title: Regulatory Compliance and Trade Ethics Guidelines
+  version: "1.0"
+  doc_type: POLICY
+  category: Compliance Guidelines
+  family: FAM-COMPLIANCE-GUIDELINES
+  status: ACTIVE
+  effective_date: "2023-09-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-021 v1.0 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-021-S1
+    heading: Prohibited and Contraband Cargo
+    page: 1
+    body:
+      - >-
+        Transport of narcotics, firearms, ammunition, unlicensed currency,
+        counterfeit luxury goods, and unregistered pharmaceuticals is strictly
+        forbidden under national law.
+
+  - ref: "2"
+    source_id: DOC-021-S2
+    heading: Anti-Bribery and Corruption
+    page: 1
+    body:
+      - >-
+        Employees and couriers are strictly barred from accepting or soliciting
+        illicit payments, gratuities, or favors from merchants, consignees, or
+        customs officials.
+
+  - ref: "3"
+    source_id: DOC-021-S3
+    heading: Reporting Violations and Whistleblower Protection
+    page: 2
+    body:
+      - >-
+        Suspected compliance violations must be reported immediately to Legal &
+        Compliance (DEPT-07) with strict whistleblower anonymity guaranteed.

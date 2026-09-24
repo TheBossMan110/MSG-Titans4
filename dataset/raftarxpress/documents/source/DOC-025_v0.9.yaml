@@ -1,0 +1,40 @@
+# RaftarXpress Logistics (Pvt) Ltd - Hazardous Materials and Dangerous Goods Transit Policy, version 0.9 (DRAFT)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-025
+  title: Hazardous Materials and Dangerous Goods Transit Policy
+  version: "0.9"
+  doc_type: POLICY
+  category: Other
+  family: FAM-DANGEROUS-GOODS
+  status: DRAFT
+  effective_date: "2026-01-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-025 v0.9 - DRAFT
+
+sections:
+  - ref: "1"
+    source_id: DOC-025-S1
+    heading: Lithium Battery and Flammable Liquid Transport
+    page: 1
+    body:
+      - >-
+        Draft guidelines mandate specialized UN-certified hazardous packaging,
+        diamond safety labeling, and dedicated ground transit fleet for
+        consignments containing lithium-ion batteries or flammable aerosols.
+
+  - ref: "2"
+    source_id: DOC-025-S2
+    heading: Emergency Incident Response
+    page: 1
+    body:
+      - >-
+        In case of chemical spill, leakage, or smoke emission in warehouses,
+        Safety & Risk (DEPT-08) initiates immediate evacuation and coordinates
+        with civil defense authorities.

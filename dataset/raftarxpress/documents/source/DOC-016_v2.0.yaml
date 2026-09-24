@@ -1,0 +1,49 @@
+# RaftarXpress Logistics (Pvt) Ltd - Multi-Tier Incident Escalation Procedure, version 2.0 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [docx]
+
+metadata:
+  doc_ref: DOC-016
+  title: Multi-Tier Incident Escalation Procedure
+  version: "2.0"
+  doc_type: POLICY
+  category: Escalation Procedure
+  family: FAM-ESCALATION-PROCEDURE
+  status: ACTIVE
+  effective_date: "2024-09-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-016 v2.0 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-016-S1
+    heading: Tier-1 to Tier-2 Escalation Triggers
+    page: 1
+    body:
+      - >-
+        Complaints unacknowledged after two (2) hours or unresolved after
+        twenty-four (24) hours automatically escalate from frontline support to
+        the Department Lead.
+
+  - ref: "2"
+    source_id: DOC-016-S2
+    heading: Tier-3 Executive Intervention (DEPT-09)
+    page: 1
+    body:
+      - >-
+        Grievances involving VIP account SLA breaches, legal notices, regulatory
+        inquiries, or damages exceeding PKR 100,000 are routed directly to
+        Management Escalations (DEPT-09).
+
+  - ref: "3"
+    source_id: DOC-016-S3
+    heading: Executive Response SLAs
+    page: 2
+    body:
+      - >-
+        Management Escalations must formulate a verified remediation plan and
+        contact the customer within one (1) business hour of escalation.

@@ -1,0 +1,293 @@
+# ══════════════════════════════════════════════════════════════════════════
+# Zenithra — DEPARTMENT ROUTING RULES
+#
+# SRS Step 22/23: the application recommends a responsible department, and
+# Python independently verifies that recommendation against this matrix.
+#
+# These rules are SCOPED to a category (`scope.category`), so they run in the
+# engine's second pass once classification has settled. That ordering matters:
+# a rule that routes "refund vocabulary" to Billing must not fire on a SAFETY
+# complaint that happens to mention a refund.
+#
+# Precedence 50-56 — deliberately below classification (57-75) and far below
+# escalation (78-120), because routing refines an answer rather than
+# establishing one.
+# ══════════════════════════════════════════════════════════════════════════
+
+version: "1.0"
+ruleset: routing
+default_precedence: 52
+
+rules:
+
+  # ── DELIVERY ──────────────────────────────────────────────────────────
+  - rule_ref: RTE-0001
+    name: Delivery complaint mentioning a damaged item routes to Returns
+    rule_type: ROUTING
+    precedence: 56
+    scope: { category: DELIVERY }
+    rationale: >-
+      Damage found on arrival is resolved by Returns; Logistics owns only the
+      transit investigation.
+    when:
+      signal: product_defect_terms
+    then:
+      department: RETURNS
+      support_department: LOGISTICS
+      required_actions:
+        - Request photographic evidence before authorising a return
+
+  - rule_ref: RTE-0002
+    name: Delivery complaint with a refund request adds Billing
+    rule_type: ROUTING
+    precedence: 54
+    scope: { category: DELIVERY }
+    rationale: Logistics owns the investigation; Billing executes any resulting refund.
+    when:
+      signal: refund_terms
+    then:
+      department: LOGISTICS
+      support_department: BILLING
+      prohibited_actions:
+        - Confirm a refund before the delivery investigation concludes
+
+  # ── BILLING AND REFUND ────────────────────────────────────────────────
+  - rule_ref: RTE-0010
+    name: Billing complaint with an account-security signal routes to Account Security
+    rule_type: ROUTING
+    precedence: 56
+    scope: { category: BILLING }
+    rationale: A disputed charge with a security signal is potential fraud, not a billing query.
+    when:
+      signal: security_incident
+    then:
+      department: ACCOUNT_SECURITY
+      support_department: BILLING
+
+  - rule_ref: RTE-0011
+    name: Refund complaint about a warranty repair routes to Warranty
+    rule_type: ROUTING
+    precedence: 55
+    scope: { category: REFUND }
+    rationale: Warranty owns the assessment that determines whether a refund is due.
+    when:
+      signal: warranty_terms
+    then:
+      department: WARRANTY
+      support_department: BILLING
+
+  - rule_ref: RTE-0012
+    name: Refund complaint following a cancellation routes to Billing
+    rule_type: ROUTING
+    precedence: 52
+    scope: { category: REFUND }
+    rationale: Cancellation refunds are processed by Billing against the original payment.
+    when:
+      signal: cancellation_request
+    then:
+      department: BILLING
+      required_actions:
+        - Confirm the cancellation was accepted before processing a refund
+
+  # ── PRODUCT AND TECHNICAL ─────────────────────────────────────────────
+  - rule_ref: RTE-0020
+    name: Product defect under warranty routes to Warranty
+    rule_type: ROUTING
+    precedence: 56
+    scope: { category: PRODUCT_DEFECT }
+    rationale: An in-warranty fault is a warranty claim rather than a return.
+    when:
+      signal: warranty_terms
+    then:
+      department: WARRANTY
+      support_department: RETURNS
+      required_actions:
+        - Confirm the purchase date and warranty period
+
+  - rule_ref: RTE-0021
+    name: Product defect described in technical terms routes to Technical Support
+    rule_type: ROUTING
+    precedence: 53
+    scope: { category: PRODUCT_DEFECT }
+    rationale: A configuration problem should be diagnosed before a unit is returned.
+    when:
+      signal: technical_terms
+    then:
+      department: TECH_SUPPORT
+      support_department: RETURNS
+      required_actions:
+        - Run the standard diagnostic before authorising a return
+
+  - rule_ref: RTE-0022
+    name: Product defect with a replacement demand routes to Returns
+    rule_type: ROUTING
+    precedence: 54
+    scope: { category: PRODUCT_DEFECT }
+    rationale: Returns owns replacement dispatch and collection.
+    when:
+      signal: replacement_demand
+    then:
+      department: RETURNS
+
+  - rule_ref: RTE-0023
+    name: Technical complaint needing an engineer routes to Warranty
+    rule_type: ROUTING
+    precedence: 53
+    scope: { category: TECHNICAL_SUPPORT }
+    rationale: On-site engineer visits are scheduled by the Warranty and Repairs team.
+    when:
+      signal: warranty_terms
+    then:
+      department: WARRANTY
+      support_department: TECH_SUPPORT
+
+  # ── ACCOUNT AND PRIVACY ───────────────────────────────────────────────
+  - rule_ref: RTE-0030
+    name: Account complaint with a privacy signal routes to Compliance
+    rule_type: ROUTING
+    precedence: 56
+    scope: { category: ACCOUNT }
+    rationale: A data-subject request is owned by Compliance, not by Account Security.
+    when:
+      signal: privacy_breach
+    then:
+      department: COMPLIANCE
+      support_department: ACCOUNT_SECURITY
+
+  - rule_ref: RTE-0031
+    name: Account complaint with a billing dispute adds Billing
+    rule_type: ROUTING
+    precedence: 52
+    scope: { category: ACCOUNT }
+    rationale: Account ownership is resolved first; the charge is then corrected by Billing.
+    when:
+      signal: billing_terms
+    then:
+      department: ACCOUNT_SECURITY
+      support_department: BILLING
+
+  - rule_ref: RTE-0032
+    name: Privacy complaint with a security signal adds Account Security
+    rule_type: ROUTING
+    precedence: 54
+    scope: { category: PRIVACY }
+    rationale: Compliance owns the regulatory clock; Account Security contains the exposure.
+    when:
+      signal: security_incident
+    then:
+      department: COMPLIANCE
+      support_department: ACCOUNT_SECURITY
+
+  # ── SERVICE AND CONDUCT ───────────────────────────────────────────────
+  - rule_ref: RTE-0040
+    name: Service-quality complaint about a delivery partner adds Logistics
+    rule_type: ROUTING
+    precedence: 53
+    scope: { category: SERVICE_QUALITY }
+    rationale: >-
+      Customer Relations owns the customer; Logistics owns the partner
+      relationship that caused the experience.
+    when:
+      signal: delivery_terms
+    then:
+      department: CUSTOMER_RELATIONS
+      support_department: LOGISTICS
+
+  - rule_ref: RTE-0041
+    name: Staff conduct complaint about a delivery partner adds Logistics
+    rule_type: ROUTING
+    precedence: 55
+    scope: { category: STAFF_BEHAVIOR }
+    rationale: Conduct of a contracted driver is addressed through the Logistics partner manager.
+    when:
+      signal: delivery_terms
+    then:
+      department: CUSTOMER_RELATIONS
+      support_department: LOGISTICS
+      required_actions:
+        - Record the delivery date and partner so the individual can be identified
+
+  - rule_ref: RTE-0042
+    name: Service-quality complaint with a repeat signal adds Management Escalations
+    rule_type: ROUTING
+    precedence: 55
+    scope: { category: SERVICE_QUALITY }
+    rationale: Repeated service failure is a process problem that needs visibility above the team.
+    when:
+      fact: repeat_count
+      gte: 3
+    then:
+      department: CUSTOMER_RELATIONS
+      support_department: MGMT_ESCALATIONS
+
+  # ── WARRANTY ──────────────────────────────────────────────────────────
+  - rule_ref: RTE-0050
+    name: Warranty complaint with a refund demand adds Billing
+    rule_type: ROUTING
+    precedence: 53
+    scope: { category: WARRANTY }
+    rationale: Warranty decides entitlement; Billing executes any refund that follows.
+    when:
+      signal: refund_terms
+    then:
+      department: WARRANTY
+      support_department: BILLING
+      prohibited_actions:
+        - Confirm a refund before the warranty assessment completes
+
+  - rule_ref: RTE-0051
+    name: Warranty complaint describing a hazard routes to Product Safety
+    rule_type: ROUTING
+    precedence: 56
+    scope: { category: WARRANTY }
+    rationale: >-
+      A hazard is never a warranty matter first. The mandatory safety
+      escalation still applies above this.
+    when:
+      signal: safety_lexicon_hit
+    then:
+      department: SAFETY
+      support_department: WARRANTY
+
+  # ── HIGH-VALUE AND RELATIONSHIP ───────────────────────────────────────
+  - rule_ref: RTE-0060
+    name: High-value billing dispute adds Management Escalations
+    rule_type: ROUTING
+    precedence: 55
+    scope: { category: BILLING }
+    rationale: Disputes above the agent settlement ceiling need manager visibility.
+    when:
+      fact: amount_value
+      gte: 50000
+    then:
+      department: BILLING
+      support_department: MGMT_ESCALATIONS
+
+  - rule_ref: RTE-0061
+    name: Business-tier complaint adds Management Escalations
+    rule_type: ROUTING
+    precedence: 51
+    rationale: >-
+      Business accounts carry a named relationship owner who is informed of any
+      open complaint. This changes who is told, not how the complaint is
+      assessed.
+    when:
+      fact: customer_tier
+      eq: BUSINESS
+    then:
+      support_department: MGMT_ESCALATIONS
+      required_actions:
+        - Notify the account manager that a complaint is open
+
+  - rule_ref: RTE-0062
+    name: Refund complaint on a high-value order adds Management Escalations
+    rule_type: ROUTING
+    precedence: 55
+    scope: { category: REFUND }
+    rationale: Mirrors RTE-0060 for refunds rather than disputed charges.
+    when:
+      fact: amount_value
+      gte: 50000
+    then:
+      department: BILLING
+      support_department: MGMT_ESCALATIONS

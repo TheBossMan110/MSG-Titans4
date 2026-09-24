@@ -1,0 +1,530 @@
+# ══════════════════════════════════════════════════════════════════════════
+# Zenithra — CLASSIFICATION RULES
+#
+# These decide what a complaint is *about*, independently of the model.
+#
+# Without them the Python pipeline could only judge risk, and would have to
+# accept the model's word on category and department — which would make the
+# "ground truth" partly derived from the thing it is supposed to check. The
+# dual-pipeline requirement (SRS 1.2) only means something if Pipeline 2 can
+# reach a complete answer on its own.
+#
+# Precedence bands
+#   75  specific subcategory with strong evidence
+#   70  compound signals (topic + failure mode)
+#   60  single strong topic signal
+#   45  weak / ambiguous topic signal
+#   10  catch-all  -> routes to review rather than guessing
+#
+# Escalation rules (100-120) always outrank everything here, which is why a
+# safety report is never merely a "product defect".
+# ══════════════════════════════════════════════════════════════════════════
+
+version: "1.0"
+ruleset: classification
+default_precedence: 60
+
+rules:
+
+  # ── DELIVERY ──────────────────────────────────────────────────────────
+  - rule_ref: CLS-0001
+    name: Shipment marked delivered but not received
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: >-
+      The clearest delivery failure mode, and the one DEL-POL-04 s4 gives a
+      specific investigation path for.
+    when:
+      all_of:
+        - signal: delivery_terms
+        - signal: delivery_failure
+    then:
+      category: DELIVERY
+      subcategory: NOT_DELIVERED
+      department: LOGISTICS
+      urgency: HIGH
+      priority: P1
+      required_actions:
+        - Verify shipment status in the tracking system
+        - Confirm the delivery address on the order
+      policy_refs:
+        - { doc_ref: DEL-POL-04, section_ref: "4" }
+
+  - rule_ref: CLS-0002
+    name: Delivery delayed beyond the committed window
+    rule_type: CLASSIFICATION
+    precedence: 70
+    rationale: >-
+      DEL-POL-04 s3 classifies a delivery as delayed once it exceeds its
+      committed window by more than twenty-four hours.
+    when:
+      all_of:
+        - signal: delivery_terms
+        - signal: delivery_delay
+    then:
+      category: DELIVERY
+      subcategory: DELAYED_DELIVERY
+      department: LOGISTICS
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Verify shipment status in the tracking system
+        - Confirm the revised delivery date with the last-mile partner
+      prohibited_actions:
+        - Offer compensation for a first delay
+        - Quote a delivery date not confirmed by the tracking system
+      policy_refs:
+        - { doc_ref: DEL-POL-04, section_ref: "3" }
+      follow_up: true
+
+  - rule_ref: CLS-0003
+    name: Partial delivery
+    rule_type: CLASSIFICATION
+    precedence: 72
+    rationale: Some of the order arrived, which is a fulfilment error rather than a delay.
+    when:
+      all_of:
+        - signal: delivery_terms
+        - signal: delivery_failure
+        - signal: product_defect_terms
+    then:
+      category: DELIVERY
+      subcategory: PARTIAL_DELIVERY
+      department: LOGISTICS
+      support_department: RETURNS
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Confirm which items are missing against the order manifest
+
+  - rule_ref: CLS-0004
+    name: General delivery enquiry
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: Delivery vocabulary with no specific failure mode identified.
+    when:
+      signal: delivery_terms
+    then:
+      category: DELIVERY
+      department: LOGISTICS
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Verify shipment status in the tracking system
+      policy_refs:
+        - { doc_ref: DEL-POL-04, section_ref: "2" }
+
+  # ── BILLING ───────────────────────────────────────────────────────────
+  - rule_ref: CLS-0010
+    name: Duplicate or incorrect charge
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: >-
+      A disputed charge is handled under REF-POL-02 s7 rather than the ordinary
+      refund window, because the charge itself was an error.
+    when:
+      signal: billing_error
+    then:
+      category: BILLING
+      subcategory: DUPLICATE_CHARGE
+      department: BILLING
+      urgency: HIGH
+      priority: P1
+      required_actions:
+        - Check the payment ledger for a matching transaction pair
+      prohibited_actions:
+        - Confirm the refund before the ledger check completes
+      policy_refs:
+        - { doc_ref: REF-POL-02, section_ref: "7" }
+
+  - rule_ref: CLS-0011
+    name: Unexpected subscription renewal
+    rule_type: CLASSIFICATION
+    precedence: 70
+    rationale: A renewal the customer did not expect is a billing dispute, not a cancellation request.
+    when:
+      all_of:
+        - signal: billing_terms
+        - signal: cancellation_request
+    then:
+      category: BILLING
+      subcategory: SUBSCRIPTION_RENEWAL
+      department: BILLING
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Confirm the renewal date and the notice given
+        - Stop further automatic renewals pending the outcome
+
+  - rule_ref: CLS-0012
+    name: General billing enquiry
+    rule_type: CLASSIFICATION
+    precedence: 60
+    rationale: Billing vocabulary without a specific dispute identified.
+    when:
+      signal: billing_terms
+    then:
+      category: BILLING
+      department: BILLING
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Verify the transaction against the payment ledger
+
+  # ── REFUND ────────────────────────────────────────────────────────────
+  - rule_ref: CLS-0020
+    name: Refund promised but not received
+    rule_type: CLASSIFICATION
+    precedence: 75
+    rationale: >-
+      REF-POL-02 s3 commits to five to ten business days; beyond that the
+      customer is chasing a commitment Zenithra already made.
+    when:
+      signal: refund_failure
+    then:
+      category: REFUND
+      subcategory: REFUND_NOT_RECEIVED
+      department: BILLING
+      urgency: HIGH
+      priority: P1
+      required_actions:
+        - Confirm the refund reference and the date it was issued
+      prohibited_actions:
+        - Quote a specific calendar date for the credit
+      policy_refs:
+        - { doc_ref: REF-POL-02, section_ref: "3" }
+      follow_up: true
+
+  - rule_ref: CLS-0021
+    name: Refund requested
+    rule_type: CLASSIFICATION
+    precedence: 62
+    rationale: >-
+      A refund request is assessed against the eligibility window in
+      REF-POL-02 s2 before anything is confirmed to the customer.
+    when:
+      signal: refund_terms
+    then:
+      category: REFUND
+      department: BILLING
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Confirm the purchase date and the applicable refund window
+      prohibited_actions:
+        - Confirm a refund before eligibility is verified
+        - Grant a refund-window exception
+      policy_refs:
+        - { doc_ref: REF-POL-02, section_ref: "2" }
+
+  - rule_ref: CLS-0022
+    name: Refund requested after a delivery failure
+    rule_type: CLASSIFICATION
+    precedence: 73
+    rationale: >-
+      DEL-POL-04 s4 makes a refund available once an investigation confirms
+      non-delivery, so the investigation must lead.
+    when:
+      all_of:
+        - signal: refund_terms
+        - signal: delivery_failure
+    then:
+      category: DELIVERY
+      subcategory: NOT_DELIVERED
+      department: LOGISTICS
+      support_department: BILLING
+      urgency: HIGH
+      priority: P1
+      required_actions:
+        - Raise a delivery investigation before assessing the refund
+      prohibited_actions:
+        - Confirm a refund before the investigation concludes
+      policy_refs:
+        - { doc_ref: DEL-POL-04, section_ref: "4" }
+
+  # ── PRODUCT DEFECT ────────────────────────────────────────────────────
+  - rule_ref: CLS-0030
+    name: Product faulty on arrival
+    rule_type: CLASSIFICATION
+    precedence: 72
+    rationale: >-
+      A fault present on delivery is a fulfilment issue with a replacement
+      path under REF-POL-02 s5.
+    when:
+      all_of:
+        - signal: product_defect_terms
+        - signal: delivery_terms
+    then:
+      category: PRODUCT_DEFECT
+      subcategory: DAMAGED_IN_TRANSIT
+      department: RETURNS
+      support_department: LOGISTICS
+      urgency: HIGH
+      priority: P1
+      required_actions:
+        - Request photographic evidence of the item and outer packaging
+        - Confirm the delivery date is within forty-eight hours
+      policy_refs:
+        - { doc_ref: DEL-POL-04, section_ref: "6" }
+        - { doc_ref: REF-POL-02, section_ref: "5" }
+
+  - rule_ref: CLS-0031
+    name: Product not working
+    rule_type: CLASSIFICATION
+    precedence: 65
+    rationale: A functional fault with no delivery or safety context.
+    when:
+      signal: product_defect_terms
+    then:
+      category: PRODUCT_DEFECT
+      department: TECH_SUPPORT
+      support_department: RETURNS
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Establish the fault symptoms and when they began
+        - Confirm the purchase date and warranty status
+
+  - rule_ref: CLS-0032
+    name: Wrong item shipped
+    rule_type: CLASSIFICATION
+    precedence: 71
+    rationale: A fulfilment error rather than a product fault.
+    when:
+      all_of:
+        - signal: product_defect_terms
+        - signal: replacement_demand
+    then:
+      category: PRODUCT_DEFECT
+      subcategory: WRONG_ITEM
+      department: RETURNS
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Confirm the item ordered against the item received
+        - Arrange collection of the incorrect item
+
+  # ── TECHNICAL ─────────────────────────────────────────────────────────
+  - rule_ref: CLS-0040
+    name: Setup or connectivity problem
+    rule_type: CLASSIFICATION
+    precedence: 66
+    rationale: A configuration problem rather than a hardware fault.
+    when:
+      signal: technical_terms
+    then:
+      category: TECHNICAL_SUPPORT
+      subcategory: CONNECTIVITY
+      department: TECH_SUPPORT
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Establish the device model and firmware version
+        - Confirm the steps the customer has already tried
+
+  - rule_ref: CLS-0041
+    name: Technical fault on a defective unit
+    rule_type: CLASSIFICATION
+    precedence: 68
+    rationale: >-
+      Technical vocabulary alongside defect vocabulary usually means the unit
+      is faulty rather than misconfigured.
+    when:
+      all_of:
+        - signal: technical_terms
+        - signal: product_defect_terms
+    then:
+      category: PRODUCT_DEFECT
+      department: TECH_SUPPORT
+      support_department: WARRANTY
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Run the standard diagnostic before authorising a return
+
+  # ── WARRANTY ──────────────────────────────────────────────────────────
+  - rule_ref: CLS-0050
+    name: Warranty claim or repair
+    rule_type: CLASSIFICATION
+    precedence: 67
+    rationale: Warranty claims are assessed by the Warranty team, not by Returns.
+    when:
+      signal: warranty_terms
+    then:
+      category: WARRANTY
+      department: WARRANTY
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Confirm the purchase date and warranty period
+        - Retrieve any prior service history for the unit
+
+  # ── ACCOUNT ───────────────────────────────────────────────────────────
+  - rule_ref: CLS-0060
+    name: Account access problem
+    rule_type: CLASSIFICATION
+    precedence: 64
+    rationale: A login failure with no security signal is a support issue.
+    when:
+      signal: account_terms
+    then:
+      category: ACCOUNT
+      subcategory: LOGIN_FAILURE
+      department: ACCOUNT_SECURITY
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Verify the customer's identity before making account changes
+
+  - rule_ref: CLS-0061
+    name: Account closure or data deletion request
+    rule_type: CLASSIFICATION
+    precedence: 69
+    rationale: >-
+      A closure request combined with privacy vocabulary is a data-subject
+      request with a statutory deadline, not a routine account change.
+    when:
+      all_of:
+        - signal: account_terms
+        - signal: privacy_breach
+    then:
+      category: PRIVACY
+      subcategory: DATA_DELETION
+      department: COMPLIANCE
+      urgency: HIGH
+      priority: P1
+      required_actions:
+        - Verify identity before acting on the request
+        - Record the statutory response deadline
+
+  # ── SERVICE QUALITY ───────────────────────────────────────────────────
+  - rule_ref: CLS-0070
+    name: Poor service or no response
+    rule_type: CLASSIFICATION
+    precedence: 58
+    rationale: >-
+      A complaint about how the customer was handled, distinct from whatever
+      the original issue was.
+    when:
+      signal: service_quality_terms
+    then:
+      category: SERVICE_QUALITY
+      subcategory: LONG_WAIT
+      department: CUSTOMER_RELATIONS
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Review the contact history before replying
+      follow_up: true
+
+  - rule_ref: CLS-0071
+    name: Incorrect information given by an agent
+    rule_type: CLASSIFICATION
+    precedence: 63
+    rationale: >-
+      Misinformation is a training and process issue as well as a customer
+      issue, so it is recorded distinctly.
+    when:
+      all_of:
+        - signal: service_quality_terms
+        - signal: repeat_contact
+    then:
+      category: SERVICE_QUALITY
+      subcategory: MISINFORMATION
+      department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      required_actions:
+        - Identify what the customer was told and by whom
+        - Correct the record and confirm the correct position in writing
+      follow_up: true
+
+  # ── CANCELLATION / REPLACEMENT ────────────────────────────────────────
+  - rule_ref: CLS-0080
+    name: Cancellation request
+    rule_type: CLASSIFICATION
+    precedence: 57
+    rationale: Assessed against the cancellation terms before anything is confirmed.
+    when:
+      signal: cancellation_request
+    then:
+      category: REFUND
+      department: BILLING
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Confirm what the customer wishes to cancel and its current status
+      prohibited_actions:
+        - Confirm cancellation before eligibility is verified
+
+  - rule_ref: CLS-0081
+    name: Replacement requested
+    rule_type: CLASSIFICATION
+    precedence: 59
+    rationale: >-
+      REF-POL-02 s5 limits replacement to specific conditions, so eligibility
+      is confirmed before the customer is told anything.
+    when:
+      signal: replacement_demand
+    then:
+      category: PRODUCT_DEFECT
+      department: RETURNS
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Confirm replacement eligibility against REF-POL-02 s5
+      prohibited_actions:
+        - Confirm a replacement before eligibility is verified
+      policy_refs:
+        - { doc_ref: REF-POL-02, section_ref: "5" }
+
+  # ── INCOMPLETE AND UNMATCHED ──────────────────────────────────────────
+  - rule_ref: CLS-0090
+    name: Complaint too short to classify
+    rule_type: CLASSIFICATION
+    precedence: 40
+    rationale: >-
+      A complaint of a few words cannot be classified reliably. Asking a
+      focused question is correct; guessing a category is not
+      (SRS 1.8 #11, Missing Information Challenge).
+    when:
+      all_of:
+        - fact: is_short
+          eq: true
+        - fact: has_order_ref
+          eq: false
+    then:
+      department: CUSTOMER_RELATIONS
+      urgency: LOW
+      priority: P3
+      escalation: NONE
+      required_actions:
+        - Request the order reference and a description of the problem
+      prohibited_actions:
+        - Assume a category from insufficient information
+        - Invent details the customer did not provide
+      follow_up: true
+
+  - rule_ref: CLS-0099
+    name: Unclassified complaint
+    rule_type: CLASSIFICATION
+    precedence: 10
+    catch_all: true
+    rationale: >-
+      The deliberate floor of the matrix. A complaint no other rule recognises
+      goes to a human rather than receiving a plausible-looking guess. This is
+      the difference between a system that knows what it does not know and one
+      that quietly fabricates.
+    when:
+      always: true
+    then:
+      department: CUSTOMER_RELATIONS
+      urgency: MEDIUM
+      priority: P2
+      escalation: SUPERVISOR
+      required_actions:
+        - Manual classification required before responding
+      prohibited_actions:
+        - Send an automated response
+        - Confirm any outcome to the customer
+      follow_up: true

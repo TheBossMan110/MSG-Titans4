@@ -1,0 +1,48 @@
+# RaftarXpress Logistics (Pvt) Ltd - Automated Department Routing and Assignment Rules, version 1.4 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-017
+  title: Automated Department Routing and Assignment Rules
+  version: "1.4"
+  doc_type: POLICY
+  category: Department-Routing Rules
+  family: FAM-ROUTING-RULES
+  status: ACTIVE
+  effective_date: "2024-07-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-017 v1.4 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-017-S1
+    heading: Operational Routing Mapping
+    page: 1
+    body:
+      - >-
+        Delayed shipments and missed attempts route to DEPT-01. Lost parcel claims
+        and cargo damages route to DEPT-04. Reverse logistics and RTO issues route
+        to DEPT-03.
+
+  - ref: "2"
+    source_id: DOC-017-S2
+    heading: Financial and Security Routing
+    page: 1
+    body:
+      - >-
+        Tariff overcharges, duplicate billings, and COD remittances route to
+        DEPT-02. Fraud allegations, portal breaches, and theft route to DEPT-06.
+
+  - ref: "3"
+    source_id: DOC-017-S3
+    heading: Specialized Risk and Legal Routing
+    page: 2
+    body:
+      - >-
+        Dangerous goods leakage, fleet accidents, and hazards route to DEPT-08.
+        Regulatory notices and contract breaches route to DEPT-07.

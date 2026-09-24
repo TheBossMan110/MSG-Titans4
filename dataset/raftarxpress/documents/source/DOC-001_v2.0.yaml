@@ -1,0 +1,64 @@
+# RaftarXpress Logistics (Pvt) Ltd - Customer Refund Policy, version 2.0 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-001
+  title: Customer Refund Policy
+  version: "2.0"
+  doc_type: POLICY
+  category: Refund Policy
+  family: FAM-REFUND-POLICY
+  status: ACTIVE
+  effective_date: "2025-07-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-001 v2.0 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-001-S1
+    heading: Scope and Applicability
+    page: 1
+    body:
+      - >-
+        This policy governs all refund requests submitted by individual consumers,
+        retail merchants, and corporate freight clients for failed, returned, or
+        overcharged courier shipments processed by RaftarXpress Logistics across
+        Pakistan.
+
+  - ref: "2"
+    source_id: DOC-001-S2
+    heading: Eligible Refund Timelines
+    page: 1
+    body:
+      - >-
+        Customers are eligible to claim a refund within seven (7) business days
+        from the recorded delivery or delivery-failure timestamp. Claims filed
+        after seven business days shall be automatically rejected unless granted
+        special executive exemption.
+
+  - ref: "3"
+    source_id: DOC-001-S3
+    heading: Condition of Returned Goods
+    page: 1
+    body:
+      - >-
+        All physical refunds require the parcel to be returned with original outer
+        packaging, unaltered shipping manifest labels, and intact security seals.
+        Items damaged due to merchant packing negligence are strictly
+        non-refundable.
+
+  - ref: "4"
+    source_id: DOC-001-S4
+    heading: Disbursement Methods and SLAs
+    page: 2
+    body:
+      - >-
+        Approved refunds are processed solely via Inter-Bank Funds Transfer (IBFT)
+        or RaftarXpress Wallet credit within five to seven (5-7) banking days.
+        Cash disbursements by couriers or regional dispatch hubs are strictly
+        prohibited under company anti-fraud protocols.

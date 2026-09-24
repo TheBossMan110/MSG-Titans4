@@ -1,0 +1,277 @@
+# ========================================================================
+# SupportNova - organisation taxonomy
+#
+# Fictional organisation: RAFTARXPRESS LOGISTICS (PVT) LTD
+# Logistics & Last-Mile Delivery, operating across Pakistan.
+#
+# GENERATED from dataset/raftarxpress by scripts/convert_raftarxpress.py.
+# Edit the dataset and re-run rather than editing this file: the corpus and
+# the configuration have to agree, and a hand-edit here is how they stop.
+#
+# SRS 1.8 #1 requires a unique fictional organisation per team. SRS Step 14
+# requires categories to be CONFIGURABLE, and SRS 1.8 #5 requires a NEW
+# category to be processable without hard-coded logic - which is why this
+# file is loaded into database tables rather than compiled into Python.
+#
+# Minimums enforced by tests/test_taxonomy_minimums.py:
+#   >= 10 categories, >= 20 subcategories, >= 8 departments
+# ========================================================================
+
+organisation:
+  name: RaftarXpress Logistics (Pvt) Ltd
+  legal_name: RaftarXpress Logistics (Pvt) Ltd
+  industry: Logistics & Last-Mile Delivery
+  founded_year: 2018
+  regions: [PK]
+  branches: [Karachi Central Hub, Lahore Regional Hub, Islamabad Hub, Faisalabad Hub, Multan Hub]
+  services: [Parcel Courier, Cash on Delivery (COD), Freight Forwarding, Warehousing, E-Commerce Fulfillment]
+  customer_types: [Individual Consumer, Business/Merchant Account, VIP/Premium Account, Corporate Freight Client]
+  support_hours: "09:00-21:00 PKT, Mon-Sat"
+
+# -- departments (9) ----------------------------------------
+departments:
+  - code: LOGISTICS_OPS
+    name: Delivery & Logistics Operations
+    description: Manages route optimization, rider dispatches, parcel sorting, linehaul transit, and resolution of delivery delays or transit failures across all provincial hubs.
+    escalation_contact: Regional Operations Director
+    source_id: DEPT-01
+  - code: BILLING
+    name: Billing & Accounts
+    description: Oversees Cash-on-Delivery (COD) reconciliation, merchant payment disbursements, tariff disputes, corporate invoicing, and fuel surcharge queries.
+    escalation_contact: Head of Financial Operations
+    source_id: DEPT-02
+  - code: RETURNS_REFUNDS
+    name: Returns & Refunds
+    description: Coordinates reverse logistics, Return to Origin (RTO) processing, failed-delivery return verification, and customer reimbursement authorizations.
+    escalation_contact: Reverse Logistics Lead
+    source_id: DEPT-03
+  - code: WARRANTY_CLAIMS
+    name: Warranty & Claims
+    description: Investigates parcel loss, high-value shipment damage, cargo insurance claims, and merchant compensation settlements.
+    escalation_contact: Chief Claims Assessor
+    source_id: DEPT-04
+  - code: CUSTOMER_RELATIONS
+    name: Customer Relations
+    description: Serves as the primary touchpoint for general inquiries, VIP customer care, corporate account management, and overall satisfaction tracking.
+    escalation_contact: Customer Experience Director
+    source_id: DEPT-05
+  - code: ACCOUNT_SECURITY
+    name: Account Security & Fraud Prevention
+    description: Monitors fraudulent COD collection attempts, portal account breaches, unauthorized profile alterations, and counterfeit shipping manifests.
+    escalation_contact: Head of Information Security
+    source_id: DEPT-06
+  - code: COMPLIANCE
+    name: Compliance & Legal Affairs
+    description: Handles regulatory compliance, contract violations, prohibited cargo violations, consumer court notices, and dispute resolutions under trade laws.
+    escalation_contact: General Legal Counsel
+    source_id: DEPT-07
+  - code: SAFETY
+    name: Safety & Risk Management
+    description: Evaluates operational hazards, dangerous goods mishandling, fleet vehicle accidents during transit, and warehouse safety incidents.
+    escalation_contact: Director of Safety & Operational Risk
+    source_id: DEPT-08
+  - code: MGMT_ESCALATIONS
+    name: Management Escalations
+    description: Resolves multi-department deadlock complaints, executive office referrals, severe brand reputation risks, and unresolved tier-3 grievances.
+    escalation_contact: Chief Operating Officer
+    source_id: DEPT-09
+
+# -- priority ladder (rank 0 = most severe) ------------------------------
+# The corpus and the backend already agree on these, name for name, so they
+# are carried across rather than regenerated: rank is what the SLA matrix
+# and the priority comparison are written against.
+priority_levels:
+  - code: P0
+    name: Critical
+    rank: 0
+    description: Safety, security or regulatory risk. Immediate action.
+  - code: P1
+    name: High
+    rank: 1
+    description: Major service failure or high-value dispute.
+  - code: P2
+    name: Medium
+    rank: 2
+    description: Standard service issue with customer impact.
+  - code: P3
+    name: Low
+    rank: 3
+    description: Minor issue, information request or cosmetic complaint.
+
+# -- escalation ladder (rank 0 = no escalation) --------------------------
+# SRS Step 37. `rank` is what makes the mandatory escalation FLOOR a
+# comparison instead of a hard-coded if-chain. The corpus names all six
+# levels identically, so the ladder is unchanged by the organisation swap.
+escalation_levels:
+  - code: NONE
+    name: No Escalation
+    rank: 0
+    description: Handled by the assigned agent.
+  - code: SUPERVISOR
+    name: Supervisor Review
+    rank: 1
+    description: Team supervisor reviews before the reply is sent.
+  - code: DEPT_MANAGER
+    name: Department Manager
+    rank: 2
+    description: Department manager owns the resolution.
+  - code: SPECIALIST
+    name: Specialist Team
+    rank: 3
+    description: Routed to a specialist function (security, safety, technical).
+  - code: COMPLIANCE_REVIEW
+    name: Compliance Review
+    rank: 4
+    description: Legal/regulatory review required before any commitment.
+  - code: CRITICAL_MGMT
+    name: Critical Management Escalation
+    rank: 5
+    description: Executive ownership. Regulatory, safety or reputational exposure.
+
+# -- categories (13) --------------------------------------------
+# `default_department` is the department most of the category's
+# subcategories already route to. It is the fallback the rule engine uses
+# when a complaint classifies to a category but no rule names a
+# destination -- without it such a complaint routes nowhere.
+categories:
+  - code: DELIVERY
+    name: Delivery
+    default_department: LOGISTICS_OPS
+    description: Issues related to parcel dispatch, linehaul transit, delivery delays, route errors, and last-mile courier fulfillment.
+    source_id: CAT-01
+  - code: LOST_SHIPMENT
+    name: Lost Shipment
+    default_department: WARRANTY_CLAIMS
+    description: Complaints regarding packages or consignments that have gone missing, untraceable in transit, or declared lost.
+    source_id: CAT-02
+  - code: PRODUCT_DEFECT
+    name: Product Defect
+    default_department: WARRANTY_CLAIMS
+    description: Damaged goods, crushed boxes, broken seals, spoiled perishable items, or incorrect items delivered.
+    source_id: CAT-03
+  - code: BILLING
+    name: Billing
+    default_department: BILLING
+    description: Disputes over Cash-on-Delivery (COD) collections, invoice discrepancies, duplicate charges, and tariff rates.
+    source_id: CAT-04
+  - code: REFUND
+    name: Refund
+    default_department: RETURNS_REFUNDS
+    description: Grievances regarding merchant COD remittances, return-to-origin (RTO) charges, and customer reimbursement delays.
+    source_id: CAT-05
+  - code: ACCOUNT
+    name: Account
+    default_department: CUSTOMER_RELATIONS
+    description: Merchant and consumer portal account management, profile updates, account lockouts, and access credential issues.
+    source_id: CAT-06
+  - code: TECHNICAL_SUPPORT
+    name: Technical Support
+    default_department: CUSTOMER_RELATIONS
+    description: Technical glitches on web portals, mobile tracking apps, barcode scanning errors, and API webhook integrations.
+    source_id: CAT-07
+  - code: STAFF_BEHAVIOR
+    name: Staff Behavior
+    default_department: LOGISTICS_OPS
+    description: Unprofessional conduct, rude demeanor, extortion attempts, or harassment by delivery riders and customer support agents.
+    source_id: CAT-08
+  - code: WARRANTY
+    name: Warranty
+    default_department: WARRANTY_CLAIMS
+    description: Disputes surrounding transit insurance coverage, cargo damage compensation, and denied loss claims.
+    source_id: CAT-09
+  - code: PRIVACY
+    name: Privacy
+    default_department: ACCOUNT_SECURITY
+    description: Unauthorized disclosure of customer phone numbers, shipping data leaks, or unsolicited marketing communications.
+    source_id: CAT-10
+  - code: SAFETY
+    name: Safety
+    default_department: SAFETY
+    description: Reckless driving by courier fleet, hazardous material mishandling, transit accidents, or hub safety violations.
+    source_id: CAT-11
+  - code: CUSTOMS
+    name: Customs/Documentation
+    default_department: COMPLIANCE
+    description: Problems with consignment notes, inter-provincial permits, customs clearance paperwork, or regulatory impoundment.
+    source_id: CAT-12
+  - code: SERVICE_QUALITY
+    name: Service Quality
+    default_department: CUSTOMER_RELATIONS
+    description: Repeated SLA breaches, poor overall customer experience, and corporate freight service level agreement failures.
+    source_id: CAT-13
+
+# -- subcategories (34) ----------------------------------------
+# Each carries the department, urgency and priority the corpus states as its
+# default. The rule matrix may raise any of them; nothing may lower a
+# mandatory escalation.
+subcategories:
+  DELIVERY:
+    - { code: DELAYED_DELIVERY, name: Delayed Delivery, default_department: LOGISTICS_OPS, default_urgency: HIGH, default_priority: P1, source_id: SUB-001 }
+    - { code: MISSED_DELIVERY_ATTEMPT, name: Missed Delivery Attempt, default_department: LOGISTICS_OPS, default_urgency: MEDIUM, default_priority: P2, source_id: SUB-002 }
+    - { code: PACKAGE_LEFT_UNATTENDED, name: Package Left Unattended, default_department: LOGISTICS_OPS, default_urgency: MEDIUM, default_priority: P2, source_id: SUB-003 }
+    - { code: WRONG_ROUTE_DISPATCH, name: Wrong Route Dispatch, default_department: LOGISTICS_OPS, default_urgency: MEDIUM, default_priority: P2, source_id: SUB-004 }
+  LOST_SHIPMENT:
+    - { code: LOST_PARCEL, name: Lost Parcel, default_department: WARRANTY_CLAIMS, default_urgency: CRITICAL, default_priority: P0, source_id: SUB-005 }
+    - { code: PARTIAL_SHIPMENT_MISSING, name: Partial Shipment Missing, default_department: WARRANTY_CLAIMS, default_urgency: HIGH, default_priority: P1, source_id: SUB-006 }
+  PRODUCT_DEFECT:
+    - { code: DAMAGED_PARCEL, name: Damaged Parcel, default_department: WARRANTY_CLAIMS, default_urgency: HIGH, default_priority: P1, source_id: SUB-007 }
+    - { code: WRONG_ITEM_DELIVERED, name: Wrong Item Delivered, default_department: LOGISTICS_OPS, default_urgency: HIGH, default_priority: P1, source_id: SUB-008 }
+    - { code: TAMPERED_PACKAGING, name: Tampered Packaging, default_department: ACCOUNT_SECURITY, default_urgency: HIGH, default_priority: P1, source_id: SUB-009 }
+  BILLING:
+    - { code: COD_AMOUNT_MISMATCH, name: COD Amount Mismatch, default_department: BILLING, default_urgency: HIGH, default_priority: P1, source_id: SUB-010 }
+    - { code: DUPLICATE_CHARGE, name: Duplicate Charge, default_department: BILLING, default_urgency: MEDIUM, default_priority: P2, source_id: SUB-011 }
+    - { code: INCORRECT_CHARGE, name: Incorrect Charge, default_department: BILLING, default_urgency: MEDIUM, default_priority: P2, source_id: SUB-012 }
+    - { code: COD_REMITTANCE_DELAY, name: COD Remittance Delay, default_department: BILLING, default_urgency: HIGH, default_priority: P1, source_id: SUB-013 }
+  REFUND:
+    - { code: REFUND_NOT_PROCESSED, name: Refund Not Processed, default_department: RETURNS_REFUNDS, default_urgency: HIGH, default_priority: P1, source_id: SUB-014 }
+    - { code: REFUND_DELAY, name: Refund Delay, default_department: RETURNS_REFUNDS, default_urgency: MEDIUM, default_priority: P2, source_id: SUB-015 }
+    - { code: RTO_PROCESSING_DELAY, name: RTO Processing Delay, default_department: RETURNS_REFUNDS, default_urgency: MEDIUM, default_priority: P2, source_id: SUB-016 }
+  ACCOUNT:
+    - { code: ACCOUNT_LOCKED, name: Account Locked, default_department: CUSTOMER_RELATIONS, default_urgency: MEDIUM, default_priority: P2, source_id: SUB-017 }
+    - { code: UNAUTHORIZED_ACCOUNT_ACCESS, name: Unauthorized Account Access, default_department: ACCOUNT_SECURITY, default_urgency: CRITICAL, default_priority: P0, source_id: SUB-018 }
+    - { code: MERCHANT_PROFILE_UPDATE, name: Merchant Profile Update, default_department: CUSTOMER_RELATIONS, default_urgency: LOW, default_priority: P3, source_id: SUB-019 }
+  TECHNICAL_SUPPORT:
+    - { code: TRACKING_NOT_UPDATING, name: Tracking Not Updating, default_department: CUSTOMER_RELATIONS, default_urgency: MEDIUM, default_priority: P2, source_id: SUB-020 }
+    - { code: APP_CRASH, name: App Crash, default_department: CUSTOMER_RELATIONS, default_urgency: MEDIUM, default_priority: P2, source_id: SUB-021 }
+    - { code: API_WEBHOOK_FAILURE, name: API Webhook Failure, default_department: CUSTOMER_RELATIONS, default_urgency: HIGH, default_priority: P1, source_id: SUB-022 }
+  STAFF_BEHAVIOR:
+    - { code: RUDE_RIDER_DRIVER_BEHAVIOR, name: Rude Rider/Driver Behavior, default_department: LOGISTICS_OPS, default_urgency: HIGH, default_priority: P1, source_id: SUB-023 }
+    - { code: RIDER_DEMANDING_CASH_TIP, name: Rider Demanding Cash Tip, default_department: ACCOUNT_SECURITY, default_urgency: HIGH, default_priority: P1, source_id: SUB-024 }
+  WARRANTY:
+    - { code: WARRANTY_CLAIM_DENIED, name: Warranty Claim Denied, default_department: WARRANTY_CLAIMS, default_urgency: HIGH, default_priority: P1, source_id: SUB-025 }
+    - { code: INSURANCE_PAYOUT_DELAY, name: Insurance Payout Delay, default_department: WARRANTY_CLAIMS, default_urgency: MEDIUM, default_priority: P2, source_id: SUB-026 }
+  PRIVACY:
+    - { code: DATA_PRIVACY_BREACH, name: Data Privacy Breach, default_department: ACCOUNT_SECURITY, default_urgency: CRITICAL, default_priority: P0, source_id: SUB-027 }
+    - { code: UNSOLICITED_MARKETING_SMS, name: Unsolicited Marketing SMS, default_department: COMPLIANCE, default_urgency: LOW, default_priority: P3, source_id: SUB-028 }
+  SAFETY:
+    - { code: RECKLESS_DRIVING_SAFETY_RISK, name: Reckless Driving/Safety Risk, default_department: SAFETY, default_urgency: HIGH, default_priority: P1, source_id: SUB-029 }
+    - { code: HAZARDOUS_MATERIAL_MISHANDLING, name: Hazardous Material Mishandling, default_department: SAFETY, default_urgency: CRITICAL, default_priority: P0, source_id: SUB-030 }
+  CUSTOMS:
+    - { code: MISSING_CUSTOMS_DOCUMENTS, name: Missing Customs Documents, default_department: COMPLIANCE, default_urgency: HIGH, default_priority: P1, source_id: SUB-031 }
+    - { code: REGULATORY_IMPOUNDMENT_HOLD, name: Regulatory Impoundment Hold, default_department: COMPLIANCE, default_urgency: HIGH, default_priority: P1, source_id: SUB-032 }
+  SERVICE_QUALITY:
+    - { code: SUBSCRIPTION_CONTRACT_RENEWAL, name: Subscription/Contract Renewal, default_department: CUSTOMER_RELATIONS, default_urgency: LOW, default_priority: P3, source_id: SUB-033 }
+    - { code: EXECUTIVE_SLA_BREACH, name: Executive SLA Breach, default_department: MGMT_ESCALATIONS, default_urgency: CRITICAL, default_priority: P0, source_id: SUB-034 }
+
+# -- SLA targets --------------------------------------------------------
+# The defaults are the priority ladder's. The overrides are each
+# department's own stated response and resolution hours, converted to
+# minutes - authored numbers, not invented ones.
+sla_policies:
+  default:
+    - { priority: P0, first_response_mins: 30, resolution_mins: 240 }
+    - { priority: P1, first_response_mins: 120, resolution_mins: 1440 }
+    - { priority: P2, first_response_mins: 480, resolution_mins: 4320 }
+    - { priority: P3, first_response_mins: 1440, resolution_mins: 10080 }
+  overrides:
+    - { category: DELIVERY, priority: P2, first_response_mins: 120, resolution_mins: 1440 }   # Delivery & Logistics Operations
+    - { category: BILLING, priority: P2, first_response_mins: 240, resolution_mins: 2880 }   # Billing & Accounts
+    - { category: REFUND, priority: P2, first_response_mins: 240, resolution_mins: 2880 }   # Returns & Refunds
+    - { category: ACCOUNT, priority: P2, first_response_mins: 60, resolution_mins: 720 }   # Customer Relations
+    - { category: ACCOUNT, priority: P3, first_response_mins: 60, resolution_mins: 720 }   # Customer Relations
+    - { category: TECHNICAL_SUPPORT, priority: P2, first_response_mins: 60, resolution_mins: 720 }   # Customer Relations
+    - { category: TECHNICAL_SUPPORT, priority: P1, first_response_mins: 60, resolution_mins: 720 }   # Customer Relations
+    - { category: WARRANTY, priority: P2, first_response_mins: 360, resolution_mins: 4320 }   # Warranty & Claims
+    - { category: PRIVACY, priority: P3, first_response_mins: 720, resolution_mins: 5760 }   # Compliance & Legal Affairs
+    - { category: SERVICE_QUALITY, priority: P3, first_response_mins: 60, resolution_mins: 720 }   # Customer Relations
+  risk_threshold_pct: 75   # flag as AT RISK once this % of the window elapsed

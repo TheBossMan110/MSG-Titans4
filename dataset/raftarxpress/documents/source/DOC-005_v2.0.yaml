@@ -1,0 +1,60 @@
+# RaftarXpress Logistics (Pvt) Ltd - Cash-on-Delivery (COD) Operations Policy, version 2.0 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-005
+  title: Cash-on-Delivery (COD) Operations Policy
+  version: "2.0"
+  doc_type: POLICY
+  category: Other
+  family: FAM-COD-POLICY
+  status: ACTIVE
+  effective_date: "2025-01-16"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-005 v2.0 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-005-S1
+    heading: Maximum Cash Collection Threshold
+    page: 1
+    body:
+      - >-
+        The maximum permissible Cash-on-Delivery (COD) collection per individual
+        parcel consignment is PKR 100,000. Consignments exceeding this value must
+        be prepaid via digital banking or company escrow.
+
+  - ref: "2"
+    source_id: DOC-005-S2
+    heading: Merchant Remittance Schedule
+    page: 1
+    body:
+      - >-
+        Collected COD funds are disbursed to verified merchant bank accounts on a
+        weekly cycle every Wednesday, provided the accumulated merchant balance
+        exceeds PKR 5,000.
+
+  - ref: "3"
+    source_id: DOC-005-S3
+    heading: Discrepancy Reporting & Reconciliation
+    page: 2
+    body:
+      - >-
+        Any mismatch between physical cash collected by the rider and the booking
+        invoice amount must be flagged in SupportNova within twenty-four (24)
+        hours of hub reconciliation.
+
+  - ref: "4"
+    source_id: DOC-005-S4
+    heading: Rider Cash Safety & Deposit
+    page: 2
+    body:
+      - >-
+        Couriers must deposit all accumulated daily COD collections at the
+        designated hub cash vault by 19:00 PST daily. Carrying overnight company
+        cash is grounds for immediate termination.

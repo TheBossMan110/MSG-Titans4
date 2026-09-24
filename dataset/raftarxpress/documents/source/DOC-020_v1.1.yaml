@@ -1,0 +1,50 @@
+# RaftarXpress Logistics (Pvt) Ltd - General Customer Service Policy and Standards, version 1.1 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [docx]
+
+metadata:
+  doc_ref: DOC-020
+  title: General Customer Service Policy and Standards
+  version: "1.1"
+  doc_type: POLICY
+  category: Customer-Service Policy
+  family: FAM-CUSTOMER-SERVICE
+  status: ACTIVE
+  effective_date: "2024-01-15"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-020 v1.1 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-020-S1
+    heading: Core Service Principles
+    page: 1
+    body:
+      - >-
+        RaftarXpress is committed to speed, integrity, and respectful customer
+        engagement across all omnichannel touchpoints (voice, email, WhatsApp,
+        portal).
+
+  - ref: "2"
+    source_id: DOC-020-S2
+    heading: Operating Hours and Channels
+    page: 1
+    body:
+      - >-
+        Customer support operates 24/7 for Critical (P0) escalation intake, and
+        08:00 to 22:00 PST Monday through Saturday for general inquiries and
+        billing reconciliations.
+
+  - ref: "3"
+    source_id: DOC-020-S3
+    heading: Customer Feedback and Quality Audits
+    page: 2
+    body:
+      - >-
+        Post-interaction CSAT surveys are automatically dispatched upon ticket
+        resolution, with random monthly audits conducted by the Quality Assurance
+        team.

@@ -1,0 +1,42 @@
+# ── secrets ──
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ── python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ── app data ──
+var/
+*.db
+*.sqlite3
+supportnova.db
+
+# ── node / frontend ──
+node_modules/
+.next/
+out/
+dist/
+.vercel
+
+# ── os / ide ──
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ── generated artifacts (keep the folders, ignore the output) ──
+reports/generated/
+screenshots/*.tmp

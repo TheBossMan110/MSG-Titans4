@@ -1,0 +1,39 @@
+# RaftarXpress Logistics (Pvt) Ltd - Cash-on-Delivery Handling Policy (Legacy), version 1.0 (SUPERSEDED)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [docx]
+
+metadata:
+  doc_ref: DOC-006
+  title: Cash-on-Delivery Handling Policy (Legacy)
+  version: "1.0"
+  doc_type: POLICY
+  category: Other
+  family: FAM-COD-POLICY
+  status: SUPERSEDED
+  effective_date: "2023-01-01"
+  expiry_date: "2025-01-15"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-006 v1.0 - SUPERSEDED
+
+sections:
+  - ref: "1"
+    source_id: DOC-006-S1
+    heading: Legacy COD Limits
+    page: 1
+    body:
+      - >-
+        The maximum cash collection per shipment was restricted to PKR 50,000.
+        Bookings above this threshold were canceled at the origin booking counter.
+
+  - ref: "2"
+    source_id: DOC-006-S2
+    heading: Bi-Monthly Remittance Cycle
+    page: 1
+    body:
+      - >-
+        Merchant COD settlements were executed bi-monthly on the 1st and 15th of
+        each calendar month via physical cheque issuance.

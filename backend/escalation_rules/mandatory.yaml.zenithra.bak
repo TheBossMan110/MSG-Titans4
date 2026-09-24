@@ -1,0 +1,891 @@
+# ══════════════════════════════════════════════════════════════════════════
+# Zenithra — MANDATORY ESCALATION RULES
+#
+# SRS requires at least 30 mandatory escalation rules or conditions.
+#
+# Every rule here sets `mandatory_escalation: true`, which means its escalation
+# level becomes a FLOOR. The reconciliation layer, the reviewer UI and the
+# response guard may all raise the final escalation; none of them may lower it
+# below this. That is the answer to the Escalation Trap (SRS 1.8 #7):
+#
+#   "A complaint may contain an escalation condition that is easily overlooked
+#    by GenAI. The Python pipeline must independently enforce the escalation
+#    rule."
+#
+# Note what these conditions test. Not one of them looks at sentiment, tone or
+# how angry the customer sounds — only at what the complaint *describes*. That
+# is the Sentiment-Urgency Trap (SRS 1.8 #6) answered in the rule matrix rather
+# than asserted in a document.
+#
+# Precedence bands
+#   120  safety with injury        — nothing outranks this
+#   110  safety hazard
+#   105  security / privacy breach
+#   100  legal and regulatory
+#    95  repeat unresolved contact
+#    90  high-value dispute
+# ══════════════════════════════════════════════════════════════════════════
+
+version: "1.0"
+ruleset: escalation
+default_precedence: 100
+
+rules:
+
+  # ── SAFETY (the highest authority in the matrix) ──────────────────────
+  - rule_ref: ESC-0001
+    name: Safety hazard with reported injury
+    rule_type: ESCALATION
+    precedence: 120
+    mandatory_escalation: true
+    rationale: >-
+      A hazard that has already caused injury or property damage is the most
+      serious report Zenithra can receive. It escalates to executive level
+      immediately, irrespective of order value or how calmly it is written.
+    when:
+      all_of:
+        - signal: safety_lexicon_hit
+        - signal: injury_mention
+    then:
+      category: SAFETY
+      subcategory: INJURY
+      department: SAFETY
+      support_department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      escalation: CRITICAL_MGMT
+      required_actions:
+        - Confirm the customer is safe and not still using the product
+        - Advise disconnecting the product from power where safe to do so
+        - Log a safety incident record
+        - Notify Product Safety within one hour
+        - Refer to Compliance Review
+      prohibited_actions:
+        - Promise a refund before Product Safety assessment
+        - Promise a replacement before Product Safety assessment
+        - Offer compensation
+        - Advise continued use of the product
+        - Close the complaint without Product Safety sign-off
+      policy_refs:
+        - { doc_ref: SAF-POL-02, section_ref: "3" }
+        - { doc_ref: SAF-POL-02, section_ref: "4" }
+      follow_up: true
+
+  - rule_ref: ESC-0002
+    name: Safety hazard reported
+    rule_type: ESCALATION
+    precedence: 110
+    mandatory_escalation: true
+    rationale: >-
+      Burning smell, smoke, sparking, overheating, melting, shock or explosion
+      is a safety incident on the basis of what it describes. SAF-POL-02 s2.2
+      states explicitly that a calmly worded report is still a safety incident.
+    when:
+      signal: safety_lexicon_hit
+    then:
+      category: SAFETY
+      department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+      escalation: CRITICAL_MGMT
+      required_actions:
+        - Advise the customer to stop using the product immediately
+        - Record product, model, serial number and purchase date
+        - Log a safety incident record
+        - Notify Product Safety within one hour
+      prohibited_actions:
+        - Promise a refund before Product Safety assessment
+        - Promise a replacement before Product Safety assessment
+        - Offer compensation
+        - Advise the customer to repair or test the product
+        - Close the complaint without Product Safety sign-off
+      policy_refs:
+        - { doc_ref: SAF-POL-02, section_ref: "2" }
+        - { doc_ref: SAF-POL-02, section_ref: "3" }
+      follow_up: true
+
+  - rule_ref: ESC-0003
+    name: Product defect described in hazardous terms
+    rule_type: ESCALATION
+    precedence: 110
+    mandatory_escalation: true
+    rationale: >-
+      DEL-POL-04 s6 routes damage reports to Returns, but explicitly excludes
+      any sign of overheating or electrical fault. Those are safety incidents
+      regardless of the value of the item.
+    when:
+      all_of:
+        - signal: product_defect_terms
+        - signal: safety_lexicon_hit
+    then:
+      category: SAFETY
+      subcategory: OVERHEATING
+      department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+      escalation: CRITICAL_MGMT
+      required_actions:
+        - Advise the customer to stop using the product immediately
+        - Log a safety incident record
+        - Notify Product Safety within one hour
+      prohibited_actions:
+        - Process this as a standard damage claim
+        - Offer compensation
+      policy_refs:
+        - { doc_ref: DEL-POL-04, section_ref: "6" }
+        - { doc_ref: SAF-POL-02, section_ref: "2" }
+      follow_up: true
+
+  - rule_ref: ESC-0004
+    name: Injury or property damage without an explicit hazard word
+    rule_type: ESCALATION
+    precedence: 115
+    mandatory_escalation: true
+    rationale: >-
+      A customer may describe harm without naming the hazard ("it burnt my
+      hand"). Injury alone is sufficient to escalate.
+    when:
+      signal: injury_mention
+    then:
+      category: SAFETY
+      subcategory: INJURY
+      department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+      escalation: CRITICAL_MGMT
+      required_actions:
+        - Confirm the customer is safe
+        - Log a safety incident record
+        - Notify Product Safety within one hour
+      prohibited_actions:
+        - Offer compensation
+        - Close the complaint without Product Safety sign-off
+      policy_refs:
+        - { doc_ref: SAF-POL-02, section_ref: "3" }
+      follow_up: true
+
+  # ── SECURITY AND PRIVACY ──────────────────────────────────────────────
+  - rule_ref: ESC-0010
+    name: Suspected personal-data exposure
+    rule_type: ESCALATION
+    precedence: 105
+    mandatory_escalation: true
+    rationale: >-
+      A suspected data breach carries a regulatory notification clock. It is
+      owned by Compliance, not by the department that happened to receive it.
+    when:
+      signal: privacy_breach
+    then:
+      category: PRIVACY
+      subcategory: DATA_BREACH
+      department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      escalation: COMPLIANCE_REVIEW
+      required_actions:
+        - Record exactly what data the customer believes was exposed
+        - Notify Compliance and Data Protection within one hour
+        - Preserve all correspondence relating to the report
+      prohibited_actions:
+        - Confirm or deny a breach to the customer
+        - Offer compensation
+        - Close the complaint without Compliance sign-off
+      policy_refs:
+        - { doc_ref: SAF-POL-02, section_ref: "1" }
+      follow_up: true
+
+  - rule_ref: ESC-0011
+    name: Unauthorised account access
+    rule_type: ESCALATION
+    precedence: 105
+    mandatory_escalation: true
+    rationale: >-
+      Account compromise is time-critical: every hour of delay is another hour
+      an attacker retains access.
+    when:
+      signal: security_incident
+    then:
+      category: ACCOUNT
+      subcategory: UNAUTHORISED_ACCESS
+      department: ACCOUNT_SECURITY
+      support_department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      escalation: SPECIALIST
+      required_actions:
+        - Verify the customer's identity before discussing the account
+        - Secure the account and force a credential reset
+        - Record the transactions the customer disputes
+        - Notify Account Security immediately
+      prohibited_actions:
+        - Confirm account details to an unverified caller
+        - Promise a refund of disputed transactions before investigation
+      policy_refs:
+        - { doc_ref: SAF-POL-02, section_ref: "1" }
+      follow_up: true
+
+  - rule_ref: ESC-0012
+    name: Unauthorised transaction on a verified account
+    rule_type: ESCALATION
+    precedence: 100
+    mandatory_escalation: true
+    rationale: >-
+      A disputed charge combined with a security signal is potential fraud and
+      must not be handled as an ordinary billing query.
+    when:
+      all_of:
+        - signal: security_incident
+        - signal: billing_terms
+    then:
+      category: ACCOUNT
+      department: ACCOUNT_SECURITY
+      support_department: BILLING
+      urgency: CRITICAL
+      priority: P0
+      escalation: SPECIALIST
+      required_actions:
+        - Verify identity before discussing transactions
+        - Freeze further automatic payments pending investigation
+        - Open a fraud investigation
+      prohibited_actions:
+        - Process a routine refund
+        - Confirm the transaction will be reversed
+      follow_up: true
+
+  # ── LEGAL AND REGULATORY ──────────────────────────────────────────────
+  - rule_ref: ESC-0020
+    name: Legal action or regulator referenced
+    rule_type: ESCALATION
+    precedence: 100
+    mandatory_escalation: true
+    rationale: >-
+      Once a customer references a lawyer, a consumer forum, an ombudsman or a
+      regulator, every further response is potentially disclosable. Compliance
+      must own the wording.
+    when:
+      signal: legal_threat
+    then:
+      department: COMPLIANCE
+      urgency: HIGH
+      priority: P1
+      escalation: COMPLIANCE_REVIEW
+      required_actions:
+        - Refer to Compliance before any further customer contact
+        - Preserve the full complaint history
+        - Record the specific forum or authority named
+      prohibited_actions:
+        - Admit liability
+        - Offer a settlement
+        - Promise any specific outcome
+      policy_refs:
+        - { doc_ref: DEL-POL-04, section_ref: "7" }
+      follow_up: true
+
+  - rule_ref: ESC-0021
+    name: Legal threat on a high-value dispute
+    rule_type: ESCALATION
+    precedence: 102
+    mandatory_escalation: true
+    rationale: >-
+      A legal threat attached to a substantial sum is the combination most
+      likely to proceed. It goes to executive level rather than Compliance
+      alone.
+    when:
+      all_of:
+        - signal: legal_threat
+        - fact: amount_value
+          gte: 25000
+    then:
+      department: MGMT_ESCALATIONS
+      support_department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      escalation: CRITICAL_MGMT
+      required_actions:
+        - Refer to Management Escalations and Compliance jointly
+        - Preserve the full complaint history
+      prohibited_actions:
+        - Admit liability
+        - Offer a settlement
+      follow_up: true
+
+  - rule_ref: ESC-0022
+    name: Regulatory or compliance obligation referenced
+    rule_type: ESCALATION
+    precedence: 100
+    mandatory_escalation: true
+    rationale: >-
+      A privacy complaint that also names a regulator carries a statutory
+      response deadline.
+    when:
+      all_of:
+        - signal: privacy_breach
+        - signal: legal_threat
+    then:
+      category: PRIVACY
+      department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      escalation: COMPLIANCE_REVIEW
+      required_actions:
+        - Notify Compliance within one hour
+        - Record the statutory deadline applicable to the request
+      prohibited_actions:
+        - Respond substantively before Compliance review
+      follow_up: true
+
+  # ── REPEAT AND UNRESOLVED ─────────────────────────────────────────────
+  - rule_ref: ESC-0030
+    name: Third unresolved contact on the same matter
+    rule_type: ESCALATION
+    precedence: 95
+    mandatory_escalation: true
+    rationale: >-
+      DEL-POL-04 s7 requires escalation to Supervisor Review once a matter has
+      been the subject of three or more contacts without resolution. This is
+      mandatory and not at the agent's discretion.
+    when:
+      fact: repeat_count
+      gte: 3
+    then:
+      urgency: HIGH
+      priority: P1
+      escalation: SUPERVISOR
+      required_actions:
+        - Review every prior contact on this matter before replying
+        - Provide a single named owner for the resolution
+        - Commit to a specific next update time
+      prohibited_actions:
+        - Repeat advice the customer has already been given
+        - Close without confirming resolution with the customer
+      policy_refs:
+        - { doc_ref: DEL-POL-04, section_ref: "7" }
+      follow_up: true
+
+  - rule_ref: ESC-0031
+    name: Fifth contact on the same matter
+    rule_type: ESCALATION
+    precedence: 98
+    mandatory_escalation: true
+    rationale: >-
+      Five contacts without resolution is a process failure rather than a case
+      difficulty, and is owned at department-manager level.
+    when:
+      fact: repeat_count
+      gte: 5
+    then:
+      urgency: HIGH
+      priority: P1
+      escalation: DEPT_MANAGER
+      required_actions:
+        - Department Manager to own the resolution personally
+        - Produce a written explanation of why prior contacts failed
+      follow_up: true
+
+  - rule_ref: ESC-0032
+    name: Customer states the matter is still unresolved
+    rule_type: ESCALATION
+    precedence: 92
+    mandatory_escalation: true
+    rationale: >-
+      An explicit statement of prior unresolved contact is treated as a repeat
+      even when the earlier complaint was never formally linked.
+    when:
+      all_of:
+        - signal: repeat_contact
+        - fact: has_previous_complaint
+          eq: true
+    then:
+      urgency: HIGH
+      priority: P1
+      escalation: SUPERVISOR
+      required_actions:
+        - Link this complaint to the earlier record
+        - Review the earlier resolution before replying
+      follow_up: true
+
+  - rule_ref: ESC-0033
+    name: Customer explicitly requests escalation
+    rule_type: ESCALATION
+    precedence: 90
+    mandatory_escalation: true
+    rationale: >-
+      A direct request to speak to a manager is honoured rather than deflected.
+      Refusing it is the most reliable way to turn a complaint into a public
+      one.
+    when:
+      signal: escalation_request
+    then:
+      escalation: SUPERVISOR
+      urgency: HIGH
+      priority: P1
+      required_actions:
+        - Acknowledge the escalation request explicitly in the reply
+        - Provide the name and role of the reviewing supervisor
+      prohibited_actions:
+        - Decline the escalation request
+      follow_up: true
+
+  - rule_ref: ESC-0034
+    name: Repeat contact on a delivery matter
+    rule_type: ESCALATION
+    precedence: 93
+    mandatory_escalation: true
+    rationale: >-
+      Repeated delivery failures on one order indicate a broken fulfilment
+      path, not an isolated delay.
+    when:
+      all_of:
+        - signal: delivery_terms
+        - fact: repeat_count
+          gte: 2
+    then:
+      department: LOGISTICS
+      urgency: HIGH
+      priority: P1
+      escalation: SUPERVISOR
+      required_actions:
+        - Raise a delivery investigation rather than re-quoting a date
+      follow_up: true
+
+  # ── VALUE AND IMPACT ──────────────────────────────────────────────────
+  - rule_ref: ESC-0040
+    name: High-value dispute
+    rule_type: ESCALATION
+    precedence: 90
+    mandatory_escalation: true
+    rationale: >-
+      A dispute above the stated threshold exceeds an agent's settlement
+      authority under REF-POL-02 s6 and must be reviewed before any commitment.
+    when:
+      fact: amount_value
+      gte: 50000
+    then:
+      urgency: HIGH
+      priority: P1
+      escalation: DEPT_MANAGER
+      required_actions:
+        - Department Manager approval required before any financial commitment
+        - Verify the disputed amount against the payment ledger
+      prohibited_actions:
+        - Approve a refund without Department Manager approval
+        - Offer goodwill credit above the standard cap
+      policy_refs:
+        - { doc_ref: REF-POL-02, section_ref: "6" }
+      follow_up: true
+
+  - rule_ref: ESC-0041
+    name: Substantial dispute requiring supervisor review
+    rule_type: ESCALATION
+    precedence: 85
+    mandatory_escalation: true
+    rationale: >-
+      Mid-value disputes are reviewed by a supervisor before a financial
+      commitment is made.
+    when:
+      all_of:
+        - fact: amount_value
+          gte: 15000
+        - fact: amount_value
+          lt: 50000
+    then:
+      urgency: HIGH
+      priority: P1
+      escalation: SUPERVISOR
+      required_actions:
+        - Supervisor review before any financial commitment
+      follow_up: true
+
+  - rule_ref: ESC-0042
+    name: High-value dispute from a business or VIP customer
+    rule_type: ESCALATION
+    precedence: 91
+    mandatory_escalation: true
+    rationale: >-
+      Relationship value and dispute value together justify manager ownership.
+      Note this raises the *escalation*, not the underlying urgency assessment,
+      which remains driven by what the complaint describes.
+    when:
+      all_of:
+        - fact: is_vip
+          eq: true
+        - fact: amount_value
+          gte: 15000
+    then:
+      escalation: DEPT_MANAGER
+      urgency: HIGH
+      priority: P1
+      required_actions:
+        - Assign a named account contact
+      follow_up: true
+
+  # ── UNSUPPORTED DEMANDS ───────────────────────────────────────────────
+  - rule_ref: ESC-0050
+    name: Compensation demanded
+    rule_type: ESCALATION
+    precedence: 80
+    mandatory_escalation: true
+    rationale: >-
+      Compensation sits outside standard agent authority. REF-POL-02 s6 caps
+      goodwill and requires manager approval above it, so the request is
+      reviewed rather than answered at the desk.
+    when:
+      signal: compensation_demand
+    then:
+      escalation: SUPERVISOR
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Verify goodwill eligibility against REF-POL-02 s6 before replying
+      prohibited_actions:
+        - Promise compensation
+        - Promise goodwill credit above the standard cap
+        - Describe goodwill credit as compensation
+      policy_refs:
+        - { doc_ref: REF-POL-02, section_ref: "6" }
+      follow_up: true
+
+  - rule_ref: ESC-0051
+    name: Compensation demanded on a repeat contact
+    rule_type: ESCALATION
+    precedence: 88
+    mandatory_escalation: true
+    rationale: >-
+      A compensation demand following repeated failures is the point at which a
+      manager decides, not an agent.
+    when:
+      all_of:
+        - signal: compensation_demand
+        - fact: repeat_count
+          gte: 2
+    then:
+      escalation: DEPT_MANAGER
+      urgency: HIGH
+      priority: P1
+      prohibited_actions:
+        - Promise compensation
+      follow_up: true
+
+  - rule_ref: ESC-0052
+    name: Refund demanded outside the eligibility window
+    rule_type: ESCALATION
+    precedence: 78
+    mandatory_escalation: true
+    rationale: >-
+      REF-POL-02 s2 states that agents may not grant an exception to the refund
+      window; exceptions require Department Manager approval.
+    when:
+      all_of:
+        - signal: refund_terms
+        - fact: complaint_age_hours
+          gt: 336
+    then:
+      escalation: DEPT_MANAGER
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Confirm the purchase date and applicable refund window
+      prohibited_actions:
+        - Grant a refund-window exception
+        - Confirm a refund before eligibility is verified
+      policy_refs:
+        - { doc_ref: REF-POL-02, section_ref: "2" }
+      follow_up: true
+
+  # ── SERVICE AND CONDUCT ───────────────────────────────────────────────
+  - rule_ref: ESC-0060
+    name: Staff conduct complaint
+    rule_type: ESCALATION
+    precedence: 87
+    mandatory_escalation: true
+    rationale: >-
+      A conduct allegation concerns a named individual and carries HR
+      implications. It cannot be assessed by the team it concerns.
+    when:
+      signal: staff_conduct_terms
+    then:
+      category: STAFF_BEHAVIOR
+      department: CUSTOMER_RELATIONS
+      urgency: HIGH
+      priority: P1
+      escalation: DEPT_MANAGER
+      required_actions:
+        - Record the date, time and channel of the interaction
+        - Refer to the relevant people manager
+      prohibited_actions:
+        - Discuss disciplinary action with the customer
+        - Route the complaint to the team it concerns
+      follow_up: true
+
+  - rule_ref: ESC-0061
+    name: Lost shipment investigation
+    rule_type: ESCALATION
+    precedence: 82
+    mandatory_escalation: true
+    rationale: >-
+      DEL-POL-04 s4 requires a delivery investigation within one business day
+      when a shipment is marked delivered but not received.
+    when:
+      all_of:
+        - signal: delivery_failure
+        - signal: delivery_terms
+    then:
+      category: DELIVERY
+      subcategory: NOT_DELIVERED
+      department: LOGISTICS
+      urgency: HIGH
+      priority: P1
+      escalation: SUPERVISOR
+      required_actions:
+        - Raise a delivery investigation within one business day
+        - Confirm the delivery address on the order
+      prohibited_actions:
+        - Confirm a replacement before the investigation concludes
+        - Confirm a refund before the investigation concludes
+      policy_refs:
+        - { doc_ref: DEL-POL-04, section_ref: "4" }
+      follow_up: true
+
+  - rule_ref: ESC-0062
+    name: Warranty claim rejection disputed
+    rule_type: ESCALATION
+    precedence: 80
+    mandatory_escalation: true
+    rationale: >-
+      A disputed warranty rejection is reviewed by someone other than the
+      original assessor.
+    when:
+      all_of:
+        - signal: warranty_terms
+        - signal: escalation_request
+    then:
+      category: WARRANTY
+      department: WARRANTY
+      urgency: HIGH
+      priority: P1
+      escalation: SPECIALIST
+      required_actions:
+        - Independent review of the original warranty assessment
+      follow_up: true
+
+  - rule_ref: ESC-0063
+    name: Repeat technical failure after a service visit
+    rule_type: ESCALATION
+    precedence: 84
+    mandatory_escalation: true
+    rationale: >-
+      A fault recurring after a repair indicates the repair did not address the
+      cause. It goes to the specialist team rather than back into the queue.
+    when:
+      all_of:
+        - signal: technical_terms
+        - signal: repeat_contact
+    then:
+      category: TECHNICAL_SUPPORT
+      department: TECH_SUPPORT
+      urgency: HIGH
+      priority: P1
+      escalation: SPECIALIST
+      required_actions:
+        - Review the previous service report before advising
+      follow_up: true
+
+  # ── BILLING INTEGRITY ─────────────────────────────────────────────────
+  - rule_ref: ESC-0070
+    name: Duplicate charge reported
+    rule_type: ESCALATION
+    precedence: 86
+    mandatory_escalation: true
+    rationale: >-
+      REF-POL-02 s7 refunds a confirmed duplicate charge in full without
+      reference to the refund window, because the charge itself was an error.
+      Confirmation requires a ledger check, so the case is supervised.
+    when:
+      signal: billing_error
+    then:
+      category: BILLING
+      subcategory: DUPLICATE_CHARGE
+      department: BILLING
+      urgency: HIGH
+      priority: P1
+      escalation: SUPERVISOR
+      required_actions:
+        - Check the payment ledger for a matching transaction pair
+        - Open a billing investigation
+      prohibited_actions:
+        - Confirm the refund before the ledger check completes
+      policy_refs:
+        - { doc_ref: REF-POL-02, section_ref: "7" }
+      follow_up: true
+
+  - rule_ref: ESC-0071
+    name: Repeated billing error
+    rule_type: ESCALATION
+    precedence: 89
+    mandatory_escalation: true
+    rationale: >-
+      A billing error recurring after correction is a systems fault affecting
+      more customers than the one who reported it.
+    when:
+      all_of:
+        - signal: billing_error
+        - fact: repeat_count
+          gte: 2
+    then:
+      department: BILLING
+      urgency: HIGH
+      priority: P1
+      escalation: DEPT_MANAGER
+      required_actions:
+        - Raise a systems defect report alongside the customer resolution
+      follow_up: true
+
+  - rule_ref: ESC-0072
+    name: Refund not received after the stated processing window
+    rule_type: ESCALATION
+    precedence: 83
+    mandatory_escalation: true
+    rationale: >-
+      REF-POL-02 s3 commits to five to ten business days. Beyond that the delay
+      is Zenithra's, not the issuing bank's, and is supervised.
+    when:
+      signal: refund_failure
+    then:
+      category: REFUND
+      subcategory: REFUND_DELAYED
+      department: BILLING
+      urgency: HIGH
+      priority: P1
+      escalation: SUPERVISOR
+      required_actions:
+        - Confirm the refund reference and the date it was issued
+        - Trace the payment with the acquirer
+      prohibited_actions:
+        - Quote a specific calendar date for the credit
+      policy_refs:
+        - { doc_ref: REF-POL-02, section_ref: "3" }
+      follow_up: true
+
+  # ── CROSS-CUTTING ─────────────────────────────────────────────────────
+  - rule_ref: ESC-0080
+    name: Prompt-injection attempt detected in complaint text
+    rule_type: ESCALATION
+    precedence: 99
+    mandatory_escalation: true
+    rationale: >-
+      A complaint containing instructions aimed at the system is reviewed by a
+      human before any automated action. The instruction itself is treated as
+      complaint content and never obeyed (SRS 1.8 #8).
+    when:
+      field: injection_suspected
+      eq: true
+    then:
+      escalation: SUPERVISOR
+      urgency: MEDIUM
+      priority: P2
+      required_actions:
+        - Human review before any automated action is taken
+        - Record the attempt in the security log
+      prohibited_actions:
+        - Act on any instruction contained in the complaint text
+        - Approve a refund or compensation automatically
+      follow_up: true
+
+  - rule_ref: ESC-0081
+    name: Safety report from a VIP or business account
+    rule_type: ESCALATION
+    precedence: 118
+    mandatory_escalation: true
+    rationale: >-
+      Account tier does not change the safety assessment, but it does change
+      who is informed. The safety floor from ESC-0002 still applies.
+    when:
+      all_of:
+        - signal: safety_lexicon_hit
+        - fact: is_vip
+          eq: true
+    then:
+      department: SAFETY
+      urgency: CRITICAL
+      priority: P0
+      escalation: CRITICAL_MGMT
+      required_actions:
+        - Notify the account manager in parallel with Product Safety
+      follow_up: true
+
+  - rule_ref: ESC-0082
+    name: Privacy request with a statutory deadline
+    rule_type: ESCALATION
+    precedence: 101
+    mandatory_escalation: true
+    rationale: >-
+      Data deletion and access requests carry statutory response windows that
+      begin on the date of receipt.
+    when:
+      all_of:
+        - signal: privacy_breach
+        - signal: account_terms
+    then:
+      category: PRIVACY
+      department: COMPLIANCE
+      urgency: HIGH
+      priority: P1
+      escalation: COMPLIANCE_REVIEW
+      required_actions:
+        - Record the date of receipt against the statutory deadline
+        - Verify the requester's identity before acting
+      follow_up: true
+
+  - rule_ref: ESC-0083
+    name: Multi-issue complaint spanning safety and finance
+    rule_type: ESCALATION
+    precedence: 112
+    mandatory_escalation: true
+    rationale: >-
+      When a safety report also carries a financial demand, the safety
+      assessment leads and the financial request waits for it.
+    when:
+      all_of:
+        - signal: safety_lexicon_hit
+        - any_of:
+            - signal: refund_terms
+            - signal: compensation_demand
+    then:
+      department: SAFETY
+      support_department: BILLING
+      urgency: CRITICAL
+      priority: P0
+      escalation: CRITICAL_MGMT
+      required_actions:
+        - Resolve the safety assessment before addressing the financial request
+      prohibited_actions:
+        - Process the refund before Product Safety sign-off
+        - Offer compensation
+      follow_up: true
+
+  - rule_ref: ESC-0084
+    name: Persistent repeat with a legal threat
+    rule_type: ESCALATION
+    precedence: 104
+    mandatory_escalation: true
+    rationale: >-
+      Repeated failure plus a legal threat is the highest-risk non-safety
+      combination in the matrix.
+    when:
+      all_of:
+        - signal: legal_threat
+        - fact: repeat_count
+          gte: 2
+    then:
+      department: MGMT_ESCALATIONS
+      support_department: COMPLIANCE
+      urgency: CRITICAL
+      priority: P0
+      escalation: CRITICAL_MGMT
+      required_actions:
+        - Management Escalations to own the case
+        - Preserve the full contact history for Compliance
+      prohibited_actions:
+        - Admit liability
+        - Offer a settlement
+      follow_up: true

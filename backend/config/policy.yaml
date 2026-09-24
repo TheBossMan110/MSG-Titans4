@@ -1,0 +1,133 @@
+# ══════════════════════════════════════════════════════════════════════════
+# SupportNova — policy precedence, comparison severity and decision thresholds
+#
+# Loaded into the `app_config` table, editable at runtime by an administrator.
+# SRS 1.8 #10 (Contradictory Policy Challenge) requires the precedence order to
+# be DOCUMENTED and APPLIED — this file is that documentation, and the engine
+# reads it rather than hard-coding the order.
+# ══════════════════════════════════════════════════════════════════════════
+
+# ── 1. Policy precedence (highest authority first) ────────────────────────
+# When two sources conflict, the one earlier in this list wins.  Ties inside a
+# tier are broken by the later `effective_date`.  A conflict is always RECORDED
+# even when it is automatically resolved.
+policy_precedence:
+  order:
+    - ACTIVE_POLICY        # current approved policy document
+    - COMPLIANCE           # regulatory / legal obligation document
+    - DEPARTMENT_SOP       # departmental standard operating procedure
+    - ROUTING_RULES        # department routing rule sheets
+    - SLA                  # service-level agreement documents
+    - FAQ                  # customer-facing FAQ
+    - HANDBOOK             # general handbook / informal guidance
+  tie_breaker: effective_date_desc
+  # A SUPERSEDED or EXPIRED version is never the primary basis of a
+  # resolution.  It remains retrievable only for contradiction detection.
+  superseded_usable_for: [CONTRADICTION_DETECTION, VERSION_DIFF]
+  on_conflict: RECORD_AND_RESOLVE   # RECORD_AND_RESOLVE | ROUTE_TO_REVIEW
+
+# ── 2. Comparison severity weights (FR xlvi-li) ───────────────────────────
+# Which pipeline wins a disagreement, and how much the disagreement matters.
+#   python  -> deterministic rules are authoritative; a mismatch is a CORRECTION
+#   genai   -> the model's reading is kept (language-surface fields only)
+#
+# required_actions and prohibited_actions are NOT listed here. They are
+# obligations, not competing opinions: the rule matrix states them and the
+# model never restates them in the same vocabulary. They are enforced against
+# the generated reply by the response guard (section 6 below) under SRS
+# Step 28, not compared between pipelines.
+#   review  -> neither side wins automatically; a human decides
+comparison_weights:
+  escalation_level:   { severity: CRITICAL,      winner: python }
+  department:         { severity: CRITICAL,      winner: python }
+  priority:           { severity: CRITICAL,      winner: python }
+  policy_validity:    { severity: CRITICAL,      winner: python }
+  category:           { severity: HIGH,          winner: review }
+  urgency:            { severity: HIGH,          winner: python }
+  support_department: { severity: MEDIUM,        winner: python }
+  subcategory:        { severity: MEDIUM,        winner: review }
+  follow_up_required: { severity: MEDIUM,        winner: python }
+  sentiment:          { severity: INFORMATIONAL, winner: genai }
+  primary_issue:      { severity: INFORMATIONAL, winner: genai }
+  secondary_issue:    { severity: INFORMATIONAL, winner: genai }
+
+# ── 3. Verification decision thresholds (SRS Step 57) ─────────────────────
+verification:
+  # Any single CRITICAL mismatch downgrades the outcome to a correction.
+  critical_mismatch_outcome: CORRECTED_BY_RULES
+  # This many HIGH mismatches forces a human into the loop.
+  high_mismatch_review_threshold: 2
+  # Outcomes that must never reach a customer without a human approval.
+  blocking_outcomes: [BLOCKED, MANUAL_REVIEW_REQUIRED, INCOMPLETE]
+  # Reasons that put a complaint in the manual review queue (SRS Step 57).
+  manual_review_reasons:
+    - GENAI_PYTHON_DISAGREEMENT
+    - POLICY_SUPPORT_MISSING
+    - AMBIGUOUS_COMPLAINT
+    - ESCALATION_UNCLEAR
+    - POLICY_CONTRADICTION
+    - SENSITIVE_COMPLAINT
+    - GUARD_BLOCKED
+    - GENAI_UNAVAILABLE
+    - RULE_UNMATCHED
+    - RULE_CONFLICT
+
+# ── 4. Scoring (FR li — Verification Score) ───────────────────────────────
+# Every score is COMPUTED from stored rows.  Nothing here is a fixed number
+# that could be displayed without evidence (SRS 1.8 #17).
+scoring:
+  agreement_score:
+    formula: matched_fields / total_compared_fields * 100
+  traceability_score:
+    formula: resolvable_active_citations / total_citations * 100
+    # A citation only counts when the chunk exists AND its document version is ACTIVE.
+    require_active_version: true
+  compliance_score:
+    # Measured by the RESPONSE GUARD against the generated reply, not at the
+    # comparison stage. Each check is a specific, deterministic question the
+    # guard actually asked: is this promise authorised by an ELIGIBLE
+    # eligibility decision, does this citation resolve to an ACTIVE document,
+    # is this policy claim cited.
+    #
+    # An earlier draft read `satisfied_required_actions / total_required_actions`,
+    # which is not machine-checkable: the rule matrix states obligations as
+    # prose ("Verify shipment status in the tracking system") and a reply
+    # cannot be read to confirm the agent did it. Those obligations are now
+    # surfaced as a mandatory agent checklist instead, and are deliberately
+    # excluded from this score rather than guessed at.
+    formula: guard_checks_passed / guard_checks_run * 100
+    # With no promise, citation or policy claim in the reply there is nothing
+    # to check. The score is then null -- never 100.
+    null_when_no_checks: true
+  targets:
+    mandatory_escalation_recall: 100.0   # non-negotiable
+    prohibited_action_violations: 0
+    traceability_minimum: 90.0
+
+# ── 5. Detection thresholds ───────────────────────────────────────────────
+thresholds:
+  duplicate_similarity: 0.85        # exact-duplicate link
+  near_duplicate_similarity: 0.70   # near-duplicate link
+  repeat_lookback_days: 90
+  repeat_escalation_count: 3        # 3rd unresolved contact escalates
+  hallucination_overlap: 0.35       # claim vs cited chunk lexical+semantic overlap
+  # Two policy sentences must share this much vocabulary, in BOTH
+  # directions, before they count as being about the same subject and a
+  # difference between them counts as a contradiction (SRS 1.8 #10).
+  # High on purpose: a false contradiction costs an agent a dismissal
+  # every time they open the complaint, and findings that are usually
+  # wrong stop being read.
+  policy_conflict_overlap: 0.60
+  retrieval_top_k: 8
+  min_complaint_length: 20
+  max_complaint_length: 8000
+
+# ── 6. Response guard ─────────────────────────────────────────────────────
+response_guard:
+  # What the guard does when it finds an unsupported promise.
+  on_unsupported_promise: REGENERATE_ONCE_THEN_REVIEW
+  max_regenerations: 1
+  # Phrases the customer-facing reply may never contain unless the matching
+  # permitted action was derived by Pipeline 2.
+  strict_types: [REFUND, COMPENSATION, TIMELINE, EXCEPTION]
+  require_citation_for_policy_claims: true

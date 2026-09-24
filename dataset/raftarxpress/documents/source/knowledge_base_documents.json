@@ -1,0 +1,778 @@
+{
+  "documents": [
+    {
+      "document_id": "DOC-001",
+      "document_family_id": "FAM-REFUND-POLICY",
+      "title": "Customer Refund Policy",
+      "category": "Refund Policy",
+      "version": "v2.0",
+      "lifecycle_status": "Active",
+      "effective_date": "2025-07-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-001-S1",
+          "heading": "Scope and Applicability",
+          "page": 1,
+          "content": "This policy governs all refund requests submitted by individual consumers, retail merchants, and corporate freight clients for failed, returned, or overcharged courier shipments processed by RaftarXpress Logistics across Pakistan."
+        },
+        {
+          "section_id": "DOC-001-S2",
+          "heading": "Eligible Refund Timelines",
+          "page": 1,
+          "content": "Customers are eligible to claim a refund within seven (7) business days from the recorded delivery or delivery-failure timestamp. Claims filed after seven business days shall be automatically rejected unless granted special executive exemption."
+        },
+        {
+          "section_id": "DOC-001-S3",
+          "heading": "Condition of Returned Goods",
+          "page": 1,
+          "content": "All physical refunds require the parcel to be returned with original outer packaging, unaltered shipping manifest labels, and intact security seals. Items damaged due to merchant packing negligence are strictly non-refundable."
+        },
+        {
+          "section_id": "DOC-001-S4",
+          "heading": "Disbursement Methods and SLAs",
+          "page": 2,
+          "content": "Approved refunds are processed solely via Inter-Bank Funds Transfer (IBFT) or RaftarXpress Wallet credit within five to seven (5-7) banking days. Cash disbursements by couriers or regional dispatch hubs are strictly prohibited under company anti-fraud protocols."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-002",
+      "document_family_id": "FAM-REFUND-POLICY",
+      "title": "Customer Refund Policy (Legacy)",
+      "category": "Refund Policy",
+      "version": "v1.0",
+      "lifecycle_status": "Superseded",
+      "effective_date": "2023-01-01",
+      "expiry_date": "2025-06-30",
+      "sections": [
+        {
+          "section_id": "DOC-002-S1",
+          "heading": "Scope and Eligibility Window",
+          "page": 1,
+          "content": "This historical policy applies to all courier shipments booked prior to July 2025. Refund requests were strictly required to be submitted within three (3) calendar days of delivery confirmation."
+        },
+        {
+          "section_id": "DOC-002-S2",
+          "heading": "Settlement Channel and Timeframe",
+          "page": 1,
+          "content": "All approved legacy claims were reimbursed within ten to fourteen (10-14) banking days exclusively via cross-cheque or physical voucher redeemable at designated Karachi and Lahore hub counters."
+        },
+        {
+          "section_id": "DOC-002-S3",
+          "heading": "Deductions and Handling Charges",
+          "page": 2,
+          "content": "A mandatory administrative restocking deduction of 15% was applied to all processed customer refunds regardless of shipment destination or customer account tier."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-003",
+      "document_family_id": "FAM-DELIVERY-POLICY",
+      "title": "Standard Last-Mile Delivery Policy",
+      "category": "Delivery Policy",
+      "version": "v2.1",
+      "lifecycle_status": "Active",
+      "effective_date": "2025-01-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-003-S1",
+          "heading": "Delivery Attempt Quota",
+          "page": 1,
+          "content": "RaftarXpress couriers must perform up to three (3) verified delivery attempts on consecutive business days before classifying a shipment as undeliverable. Each attempt requires GPS logging and recipient contact verification via automated SMS."
+        },
+        {
+          "section_id": "DOC-003-S2",
+          "heading": "Recipient Identity Verification & Handover",
+          "page": 1,
+          "content": "High-value consignments exceeding PKR 25,000 and corporate shipments require digital CNIC verification and a one-time password (OTP) transmitted to the registered consignee phone number prior to physical handover."
+        },
+        {
+          "section_id": "DOC-003-S3",
+          "heading": "Unattended Delivery Prohibition",
+          "page": 2,
+          "content": "Riders are strictly forbidden from leaving parcels unattended at doorsteps, security gates, or with unauthorized third parties without explicit written consent recorded in the SupportNova delivery portal."
+        },
+        {
+          "section_id": "DOC-003-S4",
+          "heading": "Return to Origin (RTO) Initiation",
+          "page": 2,
+          "content": "Following three unsuccessful attempts, the parcel will be held at the destination regional hub for forty-eight (48) hours before initiating automated Return to Origin (RTO) routing back to the shipper."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-004",
+      "document_family_id": "FAM-DELIVERY-POLICY",
+      "title": "Standard Last-Mile Delivery Policy (Legacy)",
+      "category": "Delivery Policy",
+      "version": "v1.0",
+      "lifecycle_status": "Superseded",
+      "effective_date": "2023-01-01",
+      "expiry_date": "2024-12-31",
+      "sections": [
+        {
+          "section_id": "DOC-004-S1",
+          "heading": "Delivery Attempt Limitations",
+          "page": 1,
+          "content": "Under the legacy protocol, couriers were required to make exactly two (2) delivery attempts before marking consignments for immediate Return to Origin (RTO). No holding period was observed at regional hubs."
+        },
+        {
+          "section_id": "DOC-004-S2",
+          "heading": "Re-attempt Surcharge",
+          "page": 1,
+          "content": "A flat re-attempt surcharge of PKR 100 was automatically billed to the shipper for every second delivery attempt requested by the consignee."
+        },
+        {
+          "section_id": "DOC-004-S3",
+          "heading": "Proof of Delivery Collection",
+          "page": 2,
+          "content": "Physical paper run-sheets with manual recipient signatures served as the sole proof of delivery, with no digital OTP or geo-tagging requirement."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-005",
+      "document_family_id": "FAM-COD-POLICY",
+      "title": "Cash-on-Delivery (COD) Operations Policy",
+      "category": "Other",
+      "version": "v2.0",
+      "lifecycle_status": "Active",
+      "effective_date": "2025-01-16",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-005-S1",
+          "heading": "Maximum Cash Collection Threshold",
+          "page": 1,
+          "content": "The maximum permissible Cash-on-Delivery (COD) collection per individual parcel consignment is PKR 100,000. Consignments exceeding this value must be prepaid via digital banking or company escrow."
+        },
+        {
+          "section_id": "DOC-005-S2",
+          "heading": "Merchant Remittance Schedule",
+          "page": 1,
+          "content": "Collected COD funds are disbursed to verified merchant bank accounts on a weekly cycle every Wednesday, provided the accumulated merchant balance exceeds PKR 5,000."
+        },
+        {
+          "section_id": "DOC-005-S3",
+          "heading": "Discrepancy Reporting & Reconciliation",
+          "page": 2,
+          "content": "Any mismatch between physical cash collected by the rider and the booking invoice amount must be flagged in SupportNova within twenty-four (24) hours of hub reconciliation."
+        },
+        {
+          "section_id": "DOC-005-S4",
+          "heading": "Rider Cash Safety & Deposit",
+          "page": 2,
+          "content": "Couriers must deposit all accumulated daily COD collections at the designated hub cash vault by 19:00 PST daily. Carrying overnight company cash is grounds for immediate termination."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-006",
+      "document_family_id": "FAM-COD-POLICY",
+      "title": "Cash-on-Delivery Handling Policy (Legacy)",
+      "category": "Other",
+      "version": "v1.0",
+      "lifecycle_status": "Superseded",
+      "effective_date": "2023-01-01",
+      "expiry_date": "2025-01-15",
+      "sections": [
+        {
+          "section_id": "DOC-006-S1",
+          "heading": "Legacy COD Limits",
+          "page": 1,
+          "content": "The maximum cash collection per shipment was restricted to PKR 50,000. Bookings above this threshold were canceled at the origin booking counter."
+        },
+        {
+          "section_id": "DOC-006-S2",
+          "heading": "Bi-Monthly Remittance Cycle",
+          "page": 1,
+          "content": "Merchant COD settlements were executed bi-monthly on the 1st and 15th of each calendar month via physical cheque issuance."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-007",
+      "document_family_id": "FAM-CLAIMS-POLICY",
+      "title": "Lost and Damaged Shipment Claims Policy",
+      "category": "Warranty Policy",
+      "version": "v2.0",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-09-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-007-S1",
+          "heading": "Filing Window for Loss and Damage",
+          "page": 1,
+          "content": "Shippers and consignees may file formal loss or damage claims within fourteen (14) calendar days of booking dispatch. Claims submitted beyond this 14-day window will not be entertained by the Claims Department (DEPT-04)."
+        },
+        {
+          "section_id": "DOC-007-S2",
+          "heading": "Standard Non-Insured Indemnity Cap",
+          "page": 1,
+          "content": "For standard uninsured shipments, the maximum liability and compensation payable by RaftarXpress Logistics is capped at PKR 15,000 or the declared invoice value, whichever is lower."
+        },
+        {
+          "section_id": "DOC-007-S3",
+          "heading": "Insured Cargo Compensation",
+          "page": 2,
+          "content": "Consignments with premium cargo insurance (declared value coverage) are reimbursed at 100% of proven invoice loss within twenty-one (21) business days following claim verification."
+        },
+        {
+          "section_id": "DOC-007-S4",
+          "heading": "Mandatory Evidentiary Documentation",
+          "page": 2,
+          "content": "Claim submissions must include high-resolution unboxing photographs/videos, commercial invoice copy, consignment note (CN) number, and initial inspection report signed by the hub supervisor."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-008",
+      "document_family_id": "FAM-CLAIMS-POLICY",
+      "title": "Lost and Damaged Shipment Claims Policy (Legacy)",
+      "category": "Warranty Policy",
+      "version": "v1.0",
+      "lifecycle_status": "Superseded",
+      "effective_date": "2023-01-01",
+      "expiry_date": "2024-08-31",
+      "sections": [
+        {
+          "section_id": "DOC-008-S1",
+          "heading": "Restricted Filing Window",
+          "page": 1,
+          "content": "Legacy claims were strictly required within five (5) calendar days from parcel dispatch date. Any delay resulted in unconditional claim forfeiture."
+        },
+        {
+          "section_id": "DOC-008-S2",
+          "heading": "Legacy Liability Cap",
+          "page": 1,
+          "content": "Maximum non-insured shipment compensation was strictly limited to PKR 5,000 regardless of the actual market value of the cargo lost in transit."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-009",
+      "document_family_id": "FAM-COMPLAINT-POLICY",
+      "title": "Enterprise Customer Complaint Policy",
+      "category": "Complaint Policy",
+      "version": "v1.5",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-03-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-009-S1",
+          "heading": "Customer Right to Grievance Redressal",
+          "page": 1,
+          "content": "Every customer, merchant, and corporate client has the right to log formal complaints regarding service lapses, rider misconduct, delivery delays, and tariff disputes via the SupportNova platform."
+        },
+        {
+          "section_id": "DOC-009-S2",
+          "heading": "Ticket Categorization and Acknowledgement",
+          "page": 1,
+          "content": "All incoming tickets must be categorized under approved taxonomy codes and acknowledged via automated SMS and email within one (1) business hour of submission."
+        },
+        {
+          "section_id": "DOC-009-S3",
+          "heading": "Single-Point-of-Contact Ownership",
+          "page": 2,
+          "content": "Once assigned, the designated support agent retains ownership of the complaint until full resolution, ensuring seamless cross-department coordination without customer bounce."
+        },
+        {
+          "section_id": "DOC-009-S4",
+          "heading": "Zero Cash Settlement Protocol",
+          "page": 2,
+          "content": "Zero cash settlements are permitted at agent level. All financial compensations and fee adjustments must be formally routed through Billing & Accounts (DEPT-02) and credited via IBFT only."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-010",
+      "document_family_id": "FAM-COMPLAINT-SOP",
+      "title": "Standard Operating Procedure for Complaint Handling",
+      "category": "Complaint SOP",
+      "version": "v2.0",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-06-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-010-S1",
+          "heading": "Ticket Intake and Initial Triage",
+          "page": 1,
+          "content": "Support representatives must verify the tracking number (CN), caller identity, and merchant account tier before tagging urgency levels in SupportNova."
+        },
+        {
+          "section_id": "DOC-010-S2",
+          "heading": "Investigation with Operational Hubs",
+          "page": 1,
+          "content": "For transit delays and missing parcels, agents must query the regional hub scan logs and dispatch history within two (2) hours of ticket intake."
+        },
+        {
+          "section_id": "DOC-010-S3",
+          "heading": "Customer Communication Milestones",
+          "page": 2,
+          "content": "Customers must receive intermediate progress updates every twelve (12) hours until resolution for High (P1) and Critical (P0) priority incidents."
+        },
+        {
+          "section_id": "DOC-010-S4",
+          "heading": "Frontline Agent Compensation Authorization",
+          "page": 2,
+          "content": "Agents are authorized to issue immediate cash compensations up to PKR 2,500 without supervisor approval for urgent customer pacification on delayed deliveries."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-011",
+      "document_family_id": "FAM-REPLACEMENT-POLICY",
+      "title": "Parcel Replacement and Re-Dispatch Policy",
+      "category": "Replacement Policy",
+      "version": "v1.2",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-04-15",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-011-S1",
+          "heading": "Eligibility for Courier-Funded Re-Dispatch",
+          "page": 1,
+          "content": "RaftarXpress funds 100% of re-dispatch freight charges when a delivery error is proven to be caused by internal route misdirection, damaged transit, or courier barcode mis-scan."
+        },
+        {
+          "section_id": "DOC-011-S2",
+          "heading": "Merchant Replacement Fulfillment",
+          "page": 1,
+          "content": "For e-commerce merchant accounts, replacement shipments are assigned express priority lane tags and dispatched within twenty-four (24) hours of claim authorization."
+        },
+        {
+          "section_id": "DOC-011-S3",
+          "heading": "Reverse Pickup Coordination",
+          "page": 2,
+          "content": "Replacement delivery and defective item pickup must occur simultaneously where reverse logistics services are active, reducing customer wait times."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-012",
+      "document_family_id": "FAM-CANCELLATION-POLICY",
+      "title": "Shipment Booking Cancellation Policy",
+      "category": "Cancellation Policy",
+      "version": "v1.1",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-02-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-012-S1",
+          "heading": "Pre-Pickup Cancellation Window",
+          "page": 1,
+          "content": "Shippers may cancel booking requests without penalty at any time prior to rider dispatch from the local operations hub."
+        },
+        {
+          "section_id": "DOC-012-S2",
+          "heading": "In-Transit Interception Restrictions",
+          "page": 1,
+          "content": "Shipments already sorted into linehaul inter-city transit cannot be immediately cancelled; an interception request may be logged to trigger Return to Origin upon arrival at the destination hub."
+        },
+        {
+          "section_id": "DOC-012-S3",
+          "heading": "Cancellation Surcharges",
+          "page": 2,
+          "content": "A nominal attempted pickup charge of PKR 150 applies if the rider arrives at the merchant warehouse and pickup is declined without prior portal cancellation."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-013",
+      "document_family_id": "FAM-BILLING-POLICY",
+      "title": "Tariff, Billing and Invoicing Policy",
+      "category": "Billing Policy",
+      "version": "v1.3",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-05-10",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-013-S1",
+          "heading": "Volumetric and Dead Weight Calculation",
+          "page": 1,
+          "content": "Freight charges are billed based on the higher of dead weight or volumetric weight calculated using the standard formula: (Length x Width x Height in cm) / 5000."
+        },
+        {
+          "section_id": "DOC-013-S2",
+          "heading": "Fuel Surcharge and Tax Invoicing",
+          "page": 1,
+          "content": "All corporate invoices include the prevailing monthly variable fuel surcharge and applicable provincial sales tax (PST/GST) in full compliance with FBR regulations."
+        },
+        {
+          "section_id": "DOC-013-S3",
+          "heading": "Billing Dispute Resolution Period",
+          "page": 2,
+          "content": "Clients must register invoice weight or tariff disputes within fifteen (15) days of monthly invoice generation. Uncontested invoices become final and payable upon expiration."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-014",
+      "document_family_id": "FAM-WARRANTY-POLICY",
+      "title": "Logistics Service Warranty and Guarantee",
+      "category": "Warranty Policy",
+      "version": "v1.0",
+      "lifecycle_status": "Active",
+      "effective_date": "2023-11-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-014-S1",
+          "heading": "On-Time Delivery Guarantee",
+          "page": 1,
+          "content": "RaftarXpress guarantees on-time delivery for Premium Overnight consignments within 24 hours between major hubs (Karachi, Lahore, Islamabad), subject to force majeure exemptions."
+        },
+        {
+          "section_id": "DOC-014-S2",
+          "heading": "Service Failure Compensation",
+          "page": 1,
+          "content": "In the event of an unexcused SLA delay on premium freight, 50% of the freight charge is credited back to the customer's billing ledger."
+        },
+        {
+          "section_id": "DOC-014-S3",
+          "heading": "Exclusions to Warranty",
+          "page": 2,
+          "content": "Delays caused by adverse weather, national highway blockades, customs inspections, or incorrect recipient addresses are strictly excluded from service guarantees."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-015",
+      "document_family_id": "FAM-PRIVACY-POLICY",
+      "title": "Customer Data Privacy and Protection Policy",
+      "category": "Privacy Policy",
+      "version": "v2.0",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-08-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-015-S1",
+          "heading": "Personal Identifiable Information (PII) Protection",
+          "page": 1,
+          "content": "Recipient names, phone numbers, and delivery addresses are encrypted at rest and in transit, accessible only to assigned couriers via masked application interfaces."
+        },
+        {
+          "section_id": "DOC-015-S2",
+          "heading": "Prohibition on Data Monetization",
+          "page": 1,
+          "content": "RaftarXpress Logistics never sells, leases, or shares customer transaction records or recipient contact details with third-party marketing brokers."
+        },
+        {
+          "section_id": "DOC-015-S3",
+          "heading": "Data Retention and Deletion",
+          "page": 2,
+          "content": "Delivery manifests and tracking logs are archived for twenty-four (24) months for audit and taxation purposes, after which PII records are securely purged."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-016",
+      "document_family_id": "FAM-ESCALATION-PROCEDURE",
+      "title": "Multi-Tier Incident Escalation Procedure",
+      "category": "Escalation Procedure",
+      "version": "v2.0",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-09-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-016-S1",
+          "heading": "Tier-1 to Tier-2 Escalation Triggers",
+          "page": 1,
+          "content": "Complaints unacknowledged after two (2) hours or unresolved after twenty-four (24) hours automatically escalate from frontline support to the Department Lead."
+        },
+        {
+          "section_id": "DOC-016-S2",
+          "heading": "Tier-3 Executive Intervention (DEPT-09)",
+          "page": 1,
+          "content": "Grievances involving VIP account SLA breaches, legal notices, regulatory inquiries, or damages exceeding PKR 100,000 are routed directly to Management Escalations (DEPT-09)."
+        },
+        {
+          "section_id": "DOC-016-S3",
+          "heading": "Executive Response SLAs",
+          "page": 2,
+          "content": "Management Escalations must formulate a verified remediation plan and contact the customer within one (1) business hour of escalation."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-017",
+      "document_family_id": "FAM-ROUTING-RULES",
+      "title": "Automated Department Routing and Assignment Rules",
+      "category": "Department-Routing Rules",
+      "version": "v1.4",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-07-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-017-S1",
+          "heading": "Operational Routing Mapping",
+          "page": 1,
+          "content": "Delayed shipments and missed attempts route to DEPT-01. Lost parcel claims and cargo damages route to DEPT-04. Reverse logistics and RTO issues route to DEPT-03."
+        },
+        {
+          "section_id": "DOC-017-S2",
+          "heading": "Financial and Security Routing",
+          "page": 1,
+          "content": "Tariff overcharges, duplicate billings, and COD remittances route to DEPT-02. Fraud allegations, portal breaches, and theft route to DEPT-06."
+        },
+        {
+          "section_id": "DOC-017-S3",
+          "heading": "Specialized Risk and Legal Routing",
+          "page": 2,
+          "content": "Dangerous goods leakage, fleet accidents, and hazards route to DEPT-08. Regulatory notices and contract breaches route to DEPT-07."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-018",
+      "document_family_id": "FAM-SLA-RULES",
+      "title": "Service Level Agreement (SLA) Matrix and Response Rules",
+      "category": "Service-Level Rules",
+      "version": "v2.0",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-10-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-018-S1",
+          "heading": "Priority Classification and Target SLAs",
+          "page": 1,
+          "content": "P0 (Critical) incidents require response within 1 hour and resolution within 8-12 hours. P1 (High) requires response in 2 hours and resolution in 24 hours."
+        },
+        {
+          "section_id": "DOC-018-S2",
+          "heading": "Standard Priority SLAs",
+          "page": 1,
+          "content": "P2 (Medium) incidents require response within 4 hours and resolution within 48 hours. P3 (Low) requires response within 12 hours and resolution within 96 hours."
+        },
+        {
+          "section_id": "DOC-018-S3",
+          "heading": "SLA Pause Conditions",
+          "page": 2,
+          "content": "SLA timers pause when a ticket status is set to 'Awaiting Customer Information' or during officially gazetted public holidays."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-019",
+      "document_family_id": "FAM-FAQS",
+      "title": "Frequently Asked Questions (Customer Portal FAQ)",
+      "category": "FAQs",
+      "version": "v2.2",
+      "lifecycle_status": "Active",
+      "effective_date": "2025-02-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-019-S1",
+          "heading": "Tracking and Transit FAQs",
+          "page": 1,
+          "content": "Q: How do I track my shipment? A: Enter your 11-digit Consignment Note (CN) number on the SupportNova web portal or mobile app for real-time live GPS tracking."
+        },
+        {
+          "section_id": "DOC-019-S2",
+          "heading": "Delivery Attempts and Timelines FAQ",
+          "page": 1,
+          "content": "Q: What happens if I miss a delivery? A: Our courier will automatically re-attempt delivery on the next business day up to three total attempts before holding at the hub."
+        },
+        {
+          "section_id": "DOC-019-S3",
+          "heading": "Unconditional Refund Guarantee FAQ",
+          "page": 2,
+          "content": "Q: What is the refund policy for unsatisfied customers? A: Refunds and replacements are unconditionally guaranteed within 24 hours without original packaging inspection or invoice verification."
+        },
+        {
+          "section_id": "DOC-019-S4",
+          "heading": "Cash-on-Delivery Payment FAQ",
+          "page": 2,
+          "content": "Q: Can I pay with credit card on delivery? A: Digital POS payment is available in Karachi, Lahore, and Islamabad; cash payment in exact currency is required in other branch zones."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-020",
+      "document_family_id": "FAM-CUSTOMER-SERVICE",
+      "title": "General Customer Service Policy and Standards",
+      "category": "Customer-Service Policy",
+      "version": "v1.1",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-01-15",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-020-S1",
+          "heading": "Core Service Principles",
+          "page": 1,
+          "content": "RaftarXpress is committed to speed, integrity, and respectful customer engagement across all omnichannel touchpoints (voice, email, WhatsApp, portal)."
+        },
+        {
+          "section_id": "DOC-020-S2",
+          "heading": "Operating Hours and Channels",
+          "page": 1,
+          "content": "Customer support operates 24/7 for Critical (P0) escalation intake, and 08:00 to 22:00 PST Monday through Saturday for general inquiries and billing reconciliations."
+        },
+        {
+          "section_id": "DOC-020-S3",
+          "heading": "Customer Feedback and Quality Audits",
+          "page": 2,
+          "content": "Post-interaction CSAT surveys are automatically dispatched upon ticket resolution, with random monthly audits conducted by the Quality Assurance team."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-021",
+      "document_family_id": "FAM-COMPLIANCE-GUIDELINES",
+      "title": "Regulatory Compliance and Trade Ethics Guidelines",
+      "category": "Compliance Guidelines",
+      "version": "v1.0",
+      "lifecycle_status": "Active",
+      "effective_date": "2023-09-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-021-S1",
+          "heading": "Prohibited and Contraband Cargo",
+          "page": 1,
+          "content": "Transport of narcotics, firearms, ammunition, unlicensed currency, counterfeit luxury goods, and unregistered pharmaceuticals is strictly forbidden under national law."
+        },
+        {
+          "section_id": "DOC-021-S2",
+          "heading": "Anti-Bribery and Corruption",
+          "page": 1,
+          "content": "Employees and couriers are strictly barred from accepting or soliciting illicit payments, gratuities, or favors from merchants, consignees, or customs officials."
+        },
+        {
+          "section_id": "DOC-021-S3",
+          "heading": "Reporting Violations and Whistleblower Protection",
+          "page": 2,
+          "content": "Suspected compliance violations must be reported immediately to Legal & Compliance (DEPT-07) with strict whistleblower anonymity guaranteed."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-022",
+      "document_family_id": "FAM-RESPONSE-TEMPLATES",
+      "title": "Standard Customer Response Templates",
+      "category": "Response Templates",
+      "version": "v1.2",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-06-15",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-022-S1",
+          "heading": "Delivery Delay Acknowledgement Template",
+          "page": 1,
+          "content": "Dear Valued Customer, we sincerely apologize for the delay regarding CN #[CN_NUMBER]. Our operations team at [HUB_NAME] is expediting priority dispatch, expected by [ESTIMATED_TIME]."
+        },
+        {
+          "section_id": "DOC-022-S2",
+          "heading": "Claim Registration Confirmation Template",
+          "page": 1,
+          "content": "Dear Shipper, your claim for consignment #[CN_NUMBER] has been registered under Case #[CASE_ID]. Claims Department (DEPT-04) will review your evidence within 72 business hours."
+        },
+        {
+          "section_id": "DOC-022-S3",
+          "heading": "Refund Disbursement Notification Template",
+          "page": 2,
+          "content": "Dear Customer, your refund of PKR [AMOUNT] for ticket #[TICKET_ID] has been authorized via IBFT. Funds will reflect in your account within 5-7 banking days under reference #[REF_NO]."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-023",
+      "document_family_id": "FAM-PRODUCT-SUPPORT",
+      "title": "Merchant Portal and Technical Product Support Guidelines",
+      "category": "Product-Support Guidelines",
+      "version": "v1.0",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-02-15",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-023-S1",
+          "heading": "Merchant Portal Access and API Keys",
+          "page": 1,
+          "content": "Merchants can generate bulk booking manifests, thermal shipping labels, and REST API webhook integration keys via the SupportNova Merchant Dashboard."
+        },
+        {
+          "section_id": "DOC-023-S2",
+          "heading": "System Outages and Bug Reporting",
+          "page": 1,
+          "content": "API errors, barcode generation failures, and tracking sync glitches must be reported with full JSON payload logs to Technical Support."
+        },
+        {
+          "section_id": "DOC-023-S3",
+          "heading": "Scheduled Maintenance Windows",
+          "page": 2,
+          "content": "Routine portal maintenance is conducted every Sunday between 02:00 and 04:00 PST. Advance notifications are posted 48 hours prior on merchant dashboards."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-024",
+      "document_family_id": "FAM-CUSTOMS-SOP",
+      "title": "Customs and Inter-Provincial Documentation SOP",
+      "category": "Other",
+      "version": "v1.0",
+      "lifecycle_status": "Active",
+      "effective_date": "2024-03-15",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-024-S1",
+          "heading": "Inter-Provincial Transit Documentation",
+          "page": 1,
+          "content": "Freight moving between Sindh, Punjab, and federal capital territories requires a valid provincial e-way bill, commercial manifest, and sales tax invoice attached to the outer pouch."
+        },
+        {
+          "section_id": "DOC-024-S2",
+          "heading": "Customs Impoundment and Hold Procedure",
+          "page": 1,
+          "content": "If a shipment is held at customs check-posts, Compliance & Legal (DEPT-07) must obtain clearance documents from the shipper within 48 hours to avoid regulatory confiscation."
+        },
+        {
+          "section_id": "DOC-024-S3",
+          "heading": "Document Archival Protocol",
+          "page": 2,
+          "content": "Physical copies of bonded freight documentation must be scanned and archived in the SupportNova compliance vault within 24 hours of inter-city dispatch."
+        }
+      ]
+    },
+    {
+      "document_id": "DOC-025",
+      "document_family_id": "FAM-DANGEROUS-GOODS",
+      "title": "Hazardous Materials and Dangerous Goods Transit Policy",
+      "category": "Other",
+      "version": "v0.9",
+      "lifecycle_status": "Draft",
+      "effective_date": "2026-01-01",
+      "expiry_date": null,
+      "sections": [
+        {
+          "section_id": "DOC-025-S1",
+          "heading": "Lithium Battery and Flammable Liquid Transport",
+          "page": 1,
+          "content": "Draft guidelines mandate specialized UN-certified hazardous packaging, diamond safety labeling, and dedicated ground transit fleet for consignments containing lithium-ion batteries or flammable aerosols."
+        },
+        {
+          "section_id": "DOC-025-S2",
+          "heading": "Emergency Incident Response",
+          "page": 1,
+          "content": "In case of chemical spill, leakage, or smoke emission in warehouses, Safety & Risk (DEPT-08) initiates immediate evacuation and coordinates with civil defense authorities."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+# RaftarXpress Logistics (Pvt) Ltd - Frequently Asked Questions (Customer Portal FAQ), version 2.2 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-019
+  title: Frequently Asked Questions (Customer Portal FAQ)
+  version: "2.2"
+  doc_type: POLICY
+  category: FAQs
+  family: FAM-FAQS
+  status: ACTIVE
+  effective_date: "2025-02-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-019 v2.2 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-019-S1
+    heading: Tracking and Transit FAQs
+    page: 1
+    body:
+      - >-
+        Q: How do I track my shipment? A: Enter your 11-digit Consignment Note
+        (CN) number on the SupportNova web portal or mobile app for real-time live
+        GPS tracking.
+
+  - ref: "2"
+    source_id: DOC-019-S2
+    heading: Delivery Attempts and Timelines FAQ
+    page: 1
+    body:
+      - >-
+        Q: What happens if I miss a delivery? A: Our courier will automatically
+        re-attempt delivery on the next business day up to three total attempts
+        before holding at the hub.
+
+  - ref: "3"
+    source_id: DOC-019-S3
+    heading: Unconditional Refund Guarantee FAQ
+    page: 2
+    body:
+      - >-
+        Q: What is the refund policy for unsatisfied customers? A: Refunds and
+        replacements are unconditionally guaranteed within 24 hours without
+        original packaging inspection or invoice verification.
+
+  - ref: "4"
+    source_id: DOC-019-S4
+    heading: Cash-on-Delivery Payment FAQ
+    page: 2
+    body:
+      - >-
+        Q: Can I pay with credit card on delivery? A: Digital POS payment is
+        available in Karachi, Lahore, and Islamabad; cash payment in exact
+        currency is required in other branch zones.

@@ -1,0 +1,164 @@
+{
+  "company": {
+    "name": "RaftarXpress Logistics (Pvt) Ltd",
+    "industry": "Logistics & Last-Mile Delivery",
+    "founded_year": 2018,
+    "branches": [
+      "Karachi Central Hub",
+      "Lahore Regional Hub",
+      "Islamabad Hub",
+      "Faisalabad Hub",
+      "Multan Hub"
+    ],
+    "services": [
+      "Parcel Courier",
+      "Cash on Delivery (COD)",
+      "Freight Forwarding",
+      "Warehousing",
+      "E-Commerce Fulfillment"
+    ],
+    "customer_types": [
+      "Individual Consumer",
+      "Business/Merchant Account",
+      "VIP/Premium Account",
+      "Corporate Freight Client"
+    ]
+  },
+  "departments": [
+    {
+      "department_id": "DEPT-01",
+      "name": "Delivery & Logistics Operations",
+      "function_summary": "Manages route optimization, rider dispatches, parcel sorting, linehaul transit, and resolution of delivery delays or transit failures across all provincial hubs.",
+      "handles_categories": [
+        "Delayed Delivery",
+        "Missed Delivery Attempt",
+        "Incorrect Route Dispatch",
+        "Damaged Parcel in Transit",
+        "Rider Misconduct"
+      ],
+      "escalation_contact_role": "Regional Operations Director",
+      "sla_response_hours": 2,
+      "sla_resolution_hours": 24
+    },
+    {
+      "department_id": "DEPT-02",
+      "name": "Billing & Accounts",
+      "function_summary": "Oversees Cash-on-Delivery (COD) reconciliation, merchant payment disbursements, tariff disputes, corporate invoicing, and fuel surcharge queries.",
+      "handles_categories": [
+        "COD Remittance Delay",
+        "Overcharging & Weight Discrepancy",
+        "Invoice Dispute",
+        "Duplicate Payment",
+        "GST Invoicing Error"
+      ],
+      "escalation_contact_role": "Head of Financial Operations",
+      "sla_response_hours": 4,
+      "sla_resolution_hours": 48
+    },
+    {
+      "department_id": "DEPT-03",
+      "name": "Returns & Refunds",
+      "function_summary": "Coordinates reverse logistics, Return to Origin (RTO) processing, failed-delivery return verification, and customer reimbursement authorizations.",
+      "handles_categories": [
+        "RTO Delay",
+        "Incorrect Item Returned",
+        "Refund Processing Delay",
+        "Restocking Fee Dispute",
+        "Return Pickup Cancellation"
+      ],
+      "escalation_contact_role": "Reverse Logistics Lead",
+      "sla_response_hours": 4,
+      "sla_resolution_hours": 48
+    },
+    {
+      "department_id": "DEPT-04",
+      "name": "Warranty & Claims",
+      "function_summary": "Investigates parcel loss, high-value shipment damage, cargo insurance claims, and merchant compensation settlements.",
+      "handles_categories": [
+        "Lost Parcel Claim",
+        "Total Freight Damage",
+        "Tampered Contents",
+        "Insurance Payout Delay",
+        "Declared Value Discrepancy"
+      ],
+      "escalation_contact_role": "Chief Claims Assessor",
+      "sla_response_hours": 6,
+      "sla_resolution_hours": 72
+    },
+    {
+      "department_id": "DEPT-05",
+      "name": "Customer Relations",
+      "function_summary": "Serves as the primary touchpoint for general inquiries, VIP customer care, corporate account management, and overall satisfaction tracking.",
+      "handles_categories": [
+        "General Inquiry",
+        "VIP SLA Breach",
+        "Customer Service Dissatisfaction",
+        "Account Onboarding",
+        "Service Information Request"
+      ],
+      "escalation_contact_role": "Customer Experience Director",
+      "sla_response_hours": 1,
+      "sla_resolution_hours": 12
+    },
+    {
+      "department_id": "DEPT-06",
+      "name": "Account Security & Fraud Prevention",
+      "function_summary": "Monitors fraudulent COD collection attempts, portal account breaches, unauthorized profile alterations, and counterfeit shipping manifests.",
+      "handles_categories": [
+        "Unauthorized Account Access",
+        "COD Theft Allegation",
+        "Identity Spoofing",
+        "Phishing Attack via SMS",
+        "Fraudulent Merchant Registration"
+      ],
+      "escalation_contact_role": "Head of Information Security",
+      "sla_response_hours": 1,
+      "sla_resolution_hours": 8
+    },
+    {
+      "department_id": "DEPT-07",
+      "name": "Compliance & Legal Affairs",
+      "function_summary": "Handles regulatory compliance, contract violations, prohibited cargo violations, consumer court notices, and dispute resolutions under trade laws.",
+      "handles_categories": [
+        "Prohibited Item Transport",
+        "Contractual Breach",
+        "Consumer Court Notice",
+        "Customs & Regulatory Dispute",
+        "Terms of Service Violation"
+      ],
+      "escalation_contact_role": "General Legal Counsel",
+      "sla_response_hours": 12,
+      "sla_resolution_hours": 96
+    },
+    {
+      "department_id": "DEPT-08",
+      "name": "Safety & Risk Management",
+      "function_summary": "Evaluates operational hazards, dangerous goods mishandling, fleet vehicle accidents during transit, and warehouse safety incidents.",
+      "handles_categories": [
+        "Hazardous Goods Leakage",
+        "Transit Fleet Accident",
+        "Warehouse Safety Hazard",
+        "Perishable Cargo Spoilage",
+        "High-Risk Zone Delivery Incident"
+      ],
+      "escalation_contact_role": "Director of Safety & Operational Risk",
+      "sla_response_hours": 2,
+      "sla_resolution_hours": 24
+    },
+    {
+      "department_id": "DEPT-09",
+      "name": "Management Escalations",
+      "function_summary": "Resolves multi-department deadlock complaints, executive office referrals, severe brand reputation risks, and unresolved tier-3 grievances.",
+      "handles_categories": [
+        "Executive Office Referral",
+        "Cross-Department SLA Failure",
+        "Severe Brand Reputation Risk",
+        "Unresolved High-Value Dispute",
+        "Public Relations Escalation"
+      ],
+      "escalation_contact_role": "Chief Operating Officer",
+      "sla_response_hours": 1,
+      "sla_resolution_hours": 12
+    }
+  ]
+}

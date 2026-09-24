@@ -1,0 +1,40 @@
+# RaftarXpress Logistics (Pvt) Ltd - Lost and Damaged Shipment Claims Policy (Legacy), version 1.0 (SUPERSEDED)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [docx]
+
+metadata:
+  doc_ref: DOC-008
+  title: Lost and Damaged Shipment Claims Policy (Legacy)
+  version: "1.0"
+  doc_type: POLICY
+  category: Warranty Policy
+  family: FAM-CLAIMS-POLICY
+  status: SUPERSEDED
+  effective_date: "2023-01-01"
+  expiry_date: "2024-08-31"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-008 v1.0 - SUPERSEDED
+
+sections:
+  - ref: "1"
+    source_id: DOC-008-S1
+    heading: Restricted Filing Window
+    page: 1
+    body:
+      - >-
+        Legacy claims were strictly required within five (5) calendar days from
+        parcel dispatch date. Any delay resulted in unconditional claim
+        forfeiture.
+
+  - ref: "2"
+    source_id: DOC-008-S2
+    heading: Legacy Liability Cap
+    page: 1
+    body:
+      - >-
+        Maximum non-insured shipment compensation was strictly limited to PKR
+        5,000 regardless of the actual market value of the cargo lost in transit.

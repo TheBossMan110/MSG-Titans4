@@ -1,0 +1,589 @@
+# ========================================================================
+# RaftarXpress - AUTHORED LEXICON
+#
+# Written by hand, from the taxonomy. This is the vocabulary a courier's
+# customers actually use, which is a different thing from the vocabulary the
+# rule matrix is written in: the author of RULE-001 wrote "transit delay
+# exceeding 72 hours", and the customer writes "my parcel is late".
+#
+# Generated terms come from the rule prose and are kept -- they discriminate
+# well between rules inside one subcategory. These carry the topic. Both are
+# merged by scripts/convert_raftarxpress.py; where a signal appears in both,
+# the terms are combined rather than replaced.
+#
+# WHERE THESE COME FROM MATTERS. Every term here is derived from the
+# subcategory's own name and meaning, as a person configuring the system would
+# write it. None of it is taken from the 500 complaints. Reading the corpus and
+# harvesting its words would fit the rule engine to the set it is scored
+# against: Pipeline 2's accuracy would measure how well the extractor
+# memorised the test set, and the dual-pipeline comparison would become one
+# pipeline checking its own homework.
+#
+# m: WORD   matches the whole word only     ("late" does not match "chocolate")
+# m: PHRASE matches the sequence            ("not arrived")
+# m: REGEX  matches the pattern             ("deliver(y|ed|ies)")
+# ========================================================================
+
+# -- cross-cutting -------------------------------------------------------
+# These decide severity regardless of what the complaint is about. They were
+# the gap: the generated lexicon produces one topic signal per subcategory and
+# nothing that cuts across them, so nothing keyed on legal exposure, repeat
+# contact or money at risk. A complaint can be a routine delay by topic and a
+# critical matter by exposure.
+cross_cutting:
+
+  legal_threat:
+    description: >-
+      Legal or regulatory exposure. Routes to Compliance and raises the floor:
+      once a customer has mentioned a lawyer, a reply that commits the company
+      to anything is a liability, and the response guard is stricter about it.
+    weight: 3.0
+    terms:
+      - { t: "legal action",            m: PHRASE }
+      - { t: "legal notice",            m: PHRASE }
+      - { t: "take you to court",       m: PHRASE }
+      - { t: "see you in court",        m: PHRASE }
+      - { t: "my lawyer",               m: PHRASE }
+      - { t: "our lawyer",              m: PHRASE }
+      - { t: "my solicitor",            m: PHRASE }
+      - { t: "legal counsel",           m: PHRASE }
+      - { t: "law firm",                m: PHRASE }
+      - { t: "sue you",                 m: PHRASE }
+      - { t: "suing",                   m: WORD }
+      - { t: "litigation",              m: WORD }
+      - { t: "court order",             m: PHRASE }
+      - { t: "breach of contract",      m: PHRASE }
+      - { t: "consumer court",          m: PHRASE }
+      - { t: "consumer protection",     m: PHRASE }
+      - { t: "regulatory complaint",    m: PHRASE }
+      - { t: "ombudsman",               m: WORD }
+      - { t: "defamation",              m: WORD }
+      - { t: "compensation claim",      m: PHRASE }
+
+  regulatory_body:
+    description: >-
+      A named regulator or enforcement agency. Distinct from a general legal
+      threat: a customs seizure or an FBR notice is not the customer being
+      angry, it is a third party with statutory power already involved.
+    weight: 3.0
+    terms:
+      - { t: "customs",                 m: WORD }
+      - { t: "fbr",                     m: WORD }
+      - { t: "pta",                     m: WORD }
+      - { t: "secp",                    m: WORD }
+      - { t: "federal investigation",   m: PHRASE }
+      - { t: "police report",           m: PHRASE }
+      - { t: "police complaint",        m: PHRASE }
+      - { t: "fir",                     m: WORD }
+      - { t: "seized",                  m: WORD }
+      - { t: "impounded",               m: WORD }
+      - { t: "confiscated",             m: WORD }
+      - { t: "held by authorities",     m: PHRASE }
+      - { t: "regulatory hold",         m: PHRASE }
+
+  repeat_contact:
+    description: >-
+      The customer says they have been here before. Corroborating evidence
+      only: the repeat COUNT is derived from stored prior complaints, never
+      from the complaint claiming to be a repeat, because a claim is exactly
+      what an adversarial submission would forge.
+    weight: 1.5
+    terms:
+      - { t: "third time",              m: PHRASE }
+      - { t: "fourth time",             m: PHRASE }
+      - { t: "fifth time",              m: PHRASE }
+      - { t: "again and again",         m: PHRASE }
+      - { t: "still waiting",           m: PHRASE }
+      - { t: "no one has replied",      m: PHRASE }
+      - { t: "no response",             m: PHRASE }
+      - { t: "chased",                  m: WORD }
+      - { t: "chasing",                 m: WORD }
+      - { t: "followed up",             m: PHRASE }
+      - { t: "previous complaint",      m: PHRASE }
+      - { t: "earlier complaint",       m: PHRASE }
+      - { t: "raised this before",      m: PHRASE }
+      - { t: "as i said before",        m: PHRASE }
+      - { t: "repeatedly",              m: WORD }
+
+  vip_or_corporate:
+    description: >-
+      A corporate, merchant or premium account. Recorded because the SLA
+      matrix differs, not because the person matters more.
+    weight: 1.5
+    terms:
+      - { t: "corporate account",       m: PHRASE }
+      - { t: "merchant account",        m: PHRASE }
+      - { t: "business account",        m: PHRASE }
+      - { t: "our company",             m: PHRASE }
+      - { t: "our warehouse",           m: PHRASE }
+      - { t: "bulk shipment",           m: PHRASE }
+      - { t: "freight contract",        m: PHRASE }
+      - { t: "service agreement",       m: PHRASE }
+      - { t: "sla",                     m: WORD }
+      - { t: "enterprise",              m: WORD }
+      - { t: "premium account",         m: PHRASE }
+
+  time_critical_contents:
+    description: >-
+      What is inside makes the delay dangerous rather than annoying. This is
+      the difference between a late parcel and a late organ transport, and it
+      is detectable from the words alone.
+    weight: 3.0
+    terms:
+      - { t: "medicine",                m: WORD }
+      - { t: "medication",              m: WORD }
+      - { t: "medical supplies",        m: PHRASE }
+      - { t: "life-saving",             m: PHRASE }
+      - { t: "life saving",             m: PHRASE }
+      - { t: "insulin",                 m: WORD }
+      - { t: "vaccine",                 m: WORD }
+      - { t: "blood sample",            m: PHRASE }
+      - { t: "organ",                   m: WORD }
+      - { t: "transplant",              m: WORD }
+      - { t: "chemotherapy",            m: WORD }
+      - { t: "dialysis",                m: WORD }
+      - { t: "surgery",                 m: WORD }
+      - { t: "perishable",              m: WORD }
+      - { t: "temperature-sensitive",   m: PHRASE }
+      - { t: "cold chain",              m: PHRASE }
+      - { t: "frozen",                  m: WORD }
+      - { t: "expiring",                m: WORD }
+      - { t: "passport",                m: WORD }
+      - { t: "visa",                    m: WORD }
+      - { t: "legal documents",         m: PHRASE }
+      - { t: "exam",                    m: WORD }
+
+# -- topic ---------------------------------------------------------------
+# One block per subcategory, keyed by its code. Merged into the signal the
+# converter generates for that subcategory.
+topics:
+
+  # ---- DELIVERY ----
+  DELAYED_DELIVERY:
+    - { t: "late",                    m: WORD }
+    - { t: "delay",                   m: WORD }
+    - { t: "delayed",                 m: WORD }
+    - { t: "overdue",                 m: WORD }
+    - { t: "not arrived",             m: PHRASE }
+    - { t: "hasn't arrived",          m: PHRASE }
+    - { t: "has not arrived",         m: PHRASE }
+    - { t: "still in transit",        m: PHRASE }
+    - { t: "stuck in transit",        m: PHRASE }
+    - { t: "stuck at",                m: PHRASE }
+    - { t: "past the promised",       m: PHRASE }
+    - { t: "promised delivery",       m: PHRASE }
+    - { t: "taking too long",         m: PHRASE }
+    - { t: "no movement",             m: PHRASE }
+    - { t: "linehaul",                m: WORD }
+
+  MISSED_DELIVERY_ATTEMPT:
+    - { t: "missed delivery",         m: PHRASE }
+    - { t: "delivery attempt",        m: PHRASE }
+    - { t: "attempted delivery",      m: PHRASE }
+    - { t: "no one came",             m: PHRASE }
+    - { t: "nobody came",             m: PHRASE }
+    - { t: "did not attempt",         m: PHRASE }
+    - { t: "never knocked",           m: PHRASE }
+    - { t: "did not call",            m: PHRASE }
+    - { t: "was at home",             m: PHRASE }
+    - { t: "i was in all day",        m: PHRASE }
+    - { t: "reattempt",               m: WORD }
+    - { t: "redelivery",              m: WORD }
+    - { t: "failed attempt",          m: PHRASE }
+
+  PACKAGE_LEFT_UNATTENDED:
+    - { t: "left outside",            m: PHRASE }
+    - { t: "left at the gate",        m: PHRASE }
+    - { t: "left at the door",        m: PHRASE }
+    - { t: "left on the doorstep",    m: PHRASE }
+    - { t: "left unattended",         m: PHRASE }
+    - { t: "without my permission",   m: PHRASE }
+    - { t: "without signature",       m: PHRASE }
+    - { t: "no signature",            m: PHRASE }
+    - { t: "in the rain",             m: PHRASE }
+    - { t: "on the street",           m: PHRASE }
+    - { t: "with a neighbour",        m: PHRASE }
+    - { t: "with the guard",          m: PHRASE }
+
+  WRONG_ROUTE_DISPATCH:
+    - { t: "wrong city",              m: PHRASE }
+    - { t: "wrong address",           m: PHRASE }
+    - { t: "wrong hub",               m: PHRASE }
+    - { t: "wrong branch",            m: PHRASE }
+    - { t: "misrouted",               m: WORD }
+    - { t: "mis-routed",              m: PHRASE }
+    - { t: "sent to the wrong",       m: PHRASE }
+    - { t: "dispatched to",           m: PHRASE }
+    - { t: "wrong province",          m: PHRASE }
+    - { t: "wrong route",             m: PHRASE }
+    - { t: "routing error",           m: PHRASE }
+
+  # ---- LOST_SHIPMENT ----
+  LOST_PARCEL:
+    - { t: "lost",                    m: WORD }
+    - { t: "missing",                 m: WORD }
+    - { t: "disappeared",             m: WORD }
+    - { t: "untraceable",             m: WORD }
+    - { t: "cannot be traced",        m: PHRASE }
+    - { t: "no trace",                m: PHRASE }
+    - { t: "vanished",                m: WORD }
+    - { t: "never received",          m: PHRASE }
+    - { t: "declared lost",           m: PHRASE }
+    - { t: "write off",               m: PHRASE }
+    - { t: "whole parcel",            m: PHRASE }
+
+  PARTIAL_SHIPMENT_MISSING:
+    - { t: "partial",                 m: WORD }
+    - { t: "part of the",             m: PHRASE }
+    - { t: "some items missing",      m: PHRASE }
+    - { t: "items missing",           m: PHRASE }
+    - { t: "one box",                 m: PHRASE }
+    - { t: "only received",           m: PHRASE }
+    - { t: "short delivery",          m: PHRASE }
+    - { t: "short shipped",           m: PHRASE }
+    - { t: "incomplete",              m: WORD }
+    - { t: "pieces",                  m: WORD }
+    - { t: "out of \\d+ (boxes|items|cartons)", m: REGEX }
+
+  # ---- PRODUCT_DEFECT ----
+  DAMAGED_PARCEL:
+    - { t: "damaged",                 m: WORD }
+    - { t: "broken",                  m: WORD }
+    - { t: "crushed",                 m: WORD }
+    - { t: "dented",                  m: WORD }
+    - { t: "smashed",                 m: WORD }
+    - { t: "cracked",                 m: WORD }
+    - { t: "torn",                    m: WORD }
+    - { t: "wet",                     m: WORD }
+    - { t: "soaked",                  m: WORD }
+    - { t: "spoiled",                 m: WORD }
+    - { t: "shattered",               m: WORD }
+    - { t: "in pieces",               m: PHRASE }
+
+  WRONG_ITEM_DELIVERED:
+    - { t: "wrong item",              m: PHRASE }
+    - { t: "wrong product",           m: PHRASE }
+    - { t: "wrong order",             m: PHRASE }
+    - { t: "not what i ordered",      m: PHRASE }
+    - { t: "different item",          m: PHRASE }
+    - { t: "someone else's",          m: PHRASE }
+    - { t: "incorrect item",          m: PHRASE }
+    - { t: "mixed up",                m: PHRASE }
+    - { t: "swapped",                 m: WORD }
+
+  TAMPERED_PACKAGING:
+    - { t: "tampered",                m: WORD }
+    - { t: "opened",                  m: WORD }
+    - { t: "reopened",                m: WORD }
+    - { t: "resealed",                m: WORD }
+    - { t: "seal broken",             m: PHRASE }
+    - { t: "broken seal",             m: PHRASE }
+    - { t: "tape was cut",            m: PHRASE }
+    - { t: "pilferage",               m: WORD }
+    - { t: "pilfered",                m: WORD }
+    - { t: "stolen from",             m: PHRASE }
+    - { t: "contents removed",        m: PHRASE }
+
+  # ---- BILLING ----
+  COD_AMOUNT_MISMATCH:
+    - { t: "cod",                     m: WORD }
+    - { t: "cash on delivery",        m: PHRASE }
+    - { t: "charged more",            m: PHRASE }
+    - { t: "collected more",          m: PHRASE }
+    - { t: "amount mismatch",         m: PHRASE }
+    - { t: "wrong amount",            m: PHRASE }
+    - { t: "asked for more",          m: PHRASE }
+    - { t: "overcharged",             m: WORD }
+    - { t: "did not give change",     m: PHRASE }
+    - { t: "no change",               m: PHRASE }
+
+  DUPLICATE_CHARGE:
+    - { t: "charged twice",           m: PHRASE }
+    - { t: "double charge",           m: PHRASE }
+    - { t: "double charged",          m: PHRASE }
+    - { t: "duplicate charge",        m: PHRASE }
+    - { t: "duplicate",               m: WORD }
+    - { t: "twice",                   m: WORD }
+    - { t: "two identical",           m: PHRASE }
+    - { t: "same invoice twice",      m: PHRASE }
+    - { t: "billed again",            m: PHRASE }
+    - { t: "deducted twice",          m: PHRASE }
+
+  INCORRECT_CHARGE:
+    - { t: "incorrect charge",        m: PHRASE }
+    - { t: "wrong charge",            m: PHRASE }
+    - { t: "overbilled",              m: WORD }
+    - { t: "tariff",                  m: WORD }
+    - { t: "rate card",               m: PHRASE }
+    - { t: "surcharge",               m: WORD }
+    - { t: "fuel charge",             m: PHRASE }
+    - { t: "volumetric",              m: WORD }
+    - { t: "weight was wrong",        m: PHRASE }
+    - { t: "should have been",        m: PHRASE }
+    - { t: "invoice is wrong",        m: PHRASE }
+    - { t: "demurrage",               m: WORD }
+    - { t: "detention charge",        m: PHRASE }
+
+  COD_REMITTANCE_DELAY:
+    - { t: "remittance",              m: WORD }
+    - { t: "not been paid",           m: PHRASE }
+    - { t: "not received my payment", m: PHRASE }
+    - { t: "payout",                  m: WORD }
+    - { t: "settlement",              m: WORD }
+    - { t: "disbursement",            m: WORD }
+    - { t: "cod payment",             m: PHRASE }
+    - { t: "merchant payment",        m: PHRASE }
+    - { t: "still not credited",      m: PHRASE }
+    - { t: "not credited",            m: PHRASE }
+
+  # ---- REFUND ----
+  REFUND_NOT_PROCESSED:
+    - { t: "refund",                  m: WORD }
+    - { t: "not been refunded",       m: PHRASE }
+    - { t: "no refund",               m: PHRASE }
+    - { t: "refund was refused",      m: PHRASE }
+    - { t: "refused my refund",       m: PHRASE }
+    - { t: "money back",              m: PHRASE }
+    - { t: "reimburse",               m: WORD }
+    - { t: "reimbursement",           m: WORD }
+    - { t: "never processed",         m: PHRASE }
+
+  REFUND_DELAY:
+    - { t: "refund is taking",        m: PHRASE }
+    - { t: "waiting for my refund",   m: PHRASE }
+    - { t: "refund delay",            m: PHRASE }
+    - { t: "refund still",            m: PHRASE }
+    - { t: "promised a refund",       m: PHRASE }
+    - { t: "weeks for the refund",    m: PHRASE }
+    - { t: "refund pending",          m: PHRASE }
+
+  RTO_PROCESSING_DELAY:
+    - { t: "rto",                     m: WORD }
+    - { t: "return to origin",        m: PHRASE }
+    - { t: "returned to origin",      m: PHRASE }
+    - { t: "return shipment",         m: PHRASE }
+    - { t: "reverse pickup",          m: PHRASE }
+    - { t: "sent back",               m: PHRASE }
+    - { t: "not returned to me",      m: PHRASE }
+    - { t: "return is stuck",         m: PHRASE }
+
+  # ---- ACCOUNT ----
+  ACCOUNT_LOCKED:
+    - { t: "locked out",              m: PHRASE }
+    - { t: "account locked",          m: PHRASE }
+    - { t: "cannot log in",           m: PHRASE }
+    - { t: "can't log in",            m: PHRASE }
+    - { t: "unable to log in",        m: PHRASE }
+    - { t: "password reset",          m: PHRASE }
+    - { t: "otp",                     m: WORD }
+    - { t: "suspended",               m: WORD }
+    - { t: "disabled",                m: WORD }
+    - { t: "access denied",           m: PHRASE }
+
+  UNAUTHORIZED_ACCOUNT_ACCESS:
+    - { t: "unauthorized",            m: WORD }
+    - { t: "unauthorised",            m: WORD }
+    - { t: "hacked",                  m: WORD }
+    - { t: "someone else logged in",  m: PHRASE }
+    - { t: "suspicious login",        m: PHRASE }
+    - { t: "did not recognise",       m: PHRASE }
+    - { t: "not me",                  m: PHRASE }
+    - { t: "fraudulent",              m: WORD }
+    - { t: "compromised",             m: WORD }
+    - { t: "phishing",                m: WORD }
+    - { t: "credentials",             m: WORD }
+
+  MERCHANT_PROFILE_UPDATE:
+    - { t: "update my profile",       m: PHRASE }
+    - { t: "change my address",       m: PHRASE }
+    - { t: "change bank",             m: PHRASE }
+    - { t: "update bank",             m: PHRASE }
+    - { t: "business details",        m: PHRASE }
+    - { t: "pickup address",          m: PHRASE }
+    - { t: "profile update",          m: PHRASE }
+    - { t: "contact details",         m: PHRASE }
+
+  # ---- TECHNICAL_SUPPORT ----
+  TRACKING_NOT_UPDATING:
+    - { t: "tracking",                m: WORD }
+    - { t: "not updating",            m: PHRASE }
+    - { t: "no update",               m: PHRASE }
+    - { t: "status has not changed",  m: PHRASE }
+    - { t: "same status",             m: PHRASE }
+    - { t: "tracking page",           m: PHRASE }
+    - { t: "tracking number",         m: PHRASE }
+    - { t: "shows nothing",           m: PHRASE }
+    - { t: "stuck on",                m: PHRASE }
+
+  APP_CRASH:
+    - { t: "app crash",               m: PHRASE }
+    - { t: "crashes",                 m: WORD }
+    - { t: "crashing",                m: WORD }
+    - { t: "freezes",                 m: WORD }
+    - { t: "won't open",              m: PHRASE }
+    - { t: "will not open",           m: PHRASE }
+    - { t: "keeps closing",           m: PHRASE }
+    - { t: "error message",           m: PHRASE }
+    - { t: "website is down",         m: PHRASE }
+    - { t: "portal",                  m: WORD }
+
+  API_WEBHOOK_FAILURE:
+    - { t: "api",                     m: WORD }
+    - { t: "webhook",                 m: WORD }
+    - { t: "integration",             m: WORD }
+    - { t: "endpoint",                m: WORD }
+    - { t: "token",                   m: WORD }
+    - { t: "sandbox",                 m: WORD }
+    - { t: "timing out",              m: PHRASE }
+    - { t: "500 error",               m: PHRASE }
+    - { t: "manifest upload",         m: PHRASE }
+    - { t: "csv upload",              m: PHRASE }
+
+  # ---- STAFF_BEHAVIOR ----
+  RUDE_RIDER_DRIVER_BEHAVIOR:
+    - { t: "rude",                    m: WORD }
+    - { t: "abusive",                 m: WORD }
+    - { t: "shouted",                 m: WORD }
+    - { t: "shouting",                m: WORD }
+    - { t: "swore",                   m: WORD }
+    - { t: "threatened",              m: WORD }
+    - { t: "aggressive",              m: WORD }
+    - { t: "disrespectful",           m: WORD }
+    - { t: "misbehaved",              m: WORD }
+    - { t: "unprofessional",          m: WORD }
+    - { t: "argued",                  m: WORD }
+
+  RIDER_DEMANDING_CASH_TIP:
+    - { t: "asked for a tip",         m: PHRASE }
+    - { t: "demanded a tip",          m: PHRASE }
+    - { t: "extra money",             m: PHRASE }
+    - { t: "extra cash",              m: PHRASE }
+    - { t: "bribe",                   m: WORD }
+    - { t: "refused to hand over",    m: PHRASE }
+    - { t: "would not give me",       m: PHRASE }
+    - { t: "asked for more money",    m: PHRASE }
+    - { t: "gratuity",                m: WORD }
+
+  # ---- WARRANTY ----
+  WARRANTY_CLAIM_DENIED:
+    - { t: "claim denied",            m: PHRASE }
+    - { t: "claim rejected",          m: PHRASE }
+    - { t: "rejected my claim",       m: PHRASE }
+    - { t: "refused my claim",        m: PHRASE }
+    - { t: "claim was closed",        m: PHRASE }
+    - { t: "no compensation",         m: PHRASE }
+    - { t: "declined",                m: WORD }
+    - { t: "claim",                   m: WORD }
+
+  INSURANCE_PAYOUT_DELAY:
+    - { t: "insurance",               m: WORD }
+    - { t: "insured",                 m: WORD }
+    - { t: "payout",                  m: WORD }
+    - { t: "assessor",                m: WORD }
+    - { t: "claim is pending",        m: PHRASE }
+    - { t: "waiting for the claim",   m: PHRASE }
+    - { t: "declared value",          m: PHRASE }
+    - { t: "cargo insurance",         m: PHRASE }
+
+  # ---- PRIVACY ----
+  DATA_PRIVACY_BREACH:
+    - { t: "personal data",           m: PHRASE }
+    - { t: "my details were",         m: PHRASE }
+    - { t: "shared my",               m: PHRASE }
+    - { t: "gave out my",             m: PHRASE }
+    - { t: "privacy",                 m: WORD }
+    - { t: "confidential",            m: WORD }
+    - { t: "data breach",             m: PHRASE }
+    - { t: "leaked",                  m: WORD }
+    - { t: "another customer's",      m: PHRASE }
+    - { t: "phone number was given",  m: PHRASE }
+
+  UNSOLICITED_MARKETING_SMS:
+    - { t: "marketing",               m: WORD }
+    - { t: "promotional",             m: WORD }
+    - { t: "spam",                    m: WORD }
+    - { t: "unsubscribe",             m: WORD }
+    - { t: "stop sending",            m: PHRASE }
+    - { t: "did not sign up",         m: PHRASE }
+    - { t: "keep texting",            m: PHRASE }
+    - { t: "sms",                     m: WORD }
+
+  # ---- SAFETY ----
+  RECKLESS_DRIVING_SAFETY_RISK:
+    - { t: "reckless",                m: WORD }
+    - { t: "dangerous driving",       m: PHRASE }
+    - { t: "speeding",                m: WORD }
+    - { t: "nearly hit",              m: PHRASE }
+    - { t: "almost hit",              m: PHRASE }
+    - { t: "knocked over",            m: PHRASE }
+    - { t: "ran a red light",         m: PHRASE }
+    - { t: "wrong way",               m: PHRASE }
+    - { t: "on the pavement",         m: PHRASE }
+    - { t: "hit my car",              m: PHRASE }
+    - { t: "accident",                m: WORD }
+    - { t: "collision",               m: WORD }
+
+  HAZARDOUS_MATERIAL_MISHANDLING:
+    - { t: "undeclared",              m: WORD }
+    - { t: "chemical",                m: WORD }
+    - { t: "acid",                    m: WORD }
+    - { t: "battery",                 m: WORD }
+    - { t: "batteries",               m: WORD }
+    - { t: "cylinder",                m: WORD }
+    - { t: "aerosol",                 m: WORD }
+    - { t: "dry ice",                 m: PHRASE }
+    - { t: "fumes",                   m: WORD }
+    - { t: "spill",                   m: WORD }
+    - { t: "leaking",                 m: WORD }
+
+  # ---- CUSTOMS ----
+  MISSING_CUSTOMS_DOCUMENTS:
+    - { t: "customs document",        m: PHRASE }
+    - { t: "commercial invoice",      m: PHRASE }
+    - { t: "declaration",             m: WORD }
+    - { t: "clearance",               m: WORD }
+    - { t: "paperwork",               m: WORD }
+    - { t: "import documents",        m: PHRASE }
+    - { t: "export documents",        m: PHRASE }
+    - { t: "hs code",                 m: PHRASE }
+    - { t: "held at customs",         m: PHRASE }
+
+  REGULATORY_IMPOUNDMENT_HOLD:
+    - { t: "impounded",               m: WORD }
+    - { t: "detained",                m: WORD }
+    - { t: "seized",                  m: WORD }
+    - { t: "prohibited item",         m: PHRASE }
+    - { t: "restricted item",         m: PHRASE }
+    - { t: "regulatory hold",         m: PHRASE }
+    - { t: "quarantine",              m: WORD }
+    - { t: "inspection",              m: WORD }
+
+  # ---- SERVICE_QUALITY ----
+  SUBSCRIPTION_CONTRACT_RENEWAL:
+    - { t: "contract",                m: WORD }
+    - { t: "renewal",                 m: WORD }
+    - { t: "renew",                   m: WORD }
+    - { t: "subscription",            m: WORD }
+    - { t: "terminate",               m: WORD }
+    - { t: "cancel my contract",      m: PHRASE }
+    - { t: "rate revision",           m: PHRASE }
+    - { t: "agreement expires",       m: PHRASE }
+
+  EXECUTIVE_SLA_BREACH:
+    # No emotional phrasing here. "Unacceptable service" was in this list and
+    # sent a furious complaint about one late parcel to SERVICE_QUALITY at
+    # CRITICAL_MGMT -- the Sentiment-Urgency trap running backwards, with anger
+    # driving the classification instead of the evidence.
+    #
+    # An executive SLA breach is about SCALE: many shipments, a contract, a
+    # systemic failure. One angry customer is not that, however they phrase it.
+    - { t: "sla breach",              m: PHRASE }
+    - { t: "service level agreement", m: PHRASE }
+    - { t: "systemic",                m: WORD }
+    - { t: "across all our",          m: PHRASE }
+    - { t: "every shipment",          m: PHRASE }
+    - { t: "entire batch",            m: PHRASE }
+    - { t: "all our consignments",    m: PHRASE }
+    - { t: "escalate to management",  m: PHRASE }
+    - { t: "senior management",       m: PHRASE }
+    - { t: "board level",             m: PHRASE }

@@ -1,0 +1,47 @@
+[project]
+name = "supportnova"
+version = "0.1.0"
+description = "SupportNova — GenAI complaint intelligence with independent Python ground-truth validation"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["alembic/versions", ".venv", "node_modules", "frontend"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "C4", "SIM"]
+ignore = ["B008", "E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+  "src", "schemas", "document_processing", "knowledge_base", "complaint_processing",
+  "genai_pipeline", "python_validation", "comparison_engine", "hallucination_checks", "security",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+  "ignore::UserWarning",
+]
+markers = [
+  "unit: fast isolated tests",
+  "integration: needs a database",
+  "llm: needs a live GenAI API key",
+]
+
+# The package root is the REPOSITORY root (we import `src.db...`,
+# `python_validation...`, `genai_pipeline...` as top-level packages),
+# not ./src . Tell type-checkers explicitly.
+[tool.pyright]
+include = ["src", "schemas", "document_processing", "knowledge_base",
+           "complaint_processing", "genai_pipeline", "python_validation",
+           "comparison_engine", "hallucination_checks", "security", "database", "tests"]
+extraPaths = ["."]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "basic"
+reportMissingImports = "warning"

@@ -1,0 +1,49 @@
+# RaftarXpress Logistics (Pvt) Ltd - Logistics Service Warranty and Guarantee, version 1.0 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [docx]
+
+metadata:
+  doc_ref: DOC-014
+  title: Logistics Service Warranty and Guarantee
+  version: "1.0"
+  doc_type: POLICY
+  category: Warranty Policy
+  family: FAM-WARRANTY-POLICY
+  status: ACTIVE
+  effective_date: "2023-11-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-014 v1.0 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-014-S1
+    heading: On-Time Delivery Guarantee
+    page: 1
+    body:
+      - >-
+        RaftarXpress guarantees on-time delivery for Premium Overnight
+        consignments within 24 hours between major hubs (Karachi, Lahore,
+        Islamabad), subject to force majeure exemptions.
+
+  - ref: "2"
+    source_id: DOC-014-S2
+    heading: Service Failure Compensation
+    page: 1
+    body:
+      - >-
+        In the event of an unexcused SLA delay on premium freight, 50% of the
+        freight charge is credited back to the customer's billing ledger.
+
+  - ref: "3"
+    source_id: DOC-014-S3
+    heading: Exclusions to Warranty
+    page: 2
+    body:
+      - >-
+        Delays caused by adverse weather, national highway blockades, customs
+        inspections, or incorrect recipient addresses are strictly excluded from
+        service guarantees.

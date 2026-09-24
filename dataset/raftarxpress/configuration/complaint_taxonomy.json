@@ -1,0 +1,343 @@
+{
+  "categories": [
+    {
+      "category_id": "CAT-01",
+      "category_name": "Delivery",
+      "description": "Issues related to parcel dispatch, linehaul transit, delivery delays, route errors, and last-mile courier fulfillment."
+    },
+    {
+      "category_id": "CAT-02",
+      "category_name": "Lost Shipment",
+      "description": "Complaints regarding packages or consignments that have gone missing, untraceable in transit, or declared lost."
+    },
+    {
+      "category_id": "CAT-03",
+      "category_name": "Product Defect",
+      "description": "Damaged goods, crushed boxes, broken seals, spoiled perishable items, or incorrect items delivered."
+    },
+    {
+      "category_id": "CAT-04",
+      "category_name": "Billing",
+      "description": "Disputes over Cash-on-Delivery (COD) collections, invoice discrepancies, duplicate charges, and tariff rates."
+    },
+    {
+      "category_id": "CAT-05",
+      "category_name": "Refund",
+      "description": "Grievances regarding merchant COD remittances, return-to-origin (RTO) charges, and customer reimbursement delays."
+    },
+    {
+      "category_id": "CAT-06",
+      "category_name": "Account",
+      "description": "Merchant and consumer portal account management, profile updates, account lockouts, and access credential issues."
+    },
+    {
+      "category_id": "CAT-07",
+      "category_name": "Technical Support",
+      "description": "Technical glitches on web portals, mobile tracking apps, barcode scanning errors, and API webhook integrations."
+    },
+    {
+      "category_id": "CAT-08",
+      "category_name": "Staff Behavior",
+      "description": "Unprofessional conduct, rude demeanor, extortion attempts, or harassment by delivery riders and customer support agents."
+    },
+    {
+      "category_id": "CAT-09",
+      "category_name": "Warranty",
+      "description": "Disputes surrounding transit insurance coverage, cargo damage compensation, and denied loss claims."
+    },
+    {
+      "category_id": "CAT-10",
+      "category_name": "Privacy",
+      "description": "Unauthorized disclosure of customer phone numbers, shipping data leaks, or unsolicited marketing communications."
+    },
+    {
+      "category_id": "CAT-11",
+      "category_name": "Safety",
+      "description": "Reckless driving by courier fleet, hazardous material mishandling, transit accidents, or hub safety violations."
+    },
+    {
+      "category_id": "CAT-12",
+      "category_name": "Customs/Documentation",
+      "description": "Problems with consignment notes, inter-provincial permits, customs clearance paperwork, or regulatory impoundment."
+    },
+    {
+      "category_id": "CAT-13",
+      "category_name": "Service Quality",
+      "description": "Repeated SLA breaches, poor overall customer experience, and corporate freight service level agreement failures."
+    }
+  ],
+  "subcategories": [
+    {
+      "subcategory_id": "SUB-001",
+      "subcategory_name": "Delayed Delivery",
+      "parent_category_id": "CAT-01",
+      "default_department_id": "DEPT-01",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-002",
+      "subcategory_name": "Missed Delivery Attempt",
+      "parent_category_id": "CAT-01",
+      "default_department_id": "DEPT-01",
+      "urgency_default": "Medium",
+      "priority_default": "P2"
+    },
+    {
+      "subcategory_id": "SUB-003",
+      "subcategory_name": "Package Left Unattended",
+      "parent_category_id": "CAT-01",
+      "default_department_id": "DEPT-01",
+      "urgency_default": "Medium",
+      "priority_default": "P2"
+    },
+    {
+      "subcategory_id": "SUB-004",
+      "subcategory_name": "Wrong Route Dispatch",
+      "parent_category_id": "CAT-01",
+      "default_department_id": "DEPT-01",
+      "urgency_default": "Medium",
+      "priority_default": "P2"
+    },
+    {
+      "subcategory_id": "SUB-005",
+      "subcategory_name": "Lost Parcel",
+      "parent_category_id": "CAT-02",
+      "default_department_id": "DEPT-04",
+      "urgency_default": "Critical",
+      "priority_default": "P0"
+    },
+    {
+      "subcategory_id": "SUB-006",
+      "subcategory_name": "Partial Shipment Missing",
+      "parent_category_id": "CAT-02",
+      "default_department_id": "DEPT-04",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-007",
+      "subcategory_name": "Damaged Parcel",
+      "parent_category_id": "CAT-03",
+      "default_department_id": "DEPT-04",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-008",
+      "subcategory_name": "Wrong Item Delivered",
+      "parent_category_id": "CAT-03",
+      "default_department_id": "DEPT-01",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-009",
+      "subcategory_name": "Tampered Packaging",
+      "parent_category_id": "CAT-03",
+      "default_department_id": "DEPT-06",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-010",
+      "subcategory_name": "COD Amount Mismatch",
+      "parent_category_id": "CAT-04",
+      "default_department_id": "DEPT-02",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-011",
+      "subcategory_name": "Duplicate Charge",
+      "parent_category_id": "CAT-04",
+      "default_department_id": "DEPT-02",
+      "urgency_default": "Medium",
+      "priority_default": "P2"
+    },
+    {
+      "subcategory_id": "SUB-012",
+      "subcategory_name": "Incorrect Charge",
+      "parent_category_id": "CAT-04",
+      "default_department_id": "DEPT-02",
+      "urgency_default": "Medium",
+      "priority_default": "P2"
+    },
+    {
+      "subcategory_id": "SUB-013",
+      "subcategory_name": "COD Remittance Delay",
+      "parent_category_id": "CAT-04",
+      "default_department_id": "DEPT-02",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-014",
+      "subcategory_name": "Refund Not Processed",
+      "parent_category_id": "CAT-05",
+      "default_department_id": "DEPT-03",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-015",
+      "subcategory_name": "Refund Delay",
+      "parent_category_id": "CAT-05",
+      "default_department_id": "DEPT-03",
+      "urgency_default": "Medium",
+      "priority_default": "P2"
+    },
+    {
+      "subcategory_id": "SUB-016",
+      "subcategory_name": "RTO Processing Delay",
+      "parent_category_id": "CAT-05",
+      "default_department_id": "DEPT-03",
+      "urgency_default": "Medium",
+      "priority_default": "P2"
+    },
+    {
+      "subcategory_id": "SUB-017",
+      "subcategory_name": "Account Locked",
+      "parent_category_id": "CAT-06",
+      "default_department_id": "DEPT-05",
+      "urgency_default": "Medium",
+      "priority_default": "P2"
+    },
+    {
+      "subcategory_id": "SUB-018",
+      "subcategory_name": "Unauthorized Account Access",
+      "parent_category_id": "CAT-06",
+      "default_department_id": "DEPT-06",
+      "urgency_default": "Critical",
+      "priority_default": "P0"
+    },
+    {
+      "subcategory_id": "SUB-019",
+      "subcategory_name": "Merchant Profile Update",
+      "parent_category_id": "CAT-06",
+      "default_department_id": "DEPT-05",
+      "urgency_default": "Low",
+      "priority_default": "P3"
+    },
+    {
+      "subcategory_id": "SUB-020",
+      "subcategory_name": "Tracking Not Updating",
+      "parent_category_id": "CAT-07",
+      "default_department_id": "DEPT-05",
+      "urgency_default": "Medium",
+      "priority_default": "P2"
+    },
+    {
+      "subcategory_id": "SUB-021",
+      "subcategory_name": "App Crash",
+      "parent_category_id": "CAT-07",
+      "default_department_id": "DEPT-05",
+      "urgency_default": "Medium",
+      "priority_default": "P2"
+    },
+    {
+      "subcategory_id": "SUB-022",
+      "subcategory_name": "API Webhook Failure",
+      "parent_category_id": "CAT-07",
+      "default_department_id": "DEPT-05",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-023",
+      "subcategory_name": "Rude Rider/Driver Behavior",
+      "parent_category_id": "CAT-08",
+      "default_department_id": "DEPT-01",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-024",
+      "subcategory_name": "Rider Demanding Cash Tip",
+      "parent_category_id": "CAT-08",
+      "default_department_id": "DEPT-06",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-025",
+      "subcategory_name": "Warranty Claim Denied",
+      "parent_category_id": "CAT-09",
+      "default_department_id": "DEPT-04",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-026",
+      "subcategory_name": "Insurance Payout Delay",
+      "parent_category_id": "CAT-09",
+      "default_department_id": "DEPT-04",
+      "urgency_default": "Medium",
+      "priority_default": "P2"
+    },
+    {
+      "subcategory_id": "SUB-027",
+      "subcategory_name": "Data Privacy Breach",
+      "parent_category_id": "CAT-10",
+      "default_department_id": "DEPT-06",
+      "urgency_default": "Critical",
+      "priority_default": "P0"
+    },
+    {
+      "subcategory_id": "SUB-028",
+      "subcategory_name": "Unsolicited Marketing SMS",
+      "parent_category_id": "CAT-10",
+      "default_department_id": "DEPT-07",
+      "urgency_default": "Low",
+      "priority_default": "P3"
+    },
+    {
+      "subcategory_id": "SUB-029",
+      "subcategory_name": "Reckless Driving/Safety Risk",
+      "parent_category_id": "CAT-11",
+      "default_department_id": "DEPT-08",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-030",
+      "subcategory_name": "Hazardous Material Mishandling",
+      "parent_category_id": "CAT-11",
+      "default_department_id": "DEPT-08",
+      "urgency_default": "Critical",
+      "priority_default": "P0"
+    },
+    {
+      "subcategory_id": "SUB-031",
+      "subcategory_name": "Missing Customs Documents",
+      "parent_category_id": "CAT-12",
+      "default_department_id": "DEPT-07",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-032",
+      "subcategory_name": "Regulatory Impoundment Hold",
+      "parent_category_id": "CAT-12",
+      "default_department_id": "DEPT-07",
+      "urgency_default": "High",
+      "priority_default": "P1"
+    },
+    {
+      "subcategory_id": "SUB-033",
+      "subcategory_name": "Subscription/Contract Renewal",
+      "parent_category_id": "CAT-13",
+      "default_department_id": "DEPT-05",
+      "urgency_default": "Low",
+      "priority_default": "P3"
+    },
+    {
+      "subcategory_id": "SUB-034",
+      "subcategory_name": "Executive SLA Breach",
+      "parent_category_id": "CAT-13",
+      "default_department_id": "DEPT-09",
+      "urgency_default": "Critical",
+      "priority_default": "P0"
+    }
+  ]
+}

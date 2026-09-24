@@ -1,0 +1,49 @@
+# RaftarXpress Logistics (Pvt) Ltd - Parcel Replacement and Re-Dispatch Policy, version 1.2 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-011
+  title: Parcel Replacement and Re-Dispatch Policy
+  version: "1.2"
+  doc_type: POLICY
+  category: Replacement Policy
+  family: FAM-REPLACEMENT-POLICY
+  status: ACTIVE
+  effective_date: "2024-04-15"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-011 v1.2 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-011-S1
+    heading: Eligibility for Courier-Funded Re-Dispatch
+    page: 1
+    body:
+      - >-
+        RaftarXpress funds 100% of re-dispatch freight charges when a delivery
+        error is proven to be caused by internal route misdirection, damaged
+        transit, or courier barcode mis-scan.
+
+  - ref: "2"
+    source_id: DOC-011-S2
+    heading: Merchant Replacement Fulfillment
+    page: 1
+    body:
+      - >-
+        For e-commerce merchant accounts, replacement shipments are assigned
+        express priority lane tags and dispatched within twenty-four (24) hours of
+        claim authorization.
+
+  - ref: "3"
+    source_id: DOC-011-S3
+    heading: Reverse Pickup Coordination
+    page: 2
+    body:
+      - >-
+        Replacement delivery and defective item pickup must occur simultaneously
+        where reverse logistics services are active, reducing customer wait times.

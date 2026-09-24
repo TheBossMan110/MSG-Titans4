@@ -1,0 +1,49 @@
+# RaftarXpress Logistics (Pvt) Ltd - Customer Data Privacy and Protection Policy, version 2.0 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-015
+  title: Customer Data Privacy and Protection Policy
+  version: "2.0"
+  doc_type: POLICY
+  category: Privacy Policy
+  family: FAM-PRIVACY-POLICY
+  status: ACTIVE
+  effective_date: "2024-08-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-015 v2.0 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-015-S1
+    heading: Personal Identifiable Information (PII) Protection
+    page: 1
+    body:
+      - >-
+        Recipient names, phone numbers, and delivery addresses are encrypted at
+        rest and in transit, accessible only to assigned couriers via masked
+        application interfaces.
+
+  - ref: "2"
+    source_id: DOC-015-S2
+    heading: Prohibition on Data Monetization
+    page: 1
+    body:
+      - >-
+        RaftarXpress Logistics never sells, leases, or shares customer transaction
+        records or recipient contact details with third-party marketing brokers.
+
+  - ref: "3"
+    source_id: DOC-015-S3
+    heading: Data Retention and Deletion
+    page: 2
+    body:
+      - >-
+        Delivery manifests and tracking logs are archived for twenty-four (24)
+        months for audit and taxation purposes, after which PII records are
+        securely purged.

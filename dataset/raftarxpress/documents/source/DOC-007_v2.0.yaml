@@ -1,0 +1,61 @@
+# RaftarXpress Logistics (Pvt) Ltd - Lost and Damaged Shipment Claims Policy, version 2.0 (ACTIVE)
+#
+# GENERATED from knowledge_base_documents.json by
+# scripts/convert_raftarxpress.py. Edit the JSON and re-run, then
+# re-render with scripts/make_sample_documents.py.
+formats: [pdf]
+
+metadata:
+  doc_ref: DOC-007
+  title: Lost and Damaged Shipment Claims Policy
+  version: "2.0"
+  doc_type: POLICY
+  category: Warranty Policy
+  family: FAM-CLAIMS-POLICY
+  status: ACTIVE
+  effective_date: "2024-09-01"
+
+header_text: RaftarXpress Logistics (Pvt) Ltd - Internal Policy
+footer_text: DOC-007 v2.0 - ACTIVE
+
+sections:
+  - ref: "1"
+    source_id: DOC-007-S1
+    heading: Filing Window for Loss and Damage
+    page: 1
+    body:
+      - >-
+        Shippers and consignees may file formal loss or damage claims within
+        fourteen (14) calendar days of booking dispatch. Claims submitted beyond
+        this 14-day window will not be entertained by the Claims Department
+        (DEPT-04).
+
+  - ref: "2"
+    source_id: DOC-007-S2
+    heading: Standard Non-Insured Indemnity Cap
+    page: 1
+    body:
+      - >-
+        For standard uninsured shipments, the maximum liability and compensation
+        payable by RaftarXpress Logistics is capped at PKR 15,000 or the declared
+        invoice value, whichever is lower.
+
+  - ref: "3"
+    source_id: DOC-007-S3
+    heading: Insured Cargo Compensation
+    page: 2
+    body:
+      - >-
+        Consignments with premium cargo insurance (declared value coverage) are
+        reimbursed at 100% of proven invoice loss within twenty-one (21) business
+        days following claim verification.
+
+  - ref: "4"
+    source_id: DOC-007-S4
+    heading: Mandatory Evidentiary Documentation
+    page: 2
+    body:
+      - >-
+        Claim submissions must include high-resolution unboxing
+        photographs/videos, commercial invoice copy, consignment note (CN) number,
+        and initial inspection report signed by the hub supervisor.
