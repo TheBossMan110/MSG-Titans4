@@ -76,7 +76,7 @@ def clean(db):
 @pytest.fixture
 def reviewer(db):
     return db.execute(
-        select(User).where(User.email == "reviewer@zenithra.com")
+        select(User).where(User.email == "reviewer@raftarxpress.com")
     ).scalars().one()
 
 

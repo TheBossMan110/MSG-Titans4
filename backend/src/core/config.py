@@ -79,11 +79,15 @@ class Settings(BaseSettings):
     llm_temperature_response: float = 0.4
 
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    # A comma-separated chain, tried left to right. Google retires model names
+    # and 503s the busiest ones on the free tier, so pinning a single name is
+    # how the whole GenAI pipeline goes dark without a line of code changing.
+    gemini_model: str = "gemini-3.6-flash,gemini-2.5-flash-lite,gemini-3.1-flash-lite"
     gemini_embed_model: str = "gemini-embedding-001"
 
     groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
+    # Verified against GET /models on 2026-09-25: Groq no longer serves Llama.
+    groq_model: str = "openai/gpt-oss-120b,qwen/qwen3.8-27b,openai/gpt-oss-20b"
     groq_base_url: str = "https://api.groq.com/openai/v1"
 
     openrouter_api_key: str = ""
@@ -205,6 +209,17 @@ class Settings(BaseSettings):
     @property
     def is_postgres(self) -> bool:
         return self.database_url.startswith("postgresql")
+
+    @property
+    def gemini_model_chain(self) -> list[str]:
+        """The Gemini models to try, in order. Never empty."""
+        chain = [m.strip() for m in self.gemini_model.split(",") if m.strip()]
+        return chain or ["gemini-2.5-flash-lite"]
+
+    @property
+    def groq_model_chain(self) -> list[str]:
+        chain = [m.strip() for m in self.groq_model.split(",") if m.strip()]
+        return chain or ["openai/gpt-oss-120b"]
 
     @property
     def cors_origin_list(self) -> list[str]:

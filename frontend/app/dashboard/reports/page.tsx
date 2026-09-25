@@ -1,189 +1,98 @@
 'use client'
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { RefreshCw, Download, BarChart3 } from 'lucide-react'
-import { DashboardShell, AuthGuard, Spinner, ErrorState, Empty } from '@/components/ui'
-import { analytics } from '@/lib/api'
-import type { Report, ExportRecord } from '@/lib/api'
+
+import { useState } from 'react'
+import { AppShell } from '@/components/layout/app-shell'
+import { useAuth } from '@/lib/auth-context'
+import { analytics, type ReportFilters } from '@/lib/api'
+import { useApi, useAction, fmtDate } from '@/lib/use-api'
+import { Badge, Button, Mono, humanise } from '@/components/ui/primitives'
+import { Card, PanelHeader } from '@/components/ui/surfaces'
+import { Checkbox, Input, Select } from '@/components/ui/forms'
+import { Table, Th, Td, Tr } from '@/components/ui/data'
+import { Empty, ErrorState, SkeletonRows, useToast } from '@/components/ui/feedback'
+import { cn } from '@/lib/utils'
 
 export default function ReportsPage() {
   return (
-    <AuthGuard allowedRoles={['manager', 'admin', 'evaluator']}>
-      <ReportsContent />
-    </AuthGuard>
+    <AppShell eyebrow="Reports" roles={['manager', 'admin', 'evaluator']} wide>
+      <Reports />
+    </AppShell>
   )
 }
 
-function ReportsContent() {
-  const [reports, setReports] = useState<Report[]>([])
-  const [exports, setExports] = useState<ExportRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [previewType, setPreviewType] = useState<string | null>(null)
-  const [previewData, setPreviewData] = useState<unknown[] | null>(null)
-  const [previewing, setPreviewing] = useState(false)
-
-  const load = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const [r, e] = await Promise.all([analytics.reports(), analytics.exports()])
-      setReports(r)
-      setExports(e)
-    } catch (e: unknown) {
-      setError((e as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const preview = async (type: string) => {
-    setPreviewType(type)
-    setPreviewing(true)
-    try {
-      const data = await analytics.report(type)
-      setPreviewData(data.data)
-    } catch (e: unknown) {
-      setError((e as Error).message)
-    } finally {
-      setPreviewing(false)
-    }
-  }
-
-  useEffect(() => { load() }, [])
+/**
+ * Report types come from the server; this page never invents one. Reading is
+ * for every oversight role; downloading (CSV or JSON) is for managers and
+ * admins, and each download is itself recorded under /dashboard/exports.
+ */
+function Reports() {
+  const { user } = useAuth()
+  const toast = useToast()
+  const types = useApi(() => analytics.reports())
+  const [type, setType] = useState<string | null>(null)
+  const [f, setF] = useState<ReportFilters>({ limit: 200 })
+  const report = useApi(() => analytics.report(type!, f), [type, JSON.stringify(f)], Boolean(type))
+  const exp = useAction((fmt: 'csv' | 'json') => analytics.exportReport(type!, fmt, f))
+  const canExport = user && ['manager', 'admin'].includes(user.role)
+  const set = <K extends keyof ReportFilters>(k: K, v: ReportFilters[K]) => setF((s) => ({ ...s, [k]: v }))
 
   return (
-    <DashboardShell>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Reports</h1>
-          <p className="page-subtitle">Export and preview operational data reports</p>
-        </div>
-        <button className="btn btn-ghost btn-sm" onClick={load} disabled={loading}>
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-        </button>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div><p className="eyebrow mb-1">Insight</p><h1 className="display text-h2">Reports</h1></div>
+        {canExport && type && <div className="flex gap-2"><Button variant="secondary" size="sm" loading={exp.pending} onClick={async () => { const n = await exp.run('csv'); if (n) toast('ok', `Downloaded ${n}`); else if (exp.error) toast('err', exp.error) }}>Download CSV</Button><Button variant="secondary" size="sm" loading={exp.pending} onClick={async () => { const n = await exp.run('json'); if (n) toast('ok', `Downloaded ${n}`); else if (exp.error) toast('err', exp.error) }}>Download JSON</Button></div>}
       </div>
 
-      {error && <ErrorState error={error} retry={load} />}
-
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><Spinner size={28} /></div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          {/* Available reports */}
-          <div>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Available Reports</h3>
-            {reports.length === 0 ? (
-              <Empty icon={<BarChart3 size={36} />} title="No reports available" />
-            ) : (
-              reports.map((r) => (
-                <div key={r.type} className="card" style={{ padding: '16px', marginBottom: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                    <div>
-                      <h4 style={{ fontSize: 14, fontWeight: 700 }}>{r.label}</h4>
-                      {r.description && <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{r.description}</p>}
-                      <p style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 4, fontFamily: 'DM Mono, monospace' }}>
-                        {r.row_count.toLocaleString()} records
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => preview(r.type)}
-                        disabled={previewing && previewType === r.type}
-                        id={`preview-${r.type}`}
-                      >
-                        {previewing && previewType === r.type ? <Spinner size={12} /> : <BarChart3 size={12} />}
-                        Preview
-                      </button>
-                      <a
-                        href={analytics.reportExportUrl(r.type)}
-                        className="btn btn-orange btn-sm"
-                        target="_blank"
-                        rel="noreferrer"
-                        id={`export-${r.type}`}
-                      >
-                        <Download size={12} /> Export
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              ))
+      <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+        <div className="flex flex-col gap-4">
+          <Card padding="sm">
+            <p className="eyebrow mb-2 px-1">Report types</p>
+            {types.error ? <p className="px-1 text-[13px] text-critical">{types.error}</p> : types.loading && !types.data ? <SkeletonRows rows={5} /> : (
+              <ul className="flex flex-col gap-0.5">{(types.data ?? []).map((t) => <li key={t.report_type}><button onClick={() => setType(t.report_type)} className={cn('w-full rounded-[var(--radius-md)] px-3 py-2 text-left transition-colors', type === t.report_type ? 'bg-espresso text-ink-on-dark' : 'hover:bg-sand/60')}><span className="block text-[13.5px] font-medium">{humanise(t.report_type)}</span><span className={cn('block text-[12px]', type === t.report_type ? 'text-sand-2' : 'text-taupe-2')}>{t.description}</span></button></li>)}</ul>
             )}
-          </div>
-
-          {/* Preview panel or exports */}
-          <div>
-            {previewData ? (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700 }}>Preview: {previewType}</h3>
-                  <button className="btn btn-ghost btn-sm" onClick={() => { setPreviewData(null); setPreviewType(null) }}>
-                    ✕ Close
-                  </button>
-                </div>
-                <div className="table-wrap">
-                  {previewData.length === 0 ? (
-                    <Empty title="No rows" body="This report has no data." />
-                  ) : (
-                    <table className="table">
-                      <thead>
-                        <tr>
-                          {Object.keys(previewData[0] as object).slice(0, 6).map((k) => (
-                            <th key={k} style={{ textTransform: 'none' }}>{k}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(previewData as Record<string, unknown>[]).slice(0, 20).map((row, i) => (
-                          <tr key={i}>
-                            {Object.values(row).slice(0, 6).map((v, j) => (
-                              <td key={j} style={{ fontSize: 12, fontFamily: 'DM Mono, monospace' }}>
-                                {v == null ? '—' : String(v)}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                  {previewData.length > 20 && (
-                    <p style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-4)' }}>
-                      Showing 20 of {previewData.length} rows. Export CSV for full data.
-                    </p>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Export History</h3>
-                {exports.length === 0 ? (
-                  <Empty title="No exports yet" body="Export a report to see the download history here." />
-                ) : (
-                  exports.map((e) => (
-                    <div key={e.id} className="card" style={{ padding: '12px 16px', marginBottom: 8 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                        <div>
-                          <span style={{ fontWeight: 600 }}>{e.type}</span>
-                          <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--text-4)', fontFamily: 'DM Mono, monospace' }}>.{e.format}</span>
-                        </div>
-                        {e.file_size_bytes != null && (
-                          <span style={{ fontSize: 11, color: 'var(--text-4)' }}>
-                            {(e.file_size_bytes / 1024).toFixed(1)} KB
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 4 }}>
-                        {e.requested_by} · {new Date(e.requested_at).toLocaleString()}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </>
-            )}
-          </div>
+          </Card>
+          {type && (
+            <Card padding="sm">
+              <p className="eyebrow mb-3 px-1">Filters</p>
+              <div className="flex flex-col gap-2.5 px-1">
+                <Checkbox label="Mismatches only" checked={Boolean(f.mismatches_only)} onChange={(e) => set('mismatches_only', e.target.checked || undefined)} />
+                <Checkbox label="SLA breached only" checked={Boolean(f.breached_only)} onChange={(e) => set('breached_only', e.target.checked || undefined)} />
+                <Checkbox label="Overrides only" checked={Boolean(f.overrides_only)} onChange={(e) => set('overrides_only', e.target.checked || undefined)} />
+                <Checkbox label="Unresolved only" checked={Boolean(f.unresolved_only)} onChange={(e) => set('unresolved_only', e.target.checked || undefined)} />
+                <Input value={f.status ?? ''} onChange={(e) => set('status', e.target.value || undefined)} placeholder="Status" aria-label="Status" className="h-9 text-[13px]" />
+                <Input value={f.dataset_tag ?? ''} onChange={(e) => set('dataset_tag', e.target.value || undefined)} placeholder="Dataset tag" aria-label="Dataset tag" className="h-9 font-mono text-[13px]" />
+                <Input value={f.field ?? ''} onChange={(e) => set('field', e.target.value || undefined)} placeholder="Field (for mismatch reports)" aria-label="Field" className="h-9 font-mono text-[13px]" />
+                <Select value={String(f.limit ?? 200)} onChange={(e) => set('limit', Number(e.target.value))} aria-label="Limit" className="h-9 text-[13px]">{[50, 200, 500, 1000].map((n) => <option key={n} value={n}>{n} rows</option>)}</Select>
+              </div>
+            </Card>
+          )}
         </div>
-      )}
-    </DashboardShell>
+
+        <div>
+          {!type ? <Empty title="Choose a report" body="Each report is a live query against the register with the filters on the left." /> : report.error ? <ErrorState message={report.error} onRetry={report.refresh} /> : report.loading && !report.data ? <SkeletonRows rows={10} /> : (
+            <div className="flex flex-col gap-4">
+              <PanelHeader title={report.data!.title} eyebrow={<><Mono>{report.data!.report_type}</Mono> · {report.data!.row_count ?? report.data!.rows?.length ?? 0} rows · generated {fmtDate(report.data!.generated_at)}</>} />
+              {!report.data!.rows?.length ? <Empty title="No rows" body="Nothing matches these filters." /> : (
+                <Table dense>
+                  <thead><tr>{(report.data!.columns ?? Object.keys(report.data!.rows![0])).map((c) => <Th key={c}>{humanise(c)}</Th>)}</tr></thead>
+                  <tbody>{report.data!.rows!.map((row, i) => <Tr key={i}>{(report.data!.columns ?? Object.keys(row)).map((c) => <Td key={c} className="max-w-[280px] truncate text-[12.5px]" title={String(row[c] ?? '')}>{cell(row[c])}</Td>)}</Tr>)}</tbody>
+                </Table>
+              )}
+              {report.data!.filters && Object.keys(report.data!.filters).length > 0 && <p className="text-[12px] text-taupe-2">Filters applied: {Object.entries(report.data!.filters).map(([k, v]) => <Badge key={k} className="mr-1">{k}={String(v)}</Badge>)}</p>}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   )
+}
+
+function cell(v: unknown): React.ReactNode {
+  if (v === null || v === undefined || v === '') return <span className="text-taupe">—</span>
+  if (typeof v === 'boolean') return <Badge tone={v ? 'verified' : 'neutral'}>{v ? 'yes' : 'no'}</Badge>
+  if (typeof v === 'number') return <span className="font-mono tnum">{v.toLocaleString()}</span>
+  if (typeof v === 'object') return <span className="font-mono text-[11.5px]">{JSON.stringify(v)}</span>
+  const s = String(v)
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return fmtDate(s)
+  return s
 }

@@ -448,7 +448,7 @@ class TestEndpoints:
             headers=auth_headers("customer"),
         )
         assert response.status_code == 201
-        ref = response.json()["complaint"]["public_ref"]
+        ref = response.json()["public_ref"]
 
         listed = client.get(
             "/api/complaints",
@@ -648,7 +648,7 @@ class TestCustomerStatus:
             headers=auth_headers(role),
         )
         assert response.status_code == 201, response.text
-        return response.json()["complaint"]["public_ref"]
+        return response.json()["public_ref"]
 
     def test_a_customer_can_track_their_own_complaint(
         self, client, auth_headers, clean_complaints
@@ -739,7 +739,7 @@ class TestMyComplaints:
         headers = auth_headers("customer")
         created = client.post("/api/complaints", json=self.BODY, headers=headers)
         assert created.status_code == 201, created.text
-        ref = created.json()["complaint"]["public_ref"]
+        ref = created.json()["public_ref"]
 
         body = client.get("/api/complaints/mine", headers=headers).json()
         assert ref in [row["public_ref"] for row in body["items"]]
@@ -758,7 +758,7 @@ class TestMyComplaints:
             "/api/complaints", json=self.BODY, headers=auth_headers("agent")
         )
         assert agent_made.status_code == 201
-        theirs = agent_made.json()["complaint"]["public_ref"]
+        theirs = agent_made.json()["public_ref"]
 
         body = client.get(
             "/api/complaints/mine", headers=auth_headers("customer")
@@ -778,10 +778,13 @@ class TestMyComplaints:
         assert body["items"], "the customer just filed one"
         row = body["items"][0]
         for leaked in (
-            "escalation_code", "department", "priority", "urgency",
+            "escalation_code", "priority", "priority_code", "urgency",
             "agent_guidance", "eligibility", "comparisons", "rule_refs",
         ):
             assert leaked not in row, f"{leaked} reached the customer view"
+        # The handling team is shown by design; its field is a contact card,
+        # not a routing code.
+        assert "department" in row
         # The fact that it was escalated is allowed; the level is not.
         assert "escalated" in row
 
@@ -789,7 +792,7 @@ class TestMyComplaints:
         """One projection, so the two views cannot drift apart."""
         headers = auth_headers("customer")
         created = client.post("/api/complaints", json=self.BODY, headers=headers)
-        ref = created.json()["complaint"]["public_ref"]
+        ref = created.json()["public_ref"]
 
         listed = next(
             row

@@ -34,8 +34,8 @@ def corpus(name: str) -> pathlib.Path:
             return candidate
     return settings.dataset_dir / "missing" / name
 
-PDF = corpus("DEL-POL-04_v2.1.pdf")
-DOCX = corpus("REF-POL-02_v3.0.docx")
+PDF = corpus("DOC-001_v2.0.pdf")
+DOCX = corpus("DOC-010_v2.0.docx")
 
 pytestmark = pytest.mark.skipif(
     not PDF.exists(), reason="run `python scripts/make_sample_documents.py` first"
@@ -150,8 +150,8 @@ def test_admin_can_upload_a_pdf(client, auth_headers):
     assert body["uploaded"] == 1
     result = body["results"][0]
     assert result["accepted"] is True
-    assert result["doc_ref"] == "DEL-POL-04"
-    assert result["version"] == "2.1"
+    assert result["doc_ref"] == "DOC-001"
+    assert result["version"] == "2.0"
     assert result["status"] == "ACTIVE"
     assert result["section_count"] > 0
     assert result["chunk_count"] > 0
@@ -163,7 +163,7 @@ def test_admin_can_upload_a_docx(client, auth_headers):
     assert response.status_code == 201
     result = response.json()["results"][0]
     assert result["accepted"] is True
-    assert result["doc_ref"] == "REF-POL-02"
+    assert result["doc_ref"] == "DOC-010"
 
 
 @pytest.mark.integration
@@ -219,7 +219,7 @@ def test_documents_list_shows_the_active_version(client, auth_headers):
 
     body = client.get("/api/documents", headers=headers).json()
     assert body["total"] >= 1
-    document = next(d for d in body["items"] if d["family_key"] == "DEL-POL-04")
+    document = next(d for d in body["items"] if d["family_key"] == "DOC-001")
     assert document["active_version"]["status"] == "ACTIVE"
     assert document["version_count"] >= 1
 
@@ -232,10 +232,10 @@ def test_version_detail_exposes_sections_for_inspection(client, auth_headers):
     ]
 
     detail = client.get(f"/api/documents/versions/{version_id}", headers=headers).json()
-    assert detail["doc_ref"] == "DEL-POL-04"
+    assert detail["doc_ref"] == "DOC-001"
     assert detail["sections"]
     headings = {s["heading"] for s in detail["sections"]}
-    assert "Escalation Triggers" in headings
+    assert "Eligible Refund Timelines" in headings
     assert all(s["page_no"] is not None for s in detail["sections"])
 
 
@@ -285,7 +285,7 @@ def test_search_returns_scored_results_with_citations(client, auth_headers):
     response = client.post(
         "/api/documents/search",
         headers=headers,
-        json={"query": "refund eligibility window", "top_k": 5},
+        json={"query": "ticket intake initial triage", "top_k": 5},
     )
     assert response.status_code == 200
     body = response.json()
@@ -326,7 +326,7 @@ def test_traceability_resolves_a_real_citation(client, auth_headers):
     assert response.status_code == 200
     body = response.json()
     assert body["resolved"] is True
-    assert body["citation"]["doc_ref"] == "DEL-POL-04"
+    assert body["citation"]["doc_ref"] == "DOC-001"
     assert body["document_status"] == "ACTIVE"
     assert body["applicability"] == "APPLICABLE"
     assert body["text"]
@@ -356,12 +356,12 @@ def test_traceability_by_document_reference(client, auth_headers):
     response = client.get(
         "/api/documents/chunks/by-reference",
         headers=headers,
-        params={"doc_ref": "DEL-POL-04", "section_ref": "5"},
+        params={"doc_ref": "DOC-001", "section_ref": "4"},
     )
     assert response.status_code == 200
     body = response.json()
     assert body["resolved"] is True
-    assert body["citation"]["section_ref"].startswith("5")
+    assert body["citation"]["section_ref"].startswith("4")
 
 
 @pytest.mark.integration

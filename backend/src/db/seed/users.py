@@ -29,15 +29,15 @@ DEFAULT_PASSWORD = os.getenv("SEED_PASSWORD", "SupportNova#2026")
 
 # (email, full_name, role, department_code)
 SEED_USERS: list[tuple[str, str, str, str | None]] = [
-    ("evaluator@zenithra.com", "Competition Evaluator", UserRole.EVALUATOR, None),
-    ("admin@zenithra.com", "Aarav Menon", UserRole.ADMIN, None),
-    ("manager@zenithra.com", "Priya Raghavan", UserRole.MANAGER, "CUSTOMER_RELATIONS"),
-    ("reviewer@zenithra.com", "Daniel Osei", UserRole.REVIEWER, "COMPLIANCE"),
-    ("agent.billing@zenithra.com", "Sara Qureshi", UserRole.AGENT, "BILLING"),
-    ("agent.logistics@zenithra.com", "Rohan Pillai", UserRole.AGENT, "LOGISTICS"),
-    ("agent.tech@zenithra.com", "Mei Lin Tan", UserRole.AGENT, "TECH_SUPPORT"),
-    ("agent.safety@zenithra.com", "Imran Farooq", UserRole.AGENT, "SAFETY"),
-    ("customer@zenithra.com", "Demo Customer", UserRole.CUSTOMER, None),
+    ("evaluator@raftarxpress.com", "Competition Evaluator", UserRole.EVALUATOR, None),
+    ("admin@raftarxpress.com", "Aarav Menon", UserRole.ADMIN, None),
+    ("manager@raftarxpress.com", "Priya Raghavan", UserRole.MANAGER, "CUSTOMER_RELATIONS"),
+    ("reviewer@raftarxpress.com", "Daniel Osei", UserRole.REVIEWER, "COMPLIANCE"),
+    ("agent.billing@raftarxpress.com", "Sara Qureshi", UserRole.AGENT, "BILLING"),
+    ("agent.logistics@raftarxpress.com", "Rohan Pillai", UserRole.AGENT, "LOGISTICS_OPS"),
+    ("agent.claims@raftarxpress.com", "Mei Lin Tan", UserRole.AGENT, "WARRANTY_CLAIMS"),
+    ("agent.safety@raftarxpress.com", "Imran Farooq", UserRole.AGENT, "SAFETY"),
+    ("customer@raftarxpress.com", "Demo Customer", UserRole.CUSTOMER, None),
 ]
 
 
@@ -67,14 +67,14 @@ def seed_users(db: Session) -> dict[str, int]:
     # The demo customer needs a Customer record too — users and customers are
     # separate concepts (see src/db/models/complaints.py).
     portal_user = db.execute(
-        select(User).where(User.email == "customer@zenithra.com")
+        select(User).where(User.email == "customer@raftarxpress.com")
     ).scalars().first()
     upsert(
         db, Customer,
         match={"external_ref": "CUST-00001"},
         values={
             "display_name": "Demo Customer",
-            "email": "customer@zenithra.com",
+            "email": "customer@raftarxpress.com",
             "tier": "STANDARD",
             "region": "IN",
             "user_id": portal_user.id if portal_user else None,

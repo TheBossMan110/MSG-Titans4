@@ -158,19 +158,19 @@ demonstration system holding **synthetic data only**. Override with `SEED_PASSWO
 
 | Email | Role | Purpose |
 |---|---|---|
-| `evaluator@zenithra.com` | evaluator | **Competition evaluator — read access across the system** |
-| `admin@zenithra.com` | admin | **Administrator — knowledge base, rules, configuration** |
-| `manager@zenithra.com` | manager | Support manager dashboards |
-| `reviewer@zenithra.com` | reviewer | Manual review queue and overrides |
-| `agent.billing@zenithra.com` | agent | Billing queue |
-| `agent.logistics@zenithra.com` | agent | Logistics queue |
-| `agent.tech@zenithra.com` | agent | Technical support queue |
-| `agent.safety@zenithra.com` | agent | Product safety queue |
-| `customer@zenithra.com` | customer | Customer portal |
+| `evaluator@raftarxpress.com` | evaluator | **Competition evaluator — read access across the system** |
+| `admin@raftarxpress.com` | admin | **Administrator — knowledge base, rules, configuration** |
+| `manager@raftarxpress.com` | manager | Support manager dashboards |
+| `reviewer@raftarxpress.com` | reviewer | Manual review queue and overrides |
+| `agent.billing@raftarxpress.com` | agent | Billing queue |
+| `agent.logistics@raftarxpress.com` | agent | Delivery & logistics queue |
+| `agent.claims@raftarxpress.com` | agent | Warranty & claims queue |
+| `agent.safety@raftarxpress.com` | agent | Product safety queue |
+| `customer@raftarxpress.com` | customer | Customer portal |
 
 **Password:** `SupportNova#2026`
 
-No email is ever sent by this application. `zenithra.com` is a fictional organisation.
+No email is ever sent by this application. `raftarxpress.com` is a fictional organisation.
 
 ---
 

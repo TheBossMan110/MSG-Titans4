@@ -1,191 +1,87 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
-import { MessageSquare, Plus, Filter, RefreshCw } from 'lucide-react'
-import { DashboardShell, AuthGuard, StatusPill, PriorityBadge, VerificationBadge, SearchBar, FilterSelect, Pagination, SkeletonRows, ErrorState, Empty } from '@/components/ui'
-import { complaints as complaintsApi } from '@/lib/api'
-import type { ComplaintSummary, Paginated } from '@/lib/api'
+
+import { Suspense, useMemo } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { AppShell } from '@/components/layout/app-shell'
+import { complaints, admin, COMPLAINT_STATUSES, URGENCIES, PRIORITIES, VERIFICATION_OUTCOMES } from '@/lib/api'
+import { useApi } from '@/lib/use-api'
 import { useAuth } from '@/lib/auth-context'
+import { Button, humanise } from '@/components/ui/primitives'
+import { Select, SearchBox, Checkbox } from '@/components/ui/forms'
+import { Pagination } from '@/components/ui/data'
+import { ErrorState, SkeletonRows } from '@/components/ui/feedback'
+import { ComplaintTable } from '@/components/app/complaint-bits'
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'All Status' },
-  { value: 'SUBMITTED', label: 'Submitted' },
-  { value: 'ANALYZING', label: 'Analyzing' },
-  { value: 'ANALYZED', label: 'Analyzed' },
-  { value: 'ASSIGNED', label: 'Assigned' },
-  { value: 'IN_PROGRESS', label: 'In Progress' },
-  { value: 'AWAITING_CUSTOMER', label: 'Awaiting Customer' },
-  { value: 'RESOLVED', label: 'Resolved' },
-  { value: 'CLOSED', label: 'Closed' },
-  { value: 'ESCALATED', label: 'Escalated' },
-  { value: 'IN_REVIEW', label: 'In Review' },
-]
-
-const PRIORITY_OPTIONS = [
-  { value: '', label: 'All Priority' },
-  { value: 'P0', label: 'P0 - Critical' },
-  { value: 'P1', label: 'P1 - High' },
-  { value: 'P2', label: 'P2 - Medium' },
-  { value: 'P3', label: 'P3 - Low' },
-]
-
-const VERIFICATION_OPTIONS = [
-  { value: '', label: 'All Verification' },
-  { value: 'VERIFIED', label: 'Verified' },
-  { value: 'MISMATCH', label: 'Mismatch' },
-  { value: 'CRITICAL', label: 'Critical' },
-]
+const STAFF = ['agent', 'reviewer', 'manager', 'admin', 'evaluator'] as const
 
 export default function ComplaintsPage() {
   return (
-    <AuthGuard>
-      <ComplaintsContent />
-    </AuthGuard>
+    <AppShell eyebrow="Complaints" roles={[...STAFF]} wide>
+      <Suspense fallback={<SkeletonRows rows={8} />}>
+        <Register />
+      </Suspense>
+    </AppShell>
   )
 }
 
-function ComplaintsContent() {
-  const { user } = useAuth()
-  const [data, setData] = useState<Paginated<ComplaintSummary> | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [q, setQ] = useState('')
-  const [status, setStatus] = useState('')
-  const [priority, setPriority] = useState('')
-  const [verification, setVerification] = useState('')
-  const [page, setPage] = useState(1)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      // Customers see only their own complaints
-      let result: Paginated<ComplaintSummary>
-      if (user?.role === 'customer') {
-        const mine = await complaintsApi.mine()
-        result = { items: mine, total: mine.length, page: 1, per_page: mine.length, pages: 1 }
-      } else {
-        result = await complaintsApi.list({
-          q: q || undefined,
-          status: status || undefined,
-          priority: priority || undefined,
-          verification_outcome: verification || undefined,
-          page,
-          per_page: 20,
-        })
-      }
-      setData(result)
-    } catch (e: unknown) {
-      setError((e as Error).message)
-    } finally {
-      setLoading(false)
+/** Filters live in the URL so a view can be shared and the back button works. */
+function useFilters() {
+  const params = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const get = (k: string) => params.get(k) ?? ''
+  const set = (patch: Record<string, string | boolean | number | undefined>) => {
+    const next = new URLSearchParams(params.toString())
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === undefined || v === '' || v === false) next.delete(k)
+      else next.set(k, String(v))
     }
-  }, [q, status, priority, verification, page, user?.role])
+    if (!('page' in patch)) next.delete('page')
+    router.replace(`${pathname}?${next.toString()}`)
+  }
+  return { get, set, page: Number(params.get('page') || 1) }
+}
 
-  useEffect(() => { setPage(1) }, [q, status, priority, verification])
-  useEffect(() => { load() }, [load])
+function Register() {
+  const { user } = useAuth()
+  const f = useFilters()
+  const oversight = user && ['manager', 'admin', 'evaluator'].includes(user.role)
+  const taxonomy = useApi(() => admin.taxonomy(), [], Boolean(oversight))
+  const filters = useMemo(() => ({
+    page: f.page, size: 25, status: f.get('status'), category: f.get('category'), department: f.get('department'),
+    urgency: f.get('urgency'), priority: f.get('priority'), verification_outcome: f.get('verification_outcome'),
+    requires_review: f.get('requires_review') === '1' ? true : undefined, dataset_tag: f.get('dataset_tag'), search: f.get('search'),
+  }), [f]) // eslint-disable-line react-hooks/exhaustive-deps
+  const q = useApi(() => complaints.list(filters), [JSON.stringify(filters)])
 
   return (
-    <DashboardShell>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">{user?.role === 'customer' ? 'My Complaints' : 'All Complaints'}</h1>
-          <p className="page-subtitle">
-            {data ? `${data.total.toLocaleString()} complaint${data.total !== 1 ? 's' : ''}` : 'Loading…'}
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-ghost btn-sm" onClick={load} title="Refresh">
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          </button>
-          {user?.role === 'customer' && (
-            <Link href="/dashboard/complaints/new" className="btn btn-orange btn-sm">
-              <Plus size={14} /> Submit New
-            </Link>
-          )}
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div><p className="eyebrow mb-1">Register</p><h1 className="display text-h2">Complaints</h1></div>
+        <Button href="/dashboard/complaints/new">Submit a complaint</Button>
+      </div>
+
+      <div className="glass grid gap-2 rounded-[var(--radius-xl)] p-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+        <SearchBox value={f.get('search')} onChange={(v) => f.set({ search: v })} placeholder="Search text or reference" className="sm:col-span-2 lg:col-span-3 2xl:col-span-6" />
+        <Select value={f.get('status')} onChange={(e) => f.set({ status: e.target.value })} aria-label="Status"><option value="">Any status</option>{COMPLAINT_STATUSES.map((s) => <option key={s} value={s}>{humanise(s)}</option>)}</Select>
+        <Select value={f.get('category')} onChange={(e) => f.set({ category: e.target.value })} aria-label="Category"><option value="">Any category</option>{(taxonomy.data?.categories ?? []).map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</Select>
+        <Select value={f.get('department')} onChange={(e) => f.set({ department: e.target.value })} aria-label="Department"><option value="">Any department</option>{(taxonomy.data?.departments ?? []).map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</Select>
+        <Select value={f.get('urgency')} onChange={(e) => f.set({ urgency: e.target.value })} aria-label="Urgency"><option value="">Any urgency</option>{URGENCIES.map((u) => <option key={u} value={u}>{humanise(u)}</option>)}</Select>
+        <Select value={f.get('priority')} onChange={(e) => f.set({ priority: e.target.value })} aria-label="Priority"><option value="">Any priority</option>{PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}</Select>
+        <Select value={f.get('verification_outcome')} onChange={(e) => f.set({ verification_outcome: e.target.value })} aria-label="Verification"><option value="">Any verification</option>{VERIFICATION_OUTCOMES.map((v) => <option key={v} value={v}>{humanise(v)}</option>)}</Select>
+        <div className="flex flex-wrap items-center gap-4 px-1 sm:col-span-2 lg:col-span-3 2xl:col-span-6">
+          <Checkbox label="Needs review only" checked={f.get('requires_review') === '1'} onChange={(e) => f.set({ requires_review: e.target.checked ? '1' : '' })} />
+          <input value={f.get('dataset_tag')} onChange={(e) => f.set({ dataset_tag: e.target.value })} placeholder="Dataset tag" aria-label="Dataset tag" className="h-9 rounded-[var(--radius-md)] border border-line bg-ivory px-3 text-[13px]" />
+          {(f.get('search') || f.get('status') || f.get('category') || f.get('department') || f.get('urgency') || f.get('priority') || f.get('verification_outcome') || f.get('requires_review') || f.get('dataset_tag')) && <button className="text-[13px] text-taupe-2 underline underline-offset-4" onClick={() => f.set({ search: '', status: '', category: '', department: '', urgency: '', priority: '', verification_outcome: '', requires_review: '', dataset_tag: '' })}>Clear</button>}
         </div>
       </div>
 
-      {/* Filters */}
-      {user?.role !== 'customer' && (
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
-          <SearchBar value={q} onChange={setQ} placeholder="Search complaints…" />
-          <FilterSelect id="status-filter" label="Status" value={status} onChange={setStatus} options={STATUS_OPTIONS} />
-          <FilterSelect id="priority-filter" label="Priority" value={priority} onChange={setPriority} options={PRIORITY_OPTIONS} />
-          <FilterSelect id="verification-filter" label="Verification" value={verification} onChange={setVerification} options={VERIFICATION_OPTIONS} />
-        </div>
+      {q.error ? <ErrorState message={q.error} onRetry={q.refresh} /> : q.loading && !q.data ? <SkeletonRows rows={10} /> : (
+        <>
+          <ComplaintTable items={q.data!.items} />
+          <Pagination page={f.page} size={25} total={q.data!.total} onPage={(p) => f.set({ page: p })} />
+        </>
       )}
-
-      {error && <ErrorState error={error} retry={load} />}
-
-      <div className="table-wrap">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Ref</th>
-              <th>Title</th>
-              <th>Status</th>
-              <th>Priority</th>
-              {user?.role !== 'customer' && <th>Verification</th>}
-              {user?.role !== 'customer' && <th>Category</th>}
-              <th>Updated</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <SkeletonRows rows={8} cols={user?.role !== 'customer' ? 8 : 6} />
-            ) : !data?.items.length ? (
-              <tr>
-                <td colSpan={8}>
-                  <Empty
-                    icon={<MessageSquare size={40} />}
-                    title="No complaints found"
-                    body={q || status || priority || verification ? 'Try adjusting your filters.' : 'No complaints yet.'}
-                  />
-                </td>
-              </tr>
-            ) : (
-              data.items.map((c) => (
-                <tr key={c.id} onClick={() => window.location.href = `/dashboard/complaints/${c.ref}`}>
-                  <td>
-                    <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: 'var(--orange-2)' }}>
-                      {c.public_ref ?? c.ref}
-                    </span>
-                  </td>
-                  <td style={{ maxWidth: 260 }}>
-                    <span style={{ fontWeight: 500, fontSize: 13 }}>{c.title}</span>
-                    {c.department && <span style={{ fontSize: 11, color: 'var(--text-4)', display: 'block' }}>{c.department}</span>}
-                  </td>
-                  <td><StatusPill status={c.status} /></td>
-                  <td><PriorityBadge priority={c.priority} /></td>
-                  {user?.role !== 'customer' && (
-                    <td><VerificationBadge outcome={c.verification_outcome} /></td>
-                  )}
-                  {user?.role !== 'customer' && (
-                    <td style={{ fontSize: 12, color: 'var(--text-3)' }}>{c.category ?? '—'}</td>
-                  )}
-                  <td style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
-                    {new Date(c.updated_at).toLocaleDateString()}
-                  </td>
-                  <td>
-                    <Link
-                      href={`/dashboard/complaints/${c.ref}`}
-                      className="btn btn-ghost btn-sm"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      View →
-                    </Link>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-        {data && (
-          <Pagination page={data.page} pages={data.pages} onPage={setPage} />
-        )}
-      </div>
-    </DashboardShell>
+    </div>
   )
 }

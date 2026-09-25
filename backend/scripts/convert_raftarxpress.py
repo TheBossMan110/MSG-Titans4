@@ -212,10 +212,16 @@ def stage_taxonomy(mapping: Mapping) -> pathlib.Path:
     # ── departments ──
     w(f"# -- departments ({len(organisation['departments'])}) " + "-" * 40)
     w("departments:")
+    # The corpus names each team but gives no mailbox. Customers are shown who
+    # is handling their complaint and how to reach that team, so each gets a
+    # team address on the fictional organisation's domain, derived from its
+    # code so a regenerated file is identical to the last one.
     for row in organisation["departments"]:
-        w(f"  - code: {mapping.departments[row['department_id']]}")
+        code = mapping.departments[row['department_id']]
+        w(f"  - code: {code}")
         w(f"    name: {_yaml_scalar(row['name'])}")
         w(f"    description: {_yaml_scalar(row['function_summary'])}")
+        w(f"    email: {code.lower().replace('_', '-')}@raftarxpress.com")
         w(f"    escalation_contact: {_yaml_scalar(row.get('escalation_contact_role'))}")
         w(f"    source_id: {row['department_id']}")
     w("")

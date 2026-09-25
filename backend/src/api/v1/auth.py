@@ -8,6 +8,7 @@ from schemas.auth import (
     LoginRequest,
     PasswordChangeRequest,
     RefreshRequest,
+    RegisterRequest,
     TokenResponse,
     UserOut,
 )
@@ -20,6 +21,41 @@ from src.services import auth as auth_service
 from src.services.audit import record_audit
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+@router.post(
+    "/register",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a customer account and sign in",
+)
+@limiter.limit(LOGIN_LIMIT)
+def register(
+    payload: RegisterRequest,
+    request: Request,
+    response: Response,   # slowapi attaches X-RateLimit-* headers here
+    db: DbSession,
+) -> TokenResponse:
+    """
+    Open sign-up, rate-limited per IP like login.
+
+    The account created is always a **customer**: the request cannot ask for
+    a role, and the service ignores anything that tries. Staff accounts come
+    from an administrator, so no one can promote themselves by posting JSON.
+    """
+    user, access, refresh = auth_service.register(
+        db,
+        email=payload.email,
+        full_name=payload.full_name,
+        password=payload.password,
+        request=request,
+    )
+    return TokenResponse(
+        access_token=access,
+        refresh_token=refresh,
+        expires_in=auth_service.access_token_ttl_seconds(),
+        user=UserOut.model_validate(user),
+    )
 
 
 @router.post(

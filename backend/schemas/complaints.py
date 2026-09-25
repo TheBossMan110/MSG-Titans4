@@ -21,7 +21,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from schemas.common import APIModel
 from src.core.config import settings
@@ -116,10 +116,23 @@ class GuidanceOut(APIModel):
 
 
 class ClarificationOut(APIModel):
+    id: uuid.UUID | None = None
     ordinal: int
     question: str
     missing_field: str | None = None
     answered_at: datetime | None = None
+    # The customer's reply. Screened for injection before it was stored.
+    answer: str | None = None
+
+
+class EvidenceOut(APIModel):
+    """One file a customer (or an agent on their behalf) attached."""
+
+    id: uuid.UUID
+    file_name: str
+    mime_type: str
+    size_bytes: int
+    uploaded_at: datetime | None = None
 
 
 class EligibilityOut(APIModel):
@@ -226,12 +239,24 @@ class ComplaintDetail(ComplaintSummary):
     guidance: list[GuidanceOut] = Field(default_factory=list)
     clarifications: list[ClarificationOut] = Field(default_factory=list)
     eligibility: list[EligibilityOut] = Field(default_factory=list)
+    evidence: list[EvidenceOut] = Field(default_factory=list)
 
 
 class IntakeResponse(APIModel):
-    """What the submitter gets back."""
+    """
+    What the submitter gets back.
 
-    complaint: ComplaintDetail
+    **Who submitted decides the shape.** Staff get the full agent view in
+    ``complaint``. A customer gets ``customer_view`` and ``complaint`` is
+    null: the agent view carries priority, escalation level, the verification
+    decision and internal guidance, which the tracking page deliberately
+    withholds — and returning them from the submit call would have leaked
+    exactly that through the side door. ``public_ref`` is present for both.
+    """
+
+    public_ref: str
+    complaint: ComplaintDetail | None = None
+    customer_view: ComplaintStatusOut | None = None
     accepted: bool = True
     analysed: bool = False
     analysis_error: str | None = None
@@ -341,6 +366,45 @@ class ReanalyseResponse(APIModel):
 # ══════════════════════════════════════════════════════════════
 # the customer's own view
 # ══════════════════════════════════════════════════════════════
+class CustomerQuestionOut(APIModel):
+    """A clarifying question as the customer sees it: answerable, not annotated."""
+
+    id: uuid.UUID
+    ordinal: int
+    question: str
+    answered: bool = False
+    answer: str | None = None
+    answered_at: datetime | None = None
+
+
+class MilestoneOut(APIModel):
+    """
+    One step of the customer-facing timeline.
+
+    Derived from the status history, but in the customer's vocabulary. The
+    internal states (ANALYZED, MANUAL_REVIEW, ESCALATED) are collapsed on
+    purpose: "a specialist is looking at it" is the truth a customer needs,
+    and "your case is in manual review because the model and the rules
+    disagreed" is not.
+    """
+
+    key: str
+    label: str
+    detail: str | None = None
+    reached: bool = False
+    current: bool = False
+    at: datetime | None = None
+
+
+class DepartmentContactOut(APIModel):
+    """The team handling a customer's complaint, and how to reach it."""
+
+    name: str
+    summary: str | None = None
+    email: str | None = None
+    support_hours: str | None = None
+
+
 class ComplaintStatusOut(APIModel):
     """
     What a customer may see about their own complaint (FR lxvi).
@@ -355,6 +419,13 @@ class ComplaintStatusOut(APIModel):
     compliance review is an internal routing fact; telling the customer a
     specialist will contact them is the same information without handing them
     a lever to argue about.
+
+    ``department`` IS shown — the team handling it and how to reach them. This
+    was a product decision (2026-09-25): a customer who knows which team has
+    their case, and has that team's address, has a direct line instead of a
+    general queue. It does reveal how a complaint was routed ("Account Security
+    & Fraud Prevention" says something), which is why the escalation *level*
+    and the priority still stay out.
     """
 
     public_ref: str
@@ -362,11 +433,21 @@ class ComplaintStatusOut(APIModel):
     status: str
     submitted_at: datetime | None = None
     category: str | None = None
+    category_name: str | None = None
     summary: str | None = None
     # True when the system has escalated internally — the fact, not the level.
     escalated: bool = False
     awaiting_information: list[str] = Field(default_factory=list)
     last_updated: datetime | None = None
+    # When the organisation aims to have it resolved, if an SLA applies.
+    target_resolution_at: datetime | None = None
+    # The team handling it. A name and a mailbox — never the escalation level.
+    department: DepartmentContactOut | None = None
+    questions: list[CustomerQuestionOut] = Field(default_factory=list)
+    milestones: list[MilestoneOut] = Field(default_factory=list)
+    evidence: list[EvidenceOut] = Field(default_factory=list)
+    # True when the next move is the customer's: an open question to answer.
+    action_needed: bool = False
 
 
 # ══════════════════════════════════════════════════════════════
@@ -479,3 +560,56 @@ class LifecycleOut(APIModel):
     status: str
     available_actions: list[str] = Field(default_factory=list)
     history: list[StatusHistoryRowOut] = Field(default_factory=list)
+
+
+# ══════════════════════════════════════════════════════════════
+# customer actions
+# ══════════════════════════════════════════════════════════════
+class ClarificationAnswerIn(BaseModel):
+    answer: str = Field(min_length=1, max_length=2000)
+
+
+class ClarificationAnswerOut(APIModel):
+    status: ComplaintStatusOut
+    # Complaint fields the answer filled, e.g. {"order_ref": "CN-482913"}.
+    filled: dict[str, str] = Field(default_factory=dict)
+    all_answered: bool = False
+    status_changed_to: str | None = None
+
+
+class PreviewIn(BaseModel):
+    title: str = Field(default="", max_length=300)
+    description: str = Field(default="", max_length=10_000)
+
+
+class PreviewEntityOut(APIModel):
+    type: str
+    value: str
+    start: int
+    end: int
+
+
+class PreviewHintOut(APIModel):
+    field: str
+    message: str
+
+
+class PreviewCategoryOut(APIModel):
+    code: str
+    name: str
+
+
+class PreviewOut(APIModel):
+    """What the pipelines will read in a draft complaint. Nothing is stored."""
+
+    entities: list[PreviewEntityOut] = Field(default_factory=list)
+    entity_counts: dict[str, int] = Field(default_factory=dict)
+    has_reference: bool = False
+    words: int = 0
+    characters: int = 0
+    injection_suspected: bool = False
+    likely_category: PreviewCategoryOut | None = None
+    hints: list[PreviewHintOut] = Field(default_factory=list)
+
+
+IntakeResponse.model_rebuild()

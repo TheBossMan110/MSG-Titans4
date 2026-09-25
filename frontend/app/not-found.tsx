@@ -1,4 +1,15 @@
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
-import { Logo } from '@/components/supportnova'
-export default function NotFound(){return <main className="page-empty"><Logo/><span className="eyebrow">404 / signal lost</span><h1 style={{fontSize:70,margin:0}}>That page drifted off course.</h1><p className="muted">The route you&apos;re looking for doesn&apos;t exist in this workspace.</p><Link href="/" className="button button-primary"><ArrowLeft size={16}/> Return home</Link></main>}
+import { Button, Wordmark } from '@/components/ui/primitives'
+
+export default function NotFound() {
+  return (
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
+      <Wordmark />
+      <h1 className="display text-h1">This page is not in the register.</h1>
+      <p className="max-w-[44ch] text-[15px] text-taupe-2">The address may have been mistyped, or the page has moved. Complaints are tracked from the dashboard; policies from the knowledge base.</p>
+      <div className="flex gap-2">
+        <Button href="/">Home</Button>
+        <Button href="/dashboard" variant="secondary">Dashboard</Button>
+      </div>
+    </main>
+  )
+}

@@ -50,7 +50,11 @@ def corpus(name: str) -> pathlib.Path:
     module-level skip guard below can report "corpus missing" rather than
     erroring at import.
     """
-    for folder in settings.document_dirs:
+    # Parser fixtures are not organisation data: look in every domain folder
+    # under dataset/, not only the ones DATASET_DOMAINS makes active, so the
+    # parsing tests keep running whichever organisation is configured.
+    folders = [*settings.document_dirs, *sorted(settings.dataset_dir.glob("*/documents"))]
+    for folder in folders:
         candidate = folder / name
         if candidate.exists():
             return candidate

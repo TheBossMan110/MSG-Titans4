@@ -52,6 +52,21 @@ class UserCreate(BaseModel):
     department_code: str | None = None
 
 
+class RegisterRequest(BaseModel):
+    """
+    Self-service sign-up.
+
+    There is deliberately no ``role`` field. A role decides what a person may
+    change in a complaint register, so it is not something the person applying
+    for the account gets to choose — the server always assigns CUSTOMER, and
+    staff roles are provisioned by an administrator.
+    """
+
+    email: EmailStr
+    full_name: str = Field(min_length=2, max_length=255)
+    password: str = Field(min_length=12, max_length=256)
+
+
 class PasswordChangeRequest(BaseModel):
     current_password: str
     new_password: str = Field(min_length=8, max_length=256)

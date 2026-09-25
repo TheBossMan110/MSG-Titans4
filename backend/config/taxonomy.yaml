@@ -33,46 +33,55 @@ departments:
   - code: LOGISTICS_OPS
     name: Delivery & Logistics Operations
     description: Manages route optimization, rider dispatches, parcel sorting, linehaul transit, and resolution of delivery delays or transit failures across all provincial hubs.
+    email: logistics-ops@raftarxpress.com
     escalation_contact: Regional Operations Director
     source_id: DEPT-01
   - code: BILLING
     name: Billing & Accounts
     description: Oversees Cash-on-Delivery (COD) reconciliation, merchant payment disbursements, tariff disputes, corporate invoicing, and fuel surcharge queries.
+    email: billing@raftarxpress.com
     escalation_contact: Head of Financial Operations
     source_id: DEPT-02
   - code: RETURNS_REFUNDS
     name: Returns & Refunds
     description: Coordinates reverse logistics, Return to Origin (RTO) processing, failed-delivery return verification, and customer reimbursement authorizations.
+    email: returns-refunds@raftarxpress.com
     escalation_contact: Reverse Logistics Lead
     source_id: DEPT-03
   - code: WARRANTY_CLAIMS
     name: Warranty & Claims
     description: Investigates parcel loss, high-value shipment damage, cargo insurance claims, and merchant compensation settlements.
+    email: warranty-claims@raftarxpress.com
     escalation_contact: Chief Claims Assessor
     source_id: DEPT-04
   - code: CUSTOMER_RELATIONS
     name: Customer Relations
     description: Serves as the primary touchpoint for general inquiries, VIP customer care, corporate account management, and overall satisfaction tracking.
+    email: customer-relations@raftarxpress.com
     escalation_contact: Customer Experience Director
     source_id: DEPT-05
   - code: ACCOUNT_SECURITY
     name: Account Security & Fraud Prevention
     description: Monitors fraudulent COD collection attempts, portal account breaches, unauthorized profile alterations, and counterfeit shipping manifests.
+    email: account-security@raftarxpress.com
     escalation_contact: Head of Information Security
     source_id: DEPT-06
   - code: COMPLIANCE
     name: Compliance & Legal Affairs
     description: Handles regulatory compliance, contract violations, prohibited cargo violations, consumer court notices, and dispute resolutions under trade laws.
+    email: compliance@raftarxpress.com
     escalation_contact: General Legal Counsel
     source_id: DEPT-07
   - code: SAFETY
     name: Safety & Risk Management
     description: Evaluates operational hazards, dangerous goods mishandling, fleet vehicle accidents during transit, and warehouse safety incidents.
+    email: safety@raftarxpress.com
     escalation_contact: Director of Safety & Operational Risk
     source_id: DEPT-08
   - code: MGMT_ESCALATIONS
     name: Management Escalations
     description: Resolves multi-department deadlock complaints, executive office referrals, severe brand reputation risks, and unresolved tier-3 grievances.
+    email: mgmt-escalations@raftarxpress.com
     escalation_contact: Chief Operating Officer
     source_id: DEPT-09
 

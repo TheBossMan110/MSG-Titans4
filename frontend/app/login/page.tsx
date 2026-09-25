@@ -1,165 +1,94 @@
 'use client'
-import { useState, useEffect, FormEvent } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Eye, EyeOff, AlertCircle, Zap, Shield } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
-import { Logo, Spinner } from '@/components/ui'
+import { errorMessage, type User } from '@/lib/api'
+import { Button, Wordmark, Eyebrow } from '@/components/ui/primitives'
+import { Field, Input } from '@/components/ui/forms'
 
 export default function LoginPage() {
-  const { login, user, loading, error } = useAuth()
+  return (
+    <Suspense fallback={null}>
+      <Login />
+    </Suspense>
+  )
+}
+
+const homeFor = (u: User) => (u.role === 'customer' ? '/dashboard/my-complaints' : '/dashboard')
+
+function Login() {
+  const { user, login, loading } = useAuth()
   const router = useRouter()
   const params = useSearchParams()
-  const redirect = params.get('redirect') ?? '/dashboard'
-
+  const next = params.get('next')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [localError, setLocalError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
 
   useEffect(() => {
-    if (!loading && user) router.replace(redirect)
-  }, [user, loading, redirect, router])
+    if (!loading && user) router.replace(next && next.startsWith('/') ? next : homeFor(user))
+  }, [loading, user, next, router])
 
-  const handleSubmit = async (e: FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLocalError(null)
-    if (!email || !password) { setLocalError('Please enter email and password.'); return }
-    setSubmitting(true)
+    setPending(true)
+    setError(null)
     try {
-      await login(email, password)
-      router.replace(redirect)
-    } catch (err: unknown) {
-      setLocalError((err as Error).message)
+      const u = await login(email.trim(), password)
+      router.replace(next && next.startsWith('/') ? next : homeFor(u))
+    } catch (err) {
+      setError(errorMessage(err))
     } finally {
-      setSubmitting(false)
+      setPending(false)
     }
   }
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', height: '100dvh', alignItems: 'center', justifyContent: 'center' }}>
-        <Spinner size={32} />
-      </div>
-    )
-  }
-
   return (
-    <div style={{
-      display: 'flex', minHeight: '100dvh', alignItems: 'center', justifyContent: 'center',
-      padding: 24, background: 'var(--bg)',
-    }}>
-      <div className="ambient-bg" />
-      <div className="grid-overlay" />
-
-      {/* Glow orb */}
-      <div style={{
-        position: 'fixed', width: 600, height: 600, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(255,87,34,0.1) 0%, transparent 70%)',
-        top: '50%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none',
-      }} />
-
-      <div style={{ width: '100%', maxWidth: 420, position: 'relative', zIndex: 1 }}>
-        {/* Brand */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Link href="/" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-            <Logo size={40} />
-            <div style={{ fontSize: 22, fontWeight: 900, fontFamily: 'Manrope, sans-serif', letterSpacing: '-0.03em' }}>
-              Support<span style={{ color: 'var(--orange)' }}>Nova</span>
-            </div>
-          </Link>
-          <p style={{ marginTop: 8, fontSize: 13, color: 'var(--text-3)' }}>
-            ResponseX Intelligence Platform
+    <main className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
+      <section className="section-dark grain relative hidden flex-col justify-between p-12 lg:flex">
+        <Link href="/"><Wordmark dark /></Link>
+        <div>
+          <Eyebrow className="mb-6 text-sand-2">Sign in</Eyebrow>
+          <h1 className="display text-h1 text-ink-on-dark">
+            The AI writes in pencil.
+            <span className="display-italic block text-sand-2">The rules confirm in ink.</span>
+          </h1>
+          <p className="mt-6 max-w-[42ch] text-[15px] text-sand-2">
+            Six roles, one register. What you can see and do is decided by the server for
+            every request, not by which buttons this page shows you.
           </p>
         </div>
+        <p className="text-[12.5px] text-sand-2">RaftarXpress Logistics (Pvt) Ltd · synthetic data only</p>
+      </section>
 
-        {/* Card */}
-        <div className="card" style={{ padding: '32px 28px', borderColor: 'var(--border-2)' }}>
-          <h1 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4, textAlign: 'center' }}>Sign In</h1>
-          <p style={{ fontSize: 13, color: 'var(--text-3)', textAlign: 'center', marginBottom: 24 }}>
-            Enter your credentials to access your dashboard
-          </p>
+      <section className="flex items-center justify-center px-[var(--gutter)] py-16">
+        <div className="w-full max-w-[400px]">
+          <Link href="/" className="mb-10 block lg:hidden"><Wordmark /></Link>
+          <h2 className="font-display text-h2 leading-none">Welcome back.</h2>
+          <p className="mt-3 text-[14px] text-taupe-2">Use the account your administrator provisioned.</p>
 
-          {(localError || error) && (
-            <div className="alert alert-error" style={{ marginBottom: 20 }}>
-              <AlertCircle size={14} />
-              {localError ?? error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} noValidate>
-            <div style={{ marginBottom: 16 }}>
-              <label className="label" htmlFor="login-email">Email</label>
-              <input
-                id="login-email"
-                type="email"
-                className="input"
-                placeholder="you@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-              />
-            </div>
-
-            <div style={{ marginBottom: 24, position: 'relative' }}>
-              <label className="label" htmlFor="login-password">Password</label>
-              <input
-                id="login-password"
-                type={showPw ? 'text' : 'password'}
-                className="input"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-                style={{ paddingRight: 44 }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw((v) => !v)}
-                style={{
-                  position: 'absolute', right: 12, bottom: 10, background: 'none', border: 'none',
-                  cursor: 'pointer', color: 'var(--text-3)', padding: 0,
-                }}
-                aria-label={showPw ? 'Hide password' : 'Show password'}
-              >
-                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-
-            <button
-              id="login-submit"
-              type="submit"
-              className="btn btn-orange"
-              disabled={submitting}
-              style={{ width: '100%', justifyContent: 'center' }}
-            >
-              {submitting ? <><Spinner size={16} color="#fff" /> Signing in…</> : 'Sign In'}
-            </button>
+          <form onSubmit={submit} className="mt-8 flex flex-col gap-4" noValidate>
+            <Field label="Email" required>{(id) => <Input id={id} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />}</Field>
+            <Field label="Password" required>{(id) => <Input id={id} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />}</Field>
+            {error && <p role="alert" className="rounded-[var(--radius-md)] border border-critical/30 bg-critical-dim px-3.5 py-2.5 text-[13.5px] text-espresso">{error}</p>}
+            <Button type="submit" size="lg" loading={pending} className="mt-2 w-full">Sign in</Button>
           </form>
-        </div>
 
-        {/* Dual-engine indicator */}
-        <div style={{
-          marginTop: 24, display: 'flex', gap: 16, justifyContent: 'center', fontSize: 12,
-        }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#a5b4fc' }}>
-            <Zap size={12} /> AI Engine
-          </span>
-          <span style={{ color: 'var(--border-3)' }}>+</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#67e8f9' }}>
-            <Shield size={12} /> Python Verifier
-          </span>
-          <span style={{ color: 'var(--border-3)' }}>→</span>
-          <span style={{ color: 'var(--text-4)' }}>Always cross-checked</span>
-        </div>
+          <div className="mt-8 rounded-[var(--radius-lg)] border border-line bg-ivory p-5 text-[13px] text-taupe-2">
+            <p className="eyebrow mb-2">Evaluation accounts</p>
+            <p>The seeded staff accounts, one per role, are listed in the backend README with the published demo password. Use <span className="font-mono text-[12px] text-espresso">admin@raftarxpress.com</span> to reach the rule matrix, knowledge base and audit trail.</p>
+          </div>
 
-        <div style={{ textAlign: 'center', marginTop: 20 }}>
-          <Link href="/" style={{ fontSize: 12, color: 'var(--text-4)' }}>← Back to home</Link>
+          <p className="mt-6 text-[13px] text-taupe-2">
+            No account?{' '}
+            <Link href="/register" className="text-espresso underline decoration-line underline-offset-4">Create one</Link>
+            {' '}&mdash; sign-up creates a customer account.
+          </p>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   )
 }

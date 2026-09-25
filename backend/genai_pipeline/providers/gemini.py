@@ -29,6 +29,7 @@ from genai_pipeline.providers.base import (
     ProviderUnavailable,
     RateLimited,
 )
+from genai_pipeline.providers.chain import run_chain
 from src.core.config import settings
 from src.core.logging import get_logger
 
@@ -56,16 +57,31 @@ class GeminiProvider(LLMProvider):
     supports_native_json_schema = True
 
     def __init__(self, model: str | None = None):
-        self._model = model or settings.gemini_model
+        # A chain, tried in order. Google retires model names ("no longer
+        # available to new users") and 503s the most popular ones on the free
+        # tier, and either of those turns a single pinned name into a dead
+        # pipeline. Falling through to the next model keeps Pipeline 1 alive
+        # without anyone editing configuration mid-evaluation.
+        self._chain = [model] if model else settings.gemini_model_chain
+        self._model = self._chain[0]
 
     @property
     def model(self) -> str:
+        """The model that last answered — recorded on every run."""
         return self._model
 
     def is_configured(self) -> bool:
         return bool(settings.gemini_api_key)
 
     def _generate(self, request: LLMRequest) -> LLMResponse:
+        """Try each model in the chain until one answers (see providers/chain.py)."""
+        model, response = run_chain(
+            self.name, self._chain, lambda m: self._generate_with(m, request), log=log
+        )
+        self._model = model  # what actually answered, for the run record
+        return response
+
+    def _generate_with(self, model: str, request: LLMRequest) -> LLMResponse:
         from google.genai import types
 
         config: dict[str, Any] = {
@@ -83,12 +99,12 @@ class GeminiProvider(LLMProvider):
         started = time.perf_counter()
         try:
             response = _client().models.generate_content(
-                model=self._model,
+                model=model,
                 contents=request.prompt,
                 config=types.GenerateContentConfig(**config),
             )
         except Exception as exc:
-            raise _translate(exc) from exc
+            raise _translate(exc, model) from exc
         latency_ms = int((time.perf_counter() - started) * 1000)
 
         finish_reason = _finish_reason(response)
@@ -112,7 +128,7 @@ class GeminiProvider(LLMProvider):
         return LLMResponse(
             text=text,
             provider=self.name,
-            model=self._model,
+            model=model,
             latency_ms=latency_ms,
             tokens_in=getattr(usage, "prompt_token_count", None),
             tokens_out=getattr(usage, "candidates_token_count", None),
@@ -160,7 +176,7 @@ def _finish_reason(response: Any) -> str | None:
     return None
 
 
-def _translate(exc: Exception) -> Exception:
+def _translate(exc: Exception, model: str = "") -> Exception:
     """
     Map an SDK exception onto our taxonomy.
 
@@ -184,7 +200,7 @@ def _translate(exc: Exception) -> Exception:
         # A renamed or retired model. Terminal, and worth saying loudly —
         # 'gemini-2.0-flash' disappearing is exactly how this fails.
         return ProviderUnavailable(
-            f"model '{settings.gemini_model}' unavailable: {message}",
+            f"model '{model or settings.gemini_model}' unavailable: {message}",
             provider="gemini", status=404,
         )
     if "safety" in lowered or "blocked" in lowered:

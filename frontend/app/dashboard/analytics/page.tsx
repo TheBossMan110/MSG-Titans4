@@ -1,250 +1,137 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { RefreshCw, Download, TrendingUp, TrendingDown, Activity } from 'lucide-react'
-import {
-  DashboardShell, AuthGuard, StatCard, BarChart, PercentBar,
-  Spinner, ErrorState, TrendArrow, Empty,
-} from '@/components/ui'
+
+import { useState } from 'react'
+import { AppShell } from '@/components/layout/app-shell'
 import { analytics } from '@/lib/api'
-import type {
-  AnalyticsDashboard, VolumeData, CategoryData, DepartmentData, PipelineData, TrendItem,
-} from '@/lib/api'
+import { useApi, pct } from '@/lib/use-api'
+import { Badge, Button, Mono, humanise } from '@/components/ui/primitives'
+import { Card, PanelHeader } from '@/components/ui/surfaces'
+import { Stat, Ratio } from '@/components/ui/data'
+import { ErrorState, SkeletonRows } from '@/components/ui/feedback'
+import { Bars, Columns, Stacked } from '@/components/app/charts'
+import { cn } from '@/lib/utils'
+
+const WINDOWS = [7, 30, 90, 365]
 
 export default function AnalyticsPage() {
   return (
-    <AuthGuard allowedRoles={['manager', 'admin', 'evaluator']}>
-      <AnalyticsContent />
-    </AuthGuard>
+    <AppShell eyebrow="Analytics" roles={['manager', 'admin', 'evaluator']} wide>
+      <Story />
+    </AppShell>
   )
 }
 
-function AnalyticsContent() {
-  const [dash, setDash] = useState<AnalyticsDashboard | null>(null)
-  const [volume, setVolume] = useState<VolumeData[]>([])
-  const [categories, setCategories] = useState<CategoryData[]>([])
-  const [departments, setDepartments] = useState<DepartmentData[]>([])
-  const [pipeline, setPipeline] = useState<PipelineData | null>(null)
-  const [trends, setTrends] = useState<TrendItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [volumePeriod, setVolumePeriod] = useState('daily')
-
-  const load = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const [d, v, c, dep, p, t] = await Promise.all([
-        analytics.dashboard(),
-        analytics.volume({ period: volumePeriod }),
-        analytics.categories(),
-        analytics.departments(),
-        analytics.pipelines(),
-        analytics.trends(),
-      ])
-      setDash(d)
-      setVolume(v)
-      setCategories(c)
-      setDepartments(dep)
-      setPipeline(p)
-      setTrends(t)
-    } catch (e: unknown) {
-      setError((e as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { load() }, [volumePeriod])
+/**
+ * The analytics story, in the order a manager asks the questions: how much,
+ * what kind, who has it, how well did the two pipelines agree, how traceable
+ * was it, what did the guard stop, how did people respond. Every figure shows
+ * its denominator; every null reads as not measured.
+ */
+function Story() {
+  const [days, setDays] = useState(30)
+  const dash = useApi(() => analytics.dashboard(days), [days])
+  const volume = useApi(() => analytics.volume(days), [days])
+  const cats = useApi(() => analytics.categories(days), [days])
+  const depts = useApi(() => analytics.departments(days), [days])
+  const pipes = useApi(() => analytics.pipelines(days), [days])
+  const d = dash.data
 
   return (
-    <DashboardShell>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Analytics</h1>
-          <p className="page-subtitle">Live operational metrics — all figures traced to database records</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <select
-            className="input"
-            style={{ width: 'auto', padding: '7px 12px', fontSize: 13 }}
-            value={volumePeriod}
-            onChange={(e) => setVolumePeriod(e.target.value)}
-            id="volume-period"
-          >
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
-          <button className="btn btn-ghost btn-sm" onClick={load} disabled={loading}>
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          </button>
-        </div>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div><p className="eyebrow mb-1">Insight</p><h1 className="display text-h2">Analytics</h1></div>
+        <div className="flex items-center gap-1 rounded-full border border-line bg-ivory p-1">{WINDOWS.map((w) => <button key={w} onClick={() => setDays(w)} className={cn('rounded-full px-3 py-1 text-[13px] transition-colors', days === w ? 'bg-espresso text-ink-on-dark' : 'text-espresso-2 hover:bg-sand/60')}>{w}d</button>)}</div>
       </div>
 
-      {error && <ErrorState error={error} retry={load} />}
-
-      {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
-          <Spinner size={28} />
-        </div>
-      )}
-
-      {!loading && !error && dash && (
+      {dash.error ? <ErrorState message={dash.error} onRetry={dash.refresh} /> : (
         <>
-          {/* KPI row */}
-          <div className="stats-grid">
-            <StatCard
-              label="Total Complaints"
-              value={dash.total_complaints.toLocaleString()}
-              icon={<Activity size={18} />}
-              sub={`${dash.resolved_count} resolved`}
-            />
-            <StatCard
-              label="Pipeline Agreement"
-              value={dash.pipeline_agreement_rate != null ? `${Math.round(dash.pipeline_agreement_rate * 100)}%` : 'Not measured'}
-              accent={dash.pipeline_agreement_rate != null ? (dash.pipeline_agreement_rate > 0.85 ? 'var(--verified)' : 'var(--mismatch)') : undefined}
-              sub="AI ↔ Python match rate"
-            />
-            <StatCard
-              label="Escalated"
-              value={dash.escalated_count.toLocaleString()}
-              accent={dash.escalated_count > 0 ? 'var(--critical)' : undefined}
-              sub="Critical priority"
-            />
-            <StatCard
-              label="Avg Resolution"
-              value={dash.avg_resolution_hours != null ? `${dash.avg_resolution_hours.toFixed(1)}h` : 'Not measured'}
-              sub="Across resolved cases"
-            />
+          <section className="grid gap-x-8 gap-y-6 rounded-[var(--radius-xl)] border border-line bg-ivory p-6 sm:grid-cols-2 lg:grid-cols-4">
+            <Stat label="Complaints" value={d ? d.volume.total ?? 0 : undefined} evidence={d ? `${d.volume.open ?? 0} open · ${d.volume.resolved ?? 0} resolved · ${d.volume.failed ?? 0} failed` : undefined} />
+            <Stat label="Escalation rate" value={d ? d.escalation.rate.pct ?? null : undefined} unit="%" tone="warning" evidence={d ? `${d.escalation.rate.count ?? 0} of ${d.escalation.rate.total ?? 0}` : undefined} />
+            <Stat label="Decisions with GenAI" value={d ? d.pipelines.with_genai ?? 0 : undefined} evidence={d ? `${d.pipelines.degraded ?? 0} degraded (rules alone) of ${d.pipelines.decisions ?? 0}` : undefined} />
+            <Stat label="SLA open at risk" value={d ? d.sla.open_at_risk ?? 0 : undefined} tone={d && (d.sla.open_at_risk ?? 0) > 0 ? 'warning' : 'neutral'} />
+          </section>
+
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+            <Card>
+              <PanelHeader title="Volume" eyebrow="By day" />
+              {volume.loading && !volume.data ? <SkeletonRows rows={3} /> : volume.error ? <p className="text-[13px] text-taupe-2">{volume.error}</p> : volume.data?.series?.length ? <Columns points={volume.data.series.map((p) => ({ label: p.date, value: p.count }))} height={140} /> : <Stacked parts={Object.entries(volume.data?.by_status ?? {}).map(([k, v]) => ({ label: humanise(k), value: v, tone: k === 'RESOLVED' || k === 'CLOSED' ? 'verified' : k === 'FAILED' ? 'critical' : k === 'ESCALATED' || k === 'MANUAL_REVIEW' ? 'warning' : 'espresso' }))} />}
+              {volume.data?.by_status && volume.data.series?.length ? <div className="mt-5"><Stacked parts={Object.entries(volume.data.by_status).map(([k, v]) => ({ label: humanise(k), value: v, tone: k === 'RESOLVED' || k === 'CLOSED' ? 'verified' : k === 'FAILED' ? 'critical' : k === 'ESCALATED' || k === 'MANUAL_REVIEW' ? 'warning' : 'espresso' }))} /></div> : null}
+            </Card>
+            <Card>
+              <PanelHeader title="Categories" eyebrow="Unclassified shown, not dropped" />
+              {cats.loading && !cats.data ? <SkeletonRows rows={5} /> : <Bars rows={(cats.data ?? []).map((c) => ({ label: c.name, value: c.count, sub: c.pct != null ? `${c.pct}%` : undefined }))} />}
+            </Card>
           </div>
 
-          {/* Volume chart */}
-          <div className="card" style={{ padding: '24px', marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700 }}>Volume Over Time</h3>
-              <a
-                href={analytics.reportExportUrl('volume')}
-                className="btn btn-ghost btn-sm"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Download size={13} /> Export
-              </a>
-            </div>
-            {volume.length === 0 ? (
-              <Empty title="No volume data" />
-            ) : (
-              <BarChart
-                data={volume.slice(-20).map((v) => ({ label: v.period.slice(-5), value: v.count }))}
-                color="var(--orange)"
-                height={180}
-              />
-            )}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-            {/* Categories */}
-            <div className="card" style={{ padding: '20px' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>By Category</h3>
-              {categories.length === 0 ? (
-                <Empty title="No category data" />
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {categories.slice(0, 8).map((c) => (
-                    <div key={c.category}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}>
-                        <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>{c.category}</span>
-                        <span style={{ color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
-                          {c.count} {c.percentage != null ? `· ${c.percentage.toFixed(1)}%` : ''}
-                        </span>
-                      </div>
-                      <PercentBar value={c.percentage} color="var(--ai)" />
-                    </div>
-                  ))}
-                </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <PanelHeader title="Department load" eyebrow="Total and open" />
+              {depts.loading && !depts.data ? <SkeletonRows rows={5} /> : (
+                <ul className="flex flex-col gap-2">
+                  {(depts.data ?? []).map((x) => { const max = Math.max(1, ...(depts.data ?? []).map((y) => y.total)); return (
+                    <li key={x.code} className="grid grid-cols-[minmax(120px,200px)_1fr_90px] items-center gap-3 text-[13px]">
+                      <span className="truncate" title={x.name}>{x.name}</span>
+                      <span className="relative h-4 overflow-hidden rounded-full bg-sand"><span className="absolute inset-y-0 left-0 rounded-full bg-taupe" style={{ width: `${(x.total / max) * 100}%` }} /><span className="absolute inset-y-0 left-0 rounded-full bg-espresso" style={{ width: `${(x.open / max) * 100}%` }} /></span>
+                      <span className="text-right font-mono text-[12px] tnum">{x.open} / {x.total}</span>
+                    </li>
+                  ) })}
+                  {!depts.data?.length && <li className="text-[13.5px] text-taupe-2">No routed complaints in the window.</li>}
+                </ul>
               )}
-            </div>
-
-            {/* Pipeline per-field */}
-            {pipeline && (
-              <div className="card" style={{ padding: '20px' }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Pipeline Agreement by Field</h3>
-                <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16 }}>
-                  Total: {pipeline.total} · Agreement: {pipeline.agreement_count} · Mismatch: {pipeline.mismatch_count}
-                </p>
-                {pipeline.by_field.map((f) => (
-                  <div key={f.field} style={{ marginBottom: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}>
-                      <span style={{ color: 'var(--text-2)', fontWeight: 500, textTransform: 'capitalize' }}>{f.field}</span>
-                    </div>
-                    <PercentBar
-                      value={f.agreement_rate != null ? Math.round(f.agreement_rate * 100) : null}
-                      color={f.agreement_rate != null ? (f.agreement_rate > 0.85 ? 'var(--verified)' : f.agreement_rate > 0.7 ? 'var(--mismatch)' : 'var(--critical)') : 'var(--text-4)'}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            </Card>
+            <Card>
+              <PanelHeader title="Escalation ladder" />
+              <Bars rows={Object.entries(d?.escalation.by_level ?? {}).map(([k, v]) => ({ label: k, value: v }))} tone="warning" />
+              {d && Object.keys(d.escalation.by_trigger ?? {}).length > 0 && <div className="mt-5"><p className="eyebrow mb-2">Triggered by</p><Bars rows={Object.entries(d.escalation.by_trigger ?? {}).map(([k, v]) => ({ label: humanise(k), value: v }))} tone="taupe" /></div>}
+            </Card>
           </div>
 
-          {/* Departments */}
-          {departments.length > 0 && (
-            <div className="table-wrap" style={{ marginBottom: 16 }}>
-              <div style={{ padding: '16px 16px 0' }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700 }}>By Department</h3>
+          <Card tone="cream">
+            <PanelHeader title="Pipeline agreement" eyebrow="The model against the rules · deliberately not called accuracy" aside={<Button href="/dashboard/benchmark" size="sm" variant="secondary">Accuracy lives in the benchmark</Button>} />
+            {pipes.loading && !pipes.data ? <SkeletonRows rows={3} /> : pipes.error ? <p className="text-[13px] text-taupe-2">{pipes.error}</p> : pipes.data && (
+              <div className="grid gap-6 md:grid-cols-[1fr_1fr_1.2fr]">
+                <Stat label="Mean agreement" value={pipes.data.mean_agreement_pct ?? null} unit="%" evidence={`${pipes.data.with_genai ?? 0} contested decisions`} />
+                <div className="flex flex-col justify-end"><Ratio numerator={pipes.data.rules_corrected_the_model.count ?? 0} denominator={pipes.data.rules_corrected_the_model.total ?? 0} label="Rules corrected the model" tone="warning" /><p className="mt-2 text-[12.5px] text-taupe-2">{pipes.data.critical_mismatches ?? 0} critical mismatches</p></div>
+                <div><p className="eyebrow mb-2">By outcome</p><Bars rows={Object.entries(pipes.data.by_outcome ?? {}).map(([k, v]) => ({ label: humanise(k), value: v }))} tone="taupe" /></div>
               </div>
-              <table className="table" style={{ marginTop: 8 }}>
-                <thead>
-                  <tr>
-                    <th>Department</th>
-                    <th>Total</th>
-                    <th>Resolved</th>
-                    <th>Pending</th>
-                    <th>Resolution Rate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {departments.map((d) => {
-                    const rate = d.count > 0 ? Math.round((d.resolved / d.count) * 100) : null
-                    return (
-                      <tr key={d.department}>
-                        <td style={{ fontWeight: 600 }}>{d.department}</td>
-                        <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 13 }}>{d.count}</td>
-                        <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, color: 'var(--verified)' }}>{d.resolved}</td>
-                        <td style={{ fontFamily: 'DM Mono, monospace', fontSize: 13 }}>{d.pending}</td>
-                        <td>
-                          <PercentBar value={rate} color="var(--verified)" />
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+            )}
+          </Card>
 
-          {/* Trends */}
-          {trends.length > 0 && (
-            <div className="card" style={{ padding: '20px' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Trends</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-                {trends.map((t) => (
-                  <div key={t.id} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '14px 16px' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
-                      {t.metric}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {t.direction === 'UP' ? <TrendingUp size={16} color="var(--verified)" /> : t.direction === 'DOWN' ? <TrendingDown size={16} color="var(--critical)" /> : <Activity size={16} color="var(--text-3)" />}
-                      <TrendArrow direction={t.direction} pct={t.change_pct} />
-                    </div>
-                    {t.description && <p style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 6 }}>{t.description}</p>}
-                  </div>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Card>
+              <PanelHeader title="Traceability" eyebrow="Citations that resolved" />
+              <div className="flex flex-col gap-4">
+                <Stat label="Mean traceability" value={d ? d.traceability.mean_traceability_pct ?? null : undefined} unit="%" evidence={d ? `${d.traceability.unmeasured_traceability ?? 0} decisions unmeasured` : undefined} tone="verified" />
+                <Stat label="Mean compliance" value={d ? d.traceability.mean_compliance_pct ?? null : undefined} unit="%" evidence={d ? `${d.traceability.unmeasured_compliance ?? 0} decisions unmeasured` : undefined} tone="verified" />
+              </div>
+            </Card>
+            <Card>
+              <PanelHeader title="Security guard" eyebrow="What was stopped" />
+              <Stat label="Injection-flagged complaints" value={d ? d.guard.injection_flagged_complaints ?? 0 : undefined} tone="critical" />
+              <div className="mt-4"><p className="eyebrow mb-2">Injection events</p><Bars rows={Object.entries(d?.guard.injection_events ?? {}).map(([k, v]) => ({ label: humanise(k), value: v }))} tone="critical" /></div>
+              <div className="mt-4"><p className="eyebrow mb-2">Response flags</p><Bars rows={Object.entries(d?.guard.response_flags ?? {}).map(([k, v]) => ({ label: humanise(k), value: v }))} tone="warning" /></div>
+            </Card>
+            <Card>
+              <PanelHeader title="Human review" />
+              {d && <div className="flex flex-col gap-4"><Ratio numerator={d.review.override_rate.count ?? 0} denominator={d.review.override_rate.total ?? 0} label="Override rate" tone="warning" /><div><p className="eyebrow mb-2">Queue depth</p><div className="flex flex-wrap gap-1.5">{Object.entries(d.review.queue_depth ?? {}).map(([k, v]) => <Badge key={k}>{humanise(k)} <Mono className="ml-1">{v}</Mono></Badge>)}{!Object.keys(d.review.queue_depth ?? {}).length && <span className="text-[13px] text-taupe-2">empty</span>}</div></div><div><p className="eyebrow mb-2">By action</p><Bars rows={Object.entries(d.review.by_action ?? {}).map(([k, v]) => ({ label: humanise(k), value: v }))} tone="taupe" /></div></div>}
+            </Card>
+          </div>
+
+          <Card>
+            <PanelHeader title="SLA compliance" eyebrow="By event type" />
+            {d && Object.keys(d.sla.by_type ?? {}).length ? (
+              <div className="grid gap-6 md:grid-cols-2">
+                {Object.entries(d.sla.by_type ?? {}).map(([k, v]) => (
+                  <div key={k}><Ratio numerator={v.compliance.count ?? 0} denominator={v.compliance.total ?? 0} label={`${humanise(k)} · compliance ${pct(v.compliance.pct, 1)}`} tone={(v.compliance.pct ?? 100) < 80 ? 'critical' : 'verified'} /><p className="mt-1.5 text-[12.5px] text-taupe-2">{v.met ?? 0} met · {v.breached ?? 0} breached · {v.at_risk ?? 0} at risk · {v.settled ?? 0} settled</p></div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : <p className="text-[13.5px] text-taupe-2">No SLA events in the window.</p>}
+          </Card>
+
+          {d && <p className="text-[12px] text-taupe-2">Generated {new Date(d.generated_at).toLocaleString()} · window {d.window_days ?? days} days</p>}
         </>
       )}
-    </DashboardShell>
+    </div>
   )
 }

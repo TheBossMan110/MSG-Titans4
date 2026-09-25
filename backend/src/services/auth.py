@@ -10,17 +10,100 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.core.config import settings
-from src.core.errors import AuthError
+from src.core.errors import AuthError, ConflictError, ValidationError
 from src.core.security import (
     create_access_token,
     create_refresh_token,
     decode_token,
+    hash_password,
     parse_uuid,
     sha256,
     verify_password,
 )
+from src.db.enums import UserRole
 from src.db.models import RefreshToken, User
 from src.services.audit import record_audit, record_security_event
+
+MIN_PASSWORD_LENGTH = 12
+
+
+def register(
+    db: Session,
+    *,
+    email: str,
+    full_name: str,
+    password: str,
+    request: Request | None = None,
+) -> tuple[User, str, str]:
+    """
+    Create a customer account and sign it in (FR i).
+
+    **The role is not a parameter.** Self-registration always produces a
+    CUSTOMER, whatever the request body says; agent, reviewer, manager, admin
+    and evaluator accounts are created by an administrator. A sign-up form
+    that let the applicant pick their own authority would make every
+    role check downstream decorative.
+
+    A customer can read only their own complaints, so the account is harmless
+    on its own — which is precisely why it is the only role worth opening.
+
+    Unlike ``authenticate``, this does distinguish "already registered" from
+    success. Registration cannot hide that fact without an email round-trip to
+    confirm ownership, and a form that silently refuses is worse for the
+    honest majority than the enumeration is for us. The seeded demonstration
+    addresses are published in the README in any case.
+    """
+    address = email.strip().lower()
+    name = full_name.strip()
+
+    if len(password) < MIN_PASSWORD_LENGTH:
+        raise ValidationError(
+            f"Password must be at least {MIN_PASSWORD_LENGTH} characters."
+        )
+    if not name:
+        raise ValidationError("Please give a name for the account.")
+
+    existing = db.execute(
+        select(User).where(User.email == address)
+    ).scalars().first()
+    if existing is not None:
+        record_security_event(
+            entity_type="auth",
+            entity_id=address,
+            action="REGISTER_REJECTED",
+            reason="email_taken",
+            request=request,
+        )
+        raise ConflictError("An account already exists for that email address.")
+
+    user = User(
+        email=address,
+        full_name=name,
+        password_hash=hash_password(password),
+        role=UserRole.CUSTOMER,
+        is_active=True,
+        last_login_at=datetime.now(UTC),
+    )
+    db.add(user)
+    db.flush()  # assign the primary key before the token references it
+
+    access = create_access_token(user_id=str(user.id), role=user.role, email=user.email)
+    raw_refresh, token_hash, expires_at = create_refresh_token(user_id=str(user.id))
+    db.add(
+        RefreshToken(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+            user_agent=(request.headers.get("User-Agent")[:255] if request else None),
+        )
+    )
+
+    record_audit(
+        db, actor=user, entity_type="user", entity_id=str(user.id),
+        action="REGISTER", after={"email": address, "role": user.role},
+        reason="self-service sign-up", request=request,
+    )
+    return user, access, raw_refresh
 
 
 def authenticate(

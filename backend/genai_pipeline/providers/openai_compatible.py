@@ -38,6 +38,7 @@ from genai_pipeline.providers.base import (
     ProviderUnavailable,
     RateLimited,
 )
+from genai_pipeline.providers.chain import parse_chain, run_chain
 from src.core.config import settings
 from src.core.logging import get_logger
 
@@ -64,24 +65,36 @@ class OpenAICompatibleProvider(LLMProvider):
         self.name = name
         self._api_key = api_key
         self._base_url = base_url.rstrip("/")
-        self._model = model
+        # A comma-separated chain, tried in order. Groq retired every Llama
+        # model it served; a single pinned name is how that becomes a dead
+        # fallback. See providers/chain.py for what may fall through.
+        self._chain = parse_chain(model, model or "")
+        self._model = self._chain[0]
         self._extra_headers = extra_headers or {}
 
     @property
     def model(self) -> str:
+        """The model that last answered — recorded on every run."""
         return self._model
 
     def is_configured(self) -> bool:
         return bool(self._api_key and self._base_url and self._model)
 
     def _generate(self, request: LLMRequest) -> LLMResponse:
+        model, response = run_chain(
+            self.name, self._chain, lambda m: self._generate_with(m, request), log=log
+        )
+        self._model = model
+        return response
+
+    def _generate_with(self, model: str, request: LLMRequest) -> LLMResponse:
         messages: list[dict[str, str]] = []
         if request.system:
             messages.append({"role": "system", "content": request.system})
         messages.append({"role": "user", "content": self._user_content(request)})
 
         payload: dict[str, Any] = {
-            "model": self._model,
+            "model": model,
             "messages": messages,
             "temperature": request.temperature,
             "max_tokens": request.max_output_tokens,
@@ -144,7 +157,7 @@ class OpenAICompatibleProvider(LLMProvider):
         return LLMResponse(
             text=str(text).strip(),
             provider=self.name,
-            model=body.get("model") or self._model,
+            model=body.get("model") or model,
             latency_ms=latency_ms,
             tokens_in=usage.get("prompt_tokens"),
             tokens_out=usage.get("completion_tokens"),

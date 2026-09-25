@@ -13,6 +13,7 @@ from fastapi import APIRouter
 from src.api.v1 import (
     admin,
     analytics,
+    audit,
     auth,
     benchmark,
     complaints,
@@ -31,3 +32,4 @@ api_router.include_router(review.router)
 api_router.include_router(analytics.router)
 api_router.include_router(benchmark.router)
 api_router.include_router(admin.router)
+api_router.include_router(audit.router)

@@ -1,436 +1,135 @@
 'use client'
 
-import { useState } from 'react'
-import { DashboardShell, StatusBadge } from '@/components/supportnova'
-import { mockResolutionRules, fictionalOrganization } from '@/lib/mock-data'
-import { ResolutionRule, ComplaintCategory, UrgencyLevel } from '@/lib/types'
-import {
-  Network,
-  ShieldCheck,
-  Search,
-  Filter,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
-  FileText,
-  Clock,
-  Zap,
-  Building2,
-  Lock,
-  Eye,
-  Info,
-} from 'lucide-react'
+import { useMemo, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { ShieldCheck } from 'lucide-react'
+import { AppShell } from '@/components/layout/app-shell'
+import { useAuth } from '@/lib/auth-context'
+import { admin, type S } from '@/lib/api'
+import { useApi, useAction } from '@/lib/use-api'
+import { Badge, Button, Mono, humanise, escalationTone, priorityTone, urgencyTone } from '@/components/ui/primitives'
+import { Card } from '@/components/ui/surfaces'
+import { Select, SearchBox, Checkbox } from '@/components/ui/forms'
+import { Table, Th, Td, Tr, Stat } from '@/components/ui/data'
+import { Empty, ErrorState, SkeletonRows, Tabs, useToast } from '@/components/ui/feedback'
+import { cn } from '@/lib/utils'
 
-export default function RuleMatrixPage() {
-  const [rules, setRules] = useState<ResolutionRule[]>(mockResolutionRules)
-  const [selectedRuleId, setSelectedRuleId] = useState<string>(mockResolutionRules[0].ruleId)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState<string>('All')
-  const [departmentFilter, setDepartmentFilter] = useState<string>('All')
+const OVERSIGHT = ['manager', 'admin', 'evaluator'] as const
 
-  const selectedRule = rules.find((r) => r.ruleId === selectedRuleId) || rules[0]
+export default function RulesPage() {
+  return (
+    <AppShell eyebrow="Rules" roles={[...OVERSIGHT]} wide>
+      <Matrix />
+    </AppShell>
+  )
+}
 
-  const filteredRules = rules.filter((r) => {
-    const matchesSearch =
-      r.ruleId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.subcategory.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.responsibleDepartment.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = categoryFilter === 'All' || r.category === categoryFilter
-    const matchesDept = departmentFilter === 'All' || r.responsibleDepartment === departmentFilter
-    return matchesSearch && matchesCategory && matchesDept
-  })
+/**
+ * The rule matrix: every rule the engine loads, filterable, with the taxonomy
+ * it maps onto. Configuration-as-data made visible: nothing here is in code.
+ */
+function Matrix() {
+  const router = useRouter()
+  const { user } = useAuth()
+  const toast = useToast()
+  const [tab, setTab] = useState<'rules' | 'taxonomy'>('rules')
+  const [type, setType] = useState('')
+  const [search, setSearch] = useState('')
+  const [mandatory, setMandatory] = useState(false)
+  const [inactive, setInactive] = useState(false)
+  const rules = useApi(() => admin.rules({ rule_type: type || undefined, search: search || undefined, mandatory: mandatory || undefined, active: inactive ? undefined : true }), [type, search, mandatory, inactive])
+  const taxonomy = useApi(() => admin.taxonomy())
+  const reload = useAction(() => admin.reloadRules())
+  const isAdmin = user?.role === 'admin'
 
-  const getUrgencyTone = (level: UrgencyLevel) => {
-    switch (level) {
-      case 'Critical':
-        return 'rose'
-      case 'High':
-        return 'amber'
-      case 'Medium':
-        return 'indigo'
-      default:
-        return 'slate'
-    }
-  }
+  const all = rules.data ?? []
+  const counts = useMemo(() => ({
+    total: all.length, mandatory: all.filter((r) => r.is_mandatory_escalation).length, catchAll: all.filter((r) => r.is_catch_all).length,
+    types: Array.from(new Set(all.map((r) => r.rule_type))).sort(),
+  }), [all])
 
   return (
-    <DashboardShell title="Complaint Resolution Rule Matrix">
-      {/* Step 8 Core Notice: Static Deterministic Architecture */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(99, 102, 241, 0.08))',
-          border: '1px solid rgba(16, 185, 129, 0.25)',
-          borderRadius: 12,
-          padding: '16px 20px',
-          marginBottom: 24,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 16,
-          flexWrap: 'wrap',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 8,
-              background: '#10b981',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-            }}
-          >
-            <Lock size={20} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="eyebrow" style={{ color: '#34d399', fontWeight: 600 }}>
-                STEP 8: DETERMINISTIC BUSINESS LOGIC (NON-GENAI GENERATED)
-              </span>
-              <span className="badge emerald">Audit Sealed</span>
-            </div>
-            <p style={{ margin: '2px 0 0 0', fontSize: 13, color: '#f1f5f9' }}>
-              This Rule Matrix defines approved organizational complaint logic and cannot be overwritten at runtime by
-              Generative AI. Pipeline 2 validates all AI outputs against these exact constraints.
-            </p>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 12 }}>
-          <div
-            style={{
-              background: 'rgba(15, 23, 42, 0.7)',
-              padding: '6px 12px',
-              borderRadius: 6,
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              fontSize: 12,
-            }}
-          >
-            <span className="muted">ORGANIZATION:</span>{' '}
-            <strong style={{ color: '#f8fafc' }}>{fictionalOrganization.name}</strong>
-          </div>
-          <div
-            style={{
-              background: 'rgba(15, 23, 42, 0.7)',
-              padding: '6px 12px',
-              borderRadius: 6,
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              fontSize: 12,
-            }}
-          >
-            <span className="muted">ACTIVE RULES:</span>{' '}
-            <strong style={{ color: '#34d399' }}>{rules.length} Rules Loaded</strong>
-          </div>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div><p className="eyebrow mb-1">Pipeline 2 · configuration as data</p><h1 className="display text-h2">Rule matrix</h1></div>
+        <div className="flex gap-2">
+          <Button href="/dashboard/rules/sandbox" variant="secondary">Sandbox</Button>
+          {isAdmin && <Button loading={reload.pending} onClick={async () => { const r = await reload.run(); if (r) { toast('ok', `Reloaded from YAML: ${Object.entries(r.reloaded ?? {}).map(([k, v]) => `${k} ${v}`).join(', ')} · ruleset ${r.ruleset_version}`); rules.refresh() } else if (reload.error) toast('err', reload.error) }}>Reload from YAML</Button>}
         </div>
       </div>
 
-      {/* Main Grid: Left = Matrix Table, Right = Selected Rule Deep Audit */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 24, alignItems: 'start' }}>
-        {/* Left: Filterable Rules Table */}
-        <div className="table-card" style={{ padding: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div>
-              <h3 style={{ margin: 0, fontSize: 16 }}>Approved Resolution Rules</h3>
-              <p className="muted" style={{ fontSize: 12, marginTop: 3 }}>
-                Categories, departments, urgency formulas, and mandatory actions
-              </p>
-            </div>
-            <span className="badge indigo">{filteredRules.length} of {rules.length}</span>
-          </div>
+      <div className="grid gap-x-8 gap-y-6 rounded-[var(--radius-xl)] border border-line bg-ivory p-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label="Rules shown" value={rules.data ? counts.total : undefined} evidence={inactive ? 'including inactive' : 'active only'} />
+        <Stat label="Mandatory escalations" value={rules.data ? counts.mandatory : undefined} tone="critical" evidence="floors that cannot be lowered" />
+        <Stat label="Catch-all" value={rules.data ? counts.catchAll : undefined} evidence="what fires when nothing else does" />
+        <Stat label="Rule types" value={rules.data ? counts.types.length : undefined} evidence={counts.types.map((t) => humanise(t)).join(' · ')} />
+      </div>
 
-          {/* Search & Filters */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 8, marginBottom: 14 }}>
-            <div className="search">
-              <Search size={14} />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search rules, IDs, depts..."
-                style={{ fontSize: 12 }}
-              />
-            </div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="select-button"
-              style={{ padding: '6px 8px', fontSize: 12 }}
-            >
-              <option value="All">All Categories</option>
-              <option value="Product Defect">Product Defect</option>
-              <option value="Refund Request">Refund Request</option>
-              <option value="Delivery & Logistics">Delivery & Logistics</option>
-              <option value="Safety-Related Concern">Safety Concern</option>
-              <option value="Account & Security">Account & Security</option>
-            </select>
-            <select
-              value={departmentFilter}
-              onChange={(e) => setDepartmentFilter(e.target.value)}
-              className="select-button"
-              style={{ padding: '6px 8px', fontSize: 12 }}
-            >
-              <option value="All">All Departments</option>
-              {fictionalOrganization.departments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-          </div>
+      <Tabs value={tab} onChange={setTab} tabs={[{ id: 'rules', label: 'Rules', count: rules.data?.length ?? null }, { id: 'taxonomy', label: 'Taxonomy' }]} />
 
-          {/* Rules List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 560, overflowY: 'auto' }}>
-            {filteredRules.map((rule) => {
-              const isSelected = rule.ruleId === selectedRuleId
-              return (
-                <div
-                  key={rule.ruleId}
-                  onClick={() => setSelectedRuleId(rule.ruleId)}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    background: isSelected ? 'rgba(99, 102, 241, 0.16)' : 'rgba(255, 255, 255, 0.02)',
-                    border: `1px solid ${isSelected ? '#6366f1' : 'rgba(255, 255, 255, 0.06)'}`,
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontWeight: 700, fontSize: 12, color: isSelected ? '#a5b4fc' : '#e2e8f0' }}>
-                        {rule.ruleId}
+      {tab === 'rules' && (
+        <>
+          <div className="flex flex-wrap items-center gap-3">
+            <SearchBox value={search} onChange={setSearch} placeholder="Reference, name or rationale" className="w-full sm:w-[320px]" />
+            <Select value={type} onChange={(e) => setType(e.target.value)} aria-label="Rule type" className="w-auto"><option value="">All types</option>{['CLASSIFICATION', 'ROUTING', 'ESCALATION', 'ELIGIBILITY', 'RESOLUTION', 'PRIORITY'].map((t) => <option key={t} value={t}>{humanise(t)}</option>)}</Select>
+            <Checkbox label="Mandatory only" checked={mandatory} onChange={(e) => setMandatory(e.target.checked)} />
+            <Checkbox label="Show inactive" checked={inactive} onChange={(e) => setInactive(e.target.checked)} />
+          </div>
+          {rules.error ? <ErrorState message={rules.error} onRetry={rules.refresh} /> : rules.loading && !rules.data ? <SkeletonRows rows={10} /> : !all.length ? <Empty title="No rules match" /> : (
+            <Table>
+              <thead><tr><Th>Rule</Th><Th>Type</Th><Th align="right">Precedence</Th><Th>Outcome</Th><Th>Flags</Th><Th align="right">Version</Th></tr></thead>
+              <tbody>
+                {all.map((r) => (
+                  <Tr key={r.rule_ref} onClick={() => router.push(`/dashboard/rules/${encodeURIComponent(r.rule_ref)}`)} className={cn(!r.is_active && 'opacity-55')}>
+                    <Td className="max-w-[420px]">
+                      <Link href={`/dashboard/rules/${encodeURIComponent(r.rule_ref)}`} onClick={(e) => e.stopPropagation()} className="font-mono text-[12.5px] text-taupe transition-colors hover:text-ai">{r.rule_ref}</Link>
+                      <span className="mt-0.5 block truncate font-medium text-espresso">{r.name}</span>
+                    </Td>
+                    <Td><Badge tone="rule">{humanise(r.rule_type)}</Badge></Td>
+                    <Td align="right" mono>{r.precedence}</Td>
+                    <Td>
+                      <span className="flex flex-wrap gap-1.5">
+                        {r.outcome_escalation_code && <Badge tone={escalationTone(r.outcome_escalation_code)}>{humanise(r.outcome_escalation_code)}</Badge>}
+                        {r.outcome_urgency && <Badge tone={urgencyTone(r.outcome_urgency)}>{humanise(r.outcome_urgency)}</Badge>}
+                        {r.outcome_priority_code && <Badge tone={priorityTone(r.outcome_priority_code)} pulse={r.outcome_priority_code === 'P0'}>{r.outcome_priority_code}</Badge>}
+                        {!r.outcome_escalation_code && !r.outcome_urgency && !r.outcome_priority_code && <span className="text-[13px] text-taupe">Classification only</span>}
                       </span>
-                      <StatusBadge tone={getUrgencyTone(rule.urgencyLevel)}>{rule.urgencyLevel}</StatusBadge>
-                    </div>
-                    <span style={{ fontSize: 11, color: '#94a3b8' }}>{rule.responsibleDepartment}</span>
-                  </div>
-
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#f8fafc', marginBottom: 4 }}>
-                    {rule.category} · <span style={{ color: '#c7d2fe' }}>{rule.subcategory}</span>
-                  </div>
-
-                  <p
-                    style={{
-                      fontSize: 11,
-                      color: '#94a3b8',
-                      margin: '0 0 6px 0',
-                      lineHeight: 1.4,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    <strong>Urgency:</strong> {rule.urgencyRule}
-                  </p>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
-                    <span style={{ color: '#34d399', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <CheckCircle2 size={11} /> {rule.mandatoryActions.length} mandatory actions
-                    </span>
-                    <span style={{ color: '#f87171', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <XCircle size={11} /> {rule.prohibitedActions.length} prohibited guardrails
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Right: Selected Rule Detail / Audit Inspector */}
-        <div className="table-card" style={{ padding: 22 }}>
-          {selectedRule ? (
-            <div>
-              {/* Header */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                  paddingBottom: 16,
-                  marginBottom: 16,
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span className="eyebrow">{selectedRule.ruleId}</span>
-                    <span className="badge indigo">{selectedRule.category}</span>
-                    <StatusBadge tone={getUrgencyTone(selectedRule.urgencyLevel)}>
-                      {selectedRule.urgencyLevel} Urgency
-                    </StatusBadge>
-                  </div>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, margin: '4px 0 2px 0', color: '#f8fafc' }}>
-                    {selectedRule.subcategory}
-                  </h3>
-                  <p className="muted" style={{ fontSize: 12, margin: 0 }}>
-                    Responsible Queue: <strong style={{ color: '#e2e8f0' }}>{selectedRule.responsibleDepartment}</strong>
-                  </p>
-                </div>
-
-                <div
-                  style={{
-                    background: 'rgba(16, 185, 129, 0.12)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
-                    padding: '4px 10px',
-                    borderRadius: 6,
-                    fontSize: 11,
-                    color: '#34d399',
-                    fontWeight: 600,
-                  }}
-                >
-                  Ground Truth Active
-                </div>
-              </div>
-
-              {/* Urgency & Escalation Rules */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                <div
-                  style={{
-                    background: 'rgba(15, 23, 42, 0.65)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
-                    borderRadius: 8,
-                    padding: 12,
-                  }}
-                >
-                  <small className="muted" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }}>
-                    <Clock size={12} /> URGENCY RULE
-                  </small>
-                  <p style={{ fontSize: 12, color: '#e2e8f0', margin: '4px 0 0 0', lineHeight: 1.5 }}>
-                    {selectedRule.urgencyRule}
-                  </p>
-                </div>
-                <div
-                  style={{
-                    background: 'rgba(15, 23, 42, 0.65)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
-                    borderRadius: 8,
-                    padding: 12,
-                  }}
-                >
-                  <small className="muted" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11 }}>
-                    <Zap size={12} className="text-amber-400" /> ESCALATION THRESHOLD
-                  </small>
-                  <p style={{ fontSize: 12, color: '#fde68a', margin: '4px 0 0 0', lineHeight: 1.5 }}>
-                    {selectedRule.escalationRule}
-                  </p>
-                </div>
-              </div>
-
-              {/* Mandatory Actions (Required for Pipeline 2 Approval) */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <CheckCircle2 size={15} className="text-emerald-400" />
-                  <strong style={{ fontSize: 13, color: '#f1f5f9' }}>
-                    Mandatory Resolution Actions ({selectedRule.mandatoryActions.length})
-                  </strong>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {selectedRule.mandatoryActions.map((action, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        background: 'rgba(16, 185, 129, 0.07)',
-                        borderLeft: '3px solid #10b981',
-                        borderRadius: '0 6px 6px 0',
-                        padding: '8px 12px',
-                        fontSize: 12,
-                        color: '#d1fae5',
-                      }}
-                    >
-                      {action}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Prohibited Actions (Anti-Hallucination Guardrails) */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <AlertTriangle size={15} className="text-rose-400" />
-                  <strong style={{ fontSize: 13, color: '#f1f5f9' }}>
-                    Prohibited Actions & Guardrails ({selectedRule.prohibitedActions.length})
-                  </strong>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {selectedRule.prohibitedActions.map((action, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        background: 'rgba(244, 63, 94, 0.08)',
-                        borderLeft: '3px solid #f43f5e',
-                        borderRadius: '0 6px 6px 0',
-                        padding: '8px 12px',
-                        fontSize: 12,
-                        color: '#fecdd3',
-                      }}
-                    >
-                      {action}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Policy Grounding References */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <FileText size={15} className="text-indigo-400" />
-                  <strong style={{ fontSize: 13, color: '#f1f5f9' }}>
-                    Approved Policy Citations ({selectedRule.policyReferences.length})
-                  </strong>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {selectedRule.policyReferences.map((ref, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        background: 'rgba(99, 102, 241, 0.08)',
-                        border: '1px solid rgba(99, 102, 241, 0.2)',
-                        borderRadius: 6,
-                        padding: '8px 12px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        fontSize: 12,
-                      }}
-                    >
-                      <div>
-                        <strong style={{ color: '#a5b4fc' }}>{ref.documentId}</strong> · {ref.sectionId}
-                        <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>
-                          {ref.documentTitle}
-                        </div>
-                      </div>
-                      <span className="badge indigo">{ref.clauseRef}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Follow-up Requirements */}
-              <div
-                style={{
-                  background: 'rgba(15, 23, 42, 0.65)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                  borderRadius: 8,
-                  padding: 12,
-                }}
-              >
-                <small className="muted" style={{ display: 'block', fontSize: 11, marginBottom: 4 }}>
-                  FOLLOW-UP REQUIREMENT
-                </small>
-                <p style={{ fontSize: 12, color: '#cbd5e1', margin: 0, lineHeight: 1.5 }}>
-                  {selectedRule.followUpRequirements}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: 40, color: '#64748b' }}>Select a rule to view specifications</div>
+                    </Td>
+                    <Td>
+                      <span className="flex flex-wrap gap-1.5">
+                        {r.is_mandatory_escalation && <Badge tone="critical" icon={<ShieldCheck size={11} aria-hidden />}>Mandatory floor</Badge>}
+                        {r.is_catch_all && <Badge tone="info">Catch-all</Badge>}
+                        {!r.is_active && <Badge>Inactive</Badge>}
+                        {r.can_deactivate === false && r.is_active && <Badge tone="warning">Locked</Badge>}
+                      </span>
+                    </Td>
+                    <Td align="right" mono>v{r.version}</Td>
+                  </Tr>
+                ))}
+              </tbody>
+            </Table>
           )}
-        </div>
-      </div>
-    </DashboardShell>
+        </>
+      )}
+
+      {tab === 'taxonomy' && (taxonomy.error ? <ErrorState message={taxonomy.error} onRetry={taxonomy.refresh} /> : taxonomy.loading && !taxonomy.data ? <SkeletonRows rows={6} /> : <TaxonomyView t={taxonomy.data!} />)}
+    </div>
+  )
+}
+
+function TaxonomyView({ t }: { t: S['TaxonomyOut'] }) {
+  const groups: Array<[string, S['CodeOut'][] | undefined]> = [['Categories', t.categories], ['Subcategories', t.subcategories], ['Departments', t.departments], ['Priority levels', t.priority_levels], ['Escalation levels', t.escalation_levels]]
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      {groups.map(([title, rows]) => (
+        <Card key={title} padding="sm">
+          <p className="eyebrow mb-3 px-1">{title} <Mono className="ml-1 text-taupe-2">{rows?.length ?? 0}</Mono></p>
+          <ul className="max-h-[420px] divide-y divide-line-soft overflow-y-auto">
+            {(rows ?? []).map((c) => <li key={c.code} className="flex items-baseline gap-3 px-1 py-2 text-[13.5px]"><Mono className="w-[220px] shrink-0 truncate text-[12px] text-taupe-2">{c.code}</Mono><span className="flex-1">{c.name}</span>{c.rank != null && <Mono className="text-[11px] text-taupe">#{c.rank}</Mono>}</li>)}
+          </ul>
+        </Card>
+      ))}
+    </div>
   )
 }

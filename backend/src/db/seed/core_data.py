@@ -46,7 +46,7 @@ def seed_taxonomy(db: Session) -> dict[str, int]:
             db, Department,
             match={"code": row["code"]},
             values={"name": row["name"], "description": row.get("description"),
-                    "is_active": True},
+                    "email": row.get("email"), "is_active": True},
         )
         counts["departments"] += 1
         log.debug("department", code=row["code"], created=created)

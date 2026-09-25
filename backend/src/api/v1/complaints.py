@@ -22,13 +22,14 @@ from stored rows rather than recomputed for display.
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, File, Query, Request, Response, UploadFile, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
 from comparison_engine.engine import comparison_rows, latest_decision
-from complaint_processing import dedupe, followup
+from complaint_processing import customer_actions, dedupe, followup
 from complaint_processing.intake import IntakeRejected, analyse_complaint
 from complaint_processing.intake import IntakeResult as _IntakeResult
 from complaint_processing.intake import submit as submit_complaint
@@ -41,21 +42,29 @@ from schemas.common import Page
 from schemas.complaints import (
     ChecklistOut,
     ChecklistStepOut,
+    ClarificationAnswerIn,
+    ClarificationAnswerOut,
     ClarificationOut,
     ComparisonOut,
     ComplaintCreate,
     ComplaintDetail,
     ComplaintStatusOut,
     ComplaintSummary,
+    CustomerQuestionOut,
+    DepartmentContactOut,
     EligibilityOut,
     EntityOut,
     EscalationOut,
+    EvidenceOut,
     ExplainResponse,
     FollowUpOut,
     GuidanceOut,
     IntakeResponse,
     LifecycleOut,
+    MilestoneOut,
     PolicyConflictOut,
+    PreviewIn,
+    PreviewOut,
     ReanalyseResponse,
     ResolutionStepOut,
     ResolutionSummaryOut,
@@ -64,20 +73,26 @@ from schemas.complaints import (
     ValidationIssueOut,
     VerificationOut,
 )
+from src.core.config import settings
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import NotFoundError, ValidationError
 from src.core.logging import get_logger
+from src.core.ratelimit import limiter
 from src.db.enums import UserRole
 from src.db.models import (
     AgentGuidance,
+    AppConfig,
     Category,
     ClarificationQuestion,
     Complaint,
+    ComplaintAttachment,
+    ComplaintStatusHistory,
     ComplaintValidationIssue,
     Customer,
     Department,
     EligibilityDecision,
     ResolutionStep,
+    SLAEvent,
     User,
     ValidationRun,
     VerificationDecision,
@@ -243,8 +258,9 @@ def _detail(db: DbSession, complaint: Complaint) -> ComplaintDetail:
         ],
         clarifications=[
             ClarificationOut(
-                ordinal=q.ordinal, question=q.question,
+                id=q.id, ordinal=q.ordinal, question=q.question,
                 missing_field=q.missing_field, answered_at=q.answered_at,
+                answer=q.answer,
             )
             for q in questions
         ],
@@ -260,7 +276,23 @@ def _detail(db: DbSession, complaint: Complaint) -> ComplaintDetail:
             )
             for e in eligibility
         ],
+        evidence=_evidence(db, complaint),
     )
+
+
+def _evidence(db: DbSession, complaint: Complaint) -> list[EvidenceOut]:
+    rows = db.execute(
+        select(ComplaintAttachment)
+        .where(ComplaintAttachment.complaint_id == complaint.id)
+        .order_by(ComplaintAttachment.created_at)
+    ).scalars().all()
+    return [
+        EvidenceOut(
+            id=a.id, file_name=a.file_name, mime_type=a.mime_type,
+            size_bytes=a.size_bytes, uploaded_at=a.created_at,
+        )
+        for a in rows
+    ]
 
 
 def _load(db: DbSession, ref: str) -> Complaint:
@@ -343,8 +375,11 @@ def create_complaint(
     complaint = result.complaint
     assert complaint is not None  # noqa: S101 - guaranteed when not rejected
 
+    staff = user.role in STAFF
     return IntakeResponse(
-        complaint=_detail(db, complaint),
+        public_ref=complaint.public_ref,
+        complaint=_detail(db, complaint) if staff else None,
+        customer_view=None if staff else _customer_view(db, complaint),
         accepted=True,
         analysed=result.analysed,
         analysis_error=result.analysis_error,
@@ -355,13 +390,16 @@ def create_complaint(
             )
             for i in (result.validation_report.issues if result.validation_report else [])
         ],
+        # Internal bookkeeping stays with staff: the duplicate a complaint was
+        # matched to may not be the submitter's own, and the preprocessing
+        # summary describes how untrusted text was neutralised.
         duplicate_of=(
             result.dedupe_result.exact.public_ref
-            if result.dedupe_result and result.dedupe_result.exact
+            if staff and result.dedupe_result and result.dedupe_result.exact
             else None
         ),
         repeat_count=result.dedupe_result.repeat_count if result.dedupe_result else 0,
-        preprocessing=result.preprocessing,
+        preprocessing=result.preprocessing if staff else {},
     )
 
 
@@ -485,12 +523,23 @@ def _customer_view(db: DbSession, complaint: Complaint) -> ComplaintStatusOut:
     """
     questions = db.execute(
         select(ClarificationQuestion)
-        .where(
-            ClarificationQuestion.complaint_id == complaint.id,
-            ClarificationQuestion.answered_at.is_(None),
-        )
+        .where(ClarificationQuestion.complaint_id == complaint.id)
         .order_by(ClarificationQuestion.ordinal)
     ).scalars().all()
+    open_questions = [q for q in questions if q.answered_at is None]
+
+    target = db.execute(
+        select(SLAEvent.due_at)
+        .where(SLAEvent.complaint_id == complaint.id, SLAEvent.event_type == "RESOLUTION")
+        .order_by(SLAEvent.due_at.desc())
+    ).scalars().first()
+
+    # "Last updated" means the last time anything happened to it, which the
+    # status history knows and the analysis timestamp does not.
+    last_moved = db.execute(
+        select(func.max(ComplaintStatusHistory.created_at))
+        .where(ComplaintStatusHistory.complaint_id == complaint.id)
+    ).scalar()
 
     return ComplaintStatusOut(
         public_ref=complaint.public_ref,
@@ -498,6 +547,7 @@ def _customer_view(db: DbSession, complaint: Complaint) -> ComplaintStatusOut:
         status=complaint.status,
         submitted_at=complaint.created_at,
         category=complaint.category.code if complaint.category else None,
+        category_name=complaint.category.name if complaint.category else None,
         summary=complaint.summary,
         # The fact, not the level. That a complaint went to compliance review
         # is internal routing; telling the customer a specialist will be in
@@ -505,9 +555,103 @@ def _customer_view(db: DbSession, complaint: Complaint) -> ComplaintStatusOut:
         escalated=bool(
             complaint.escalation_code and complaint.escalation_code.upper() != "NONE"
         ),
-        awaiting_information=[q.question for q in questions],
-        last_updated=complaint.analyzed_at or complaint.created_at,
+        awaiting_information=[q.question for q in open_questions],
+        last_updated=last_moved or complaint.analyzed_at or complaint.created_at,
+        target_resolution_at=target,
+        department=_department_contact(db, complaint),
+        questions=[
+            CustomerQuestionOut(
+                id=q.id, ordinal=q.ordinal, question=q.question,
+                answered=q.answered_at is not None, answer=q.answer,
+                answered_at=q.answered_at,
+            )
+            for q in questions
+        ],
+        milestones=_milestones(db, complaint),
+        evidence=_evidence(db, complaint),
+        action_needed=bool(open_questions),
     )
+
+
+def _department_contact(db: DbSession, complaint: Complaint) -> DepartmentContactOut | None:
+    """The owning team as the customer sees it: name, remit, mailbox, hours."""
+    dept = complaint.department
+    if dept is None:
+        return None
+    organisation = db.get(AppConfig, "organisation")
+    hours = None
+    if organisation is not None and isinstance(organisation.value, dict):
+        hours = organisation.value.get("support_hours")
+    return DepartmentContactOut(
+        name=dept.name, summary=dept.description, email=dept.email, support_hours=hours,
+    )
+
+
+# Customer vocabulary for the internal lifecycle. Several internal states map
+# to one milestone on purpose — see MilestoneOut.
+_TEAM_STATES = {
+    "ASSIGNED", "IN_PROGRESS", "AWAITING_CUSTOMER", "ESCALATED", "MANUAL_REVIEW", "REOPENED",
+}
+_DONE_STATES = {"RESOLVED", "CLOSED"}
+_CHECKED_STATES = {"ANALYZED", "VALIDATED"} | _TEAM_STATES | _DONE_STATES
+
+
+def _milestones(db: DbSession, complaint: Complaint) -> list[MilestoneOut]:
+    history = db.execute(
+        select(ComplaintStatusHistory.to_status, ComplaintStatusHistory.created_at)
+        .where(ComplaintStatusHistory.complaint_id == complaint.id)
+        .order_by(ComplaintStatusHistory.created_at)
+    ).all()
+    first_at: dict[str, Any] = {}
+    for to_status, at in history:
+        first_at.setdefault(to_status, at)
+
+    def first_of(states: set[str]):
+        times = [first_at[state] for state in states if state in first_at]
+        return min(times) if times else None
+
+    now = complaint.status
+    team = f"the {complaint.department.name} team" if complaint.department else "a specialist"
+    steps = [
+        MilestoneOut(
+            key="RECEIVED", label="Received",
+            detail="Your complaint is in the register with a reference number.",
+            reached=True, at=complaint.created_at,
+        ),
+        MilestoneOut(
+            key="UNDERSTOOD", label="Read and understood",
+            detail="What happened, what you are asking for, and what is missing.",
+            reached=bool(first_at.get("ANALYZING") or complaint.analyzed_at),
+            at=first_at.get("ANALYZING") or complaint.analyzed_at,
+        ),
+        MilestoneOut(
+            key="CHECKED", label="Checked against policy",
+            detail="Every decision is confirmed against the company's own rules.",
+            reached=now in _CHECKED_STATES or bool(first_of(_CHECKED_STATES)),
+            at=complaint.validated_at or complaint.analyzed_at or first_of(_CHECKED_STATES),
+        ),
+        MilestoneOut(
+            key="WITH_TEAM", label=f"With {team}",
+            detail=(
+                "Waiting for your answer to the questions below."
+                if now == "AWAITING_CUSTOMER"
+                else "A person is working on it."
+            ),
+            reached=now in (_TEAM_STATES | _DONE_STATES) or bool(first_of(_TEAM_STATES)),
+            at=first_of(_TEAM_STATES),
+        ),
+        MilestoneOut(
+            key="RESOLVED", label="Resolved",
+            detail="The outcome has been confirmed and sent to you.",
+            reached=now in _DONE_STATES,
+            at=first_of(_DONE_STATES),
+        ),
+    ]
+    for step in steps:
+        if not step.reached:
+            step.current = True
+            break
+    return steps
 
 
 @router.get(
@@ -750,6 +894,147 @@ def complaint_status(
         raise NotFoundError(f"No complaint with reference '{ref}'.")
 
     return _customer_view(db, complaint)
+
+
+# ══════════════════════════════════════════════════════════════
+# customer actions: answer, attach, preview
+# ══════════════════════════════════════════════════════════════
+def _own_or_staff(db: DbSession, ref: str, user: User) -> Complaint:
+    """
+    Load a complaint the caller may act on: their own, or any if staff.
+
+    An unowned reference answers with the same 404 as an unknown one, so the
+    endpoints below cannot be used to discover which references exist.
+    """
+    complaint = _load(db, ref)
+    if user.role not in STAFF and not _belongs_to(db, complaint, user):
+        raise NotFoundError(f"No complaint with reference '{ref}'.")
+    return complaint
+
+
+@router.post(
+    "/preview",
+    response_model=PreviewOut,
+    summary="What the system will read in a draft complaint (nothing is stored)",
+)
+@limiter.limit("40/minute")
+def preview_complaint(
+    request: Request,
+    response: Response,
+    payload: PreviewIn,
+    db: DbSession,
+    user: CurrentUser,
+) -> PreviewOut:
+    """
+    The live pre-check behind the intake form.
+
+    Pattern extraction and the injection screen, plus the rule engine's
+    likely category once there is enough text to classify. **No model is
+    called and nothing is written** — not a complaint row, not an injection
+    event — so it can run on every pause in typing without spending quota or
+    counting keystrokes as attacks. Rate-limited all the same.
+    """
+    return PreviewOut(**customer_actions.preview(
+        db, title=payload.title, description=payload.description,
+        with_category=len(payload.description.split()) >= 6,
+    ))
+
+
+@router.post(
+    "/{ref}/clarifications/{question_id}/answer",
+    response_model=ClarificationAnswerOut,
+    summary="Answer one clarifying question",
+)
+def answer_question(
+    ref: str,
+    question_id: uuid.UUID,
+    payload: ClarificationAnswerIn,
+    db: DbSession,
+    user: CurrentUser,
+    request: Request,
+) -> ClarificationAnswerOut:
+    """
+    The customer's side of the Missing-Information Challenge.
+
+    The pipeline asks rather than invents; this is how the answer gets back.
+    The reply is screened for injection like the complaint body, may fill an
+    empty order or transaction reference, and — once every question is
+    answered — closes the chase follow-up and returns the complaint to work.
+    Staff may record an answer given by phone on the customer's behalf.
+    """
+    complaint = _own_or_staff(db, ref, user)
+    result = customer_actions.answer_clarification(
+        db, complaint, question_id, payload.answer, actor=user, request=request,
+    )
+    db.flush()
+    return ClarificationAnswerOut(
+        status=_customer_view(db, complaint),
+        filled=result.filled,
+        all_answered=result.all_answered,
+        status_changed_to=result.status_changed_to,
+    )
+
+
+@router.post(
+    "/{ref}/evidence",
+    response_model=EvidenceOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Attach a photo, receipt or document",
+)
+async def attach_evidence(
+    ref: str,
+    db: DbSession,
+    user: CurrentUser,
+    request: Request,
+    response: Response,
+    file: UploadFile = File(...),
+) -> EvidenceOut:
+    """
+    Upload one evidence file: PDF, DOCX, PNG, JPEG, WEBP or plain text.
+
+    The type is decided by the file's bytes, not its name or the browser's
+    content type, so a renamed executable is refused rather than stored with a
+    reassuring MIME type. The same file uploaded twice returns the first copy
+    with 200 instead of 201.
+    """
+    complaint = _own_or_staff(db, ref, user)
+    data = await file.read(settings.max_upload_bytes + 1)
+    attachment, created = customer_actions.attach_evidence(
+        db, complaint, data=data, file_name=file.filename or "evidence",
+        actor=user, request=request,
+    )
+    if not created:
+        response.status_code = status.HTTP_200_OK
+    return EvidenceOut(
+        id=attachment.id, file_name=attachment.file_name, mime_type=attachment.mime_type,
+        size_bytes=attachment.size_bytes, uploaded_at=attachment.created_at,
+    )
+
+
+@router.get(
+    "/{ref}/evidence/{attachment_id}",
+    summary="Download one evidence file",
+    response_class=Response,
+)
+def download_evidence(
+    ref: str, attachment_id: uuid.UUID, db: DbSession, user: CurrentUser
+) -> Response:
+    """
+    Always served as a download, never inline: an uploaded file is untrusted
+    content, and rendering it in our origin would let a crafted file run as us.
+    """
+    complaint = _own_or_staff(db, ref, user)
+    attachment, data = customer_actions.load_evidence(complaint, attachment_id, db)
+    safe = attachment.file_name.replace('"', "")
+    return Response(
+        content=data,
+        media_type=attachment.mime_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe}"',
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 # ══════════════════════════════════════════════════════════════

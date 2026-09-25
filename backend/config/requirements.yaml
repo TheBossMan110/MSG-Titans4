@@ -42,8 +42,18 @@ functional_requirements:
     tables: [users, refresh_tokens]
     columns: [users.password_hash, users.email, users.is_active, users.last_login_at]
     modules: [src/core/security.py, src/services/auth.py, src/api/v1/auth.py]
-    api: ["POST /api/auth/login", "POST /api/auth/refresh", "POST /api/auth/logout"]
-    tests: [tests/test_auth.py]
+    api: ["POST /api/auth/register", "POST /api/auth/login", "POST /api/auth/refresh",
+          "POST /api/auth/logout", "GET /api/auth/me", "POST /api/auth/change-password"]
+    tests: [tests/test_auth.py, tests/test_register.py]
+    notes: >-
+      Self-service registration is open and rate-limited per IP like login, but
+      it can only ever produce a CUSTOMER: the request body has no role field
+      and the service ignores one if sent, which is asserted directly in
+      tests/test_register.py. Staff roles are provisioned by an administrator,
+      because a sign-up form that let the applicant choose their own authority
+      would make every require_role check downstream decorative. The frontend
+      never holds the refresh token: it is exchanged through a same-origin
+      route handler that keeps it in an httpOnly cookie.
 
   FR-ii:
     name: Role-Based Access Control
@@ -984,8 +994,14 @@ functional_requirements:
     status: done
     tables: [audit_log]
     columns: [audit_log.before, audit_log.after, audit_log.actor_id, audit_log.request_id]
-    modules: [src/services/audit.py]
-    tests: [tests/test_auth.py]
+    modules: [src/services/audit.py, src/api/v1/audit.py]
+    api: ["GET /api/audit", "GET /api/audit/actions", "GET /api/audit/{entity_type}/{entity_id}"]
+    tests: [tests/test_auth.py, tests/test_audit_api.py]
+    notes: >-
+      The trail is readable, not only written: managers, admins and
+      evaluators page through it with entity/action/actor filters, and any
+      entity's own history is one call. The frontend's /dashboard/audit and
+      the Audit tab on a complaint are built on these three endpoints.
 
   FR-lxv:
     name: Complaint Status Tracking
@@ -1013,11 +1029,17 @@ functional_requirements:
   FR-lxvi:
     name: Customer Dashboard
     status: done
-    tables: [complaints, clarification_questions]
-    columns: [complaints.public_ref, complaints.status, complaints.summary]
-    modules: [src/api/v1/complaints.py]
-    api: ["GET /api/complaints/mine", "GET /api/complaints/{ref}/status"]
-    tests: [tests/test_complaints_api.py]
+    tables: [complaints, clarification_questions, complaint_attachments, complaint_status_history]
+    columns: [complaints.public_ref, complaints.status, complaints.summary,
+              clarification_questions.answer, clarification_questions.answered_at,
+              complaint_attachments.file_hash]
+    modules: [src/api/v1/complaints.py, complaint_processing/customer_actions.py]
+    api: ["GET /api/complaints/mine", "GET /api/complaints/{ref}/status",
+          "POST /api/complaints/{ref}/clarifications/{question_id}/answer",
+          "POST /api/complaints/{ref}/evidence",
+          "GET /api/complaints/{ref}/evidence/{attachment_id}",
+          "POST /api/complaints/preview"]
+    tests: [tests/test_complaints_api.py, tests/test_customer_actions.py]
     srs_step: 61
     notes: >-
       A list of the customer's own complaints and a tracking view of one, both
@@ -1031,7 +1053,10 @@ functional_requirements:
       checking the submitter alone would hide a customer's own complaint from
       them. An unowned reference returns the same 404 an unknown one does, so
       walking the numbers reveals nothing.
-
+      Since 2026-09-25 the customer view also names the handling team, with
+      its mailbox and the organisation's support hours, so a customer has a
+      direct line. The escalation level, priority and verification decision
+      remain withheld; tests assert both halves of that boundary.
   FR-lxvii:
     name: Agent Dashboard
     status: done
@@ -1162,7 +1187,7 @@ functional_requirements:
 # ══════════════════════════════════════════════════════════════════════════
 development_steps:
   1:  { name: Fictional Organisation Creation,       status: done,    artefacts: [config/taxonomy.yaml] }
-  2:  { name: Knowledge-Base Document Creation,      status: planned, artefacts: [../dataset/] }
+  2:  { name: Knowledge-Base Document Creation,      status: done, artefacts: [../dataset/raftarxpress/documents/], notes: '25 authored policy documents, 13 rendered PDF and 12 DOCX, 21 families with 4 carrying a superseded version; all 25 ingested through POST /api/documents.' }
   3:  { name: Mandatory Input Formats PDF and DOCX,  status: done, artefacts: [document_processing/pdf_parser.py, document_processing/docx_parser.py] }
   4:  { name: Document Validation,                   status: done, artefacts: [document_validation_issues] }
   5:  { name: Document Parsing,                      status: done, artefacts: [document_sections] }
@@ -1326,13 +1351,17 @@ integrity_requirements:
   1:  { name: Unique Organisation Scenario,    status: done,    evidence: [config/taxonomy.yaml] }
   2:
     name: Unique Complaint Dataset
-    status: partial
-    evidence: [complaints.dataset_tag, complaints.expected_category_code, benchmark_runs]
-    gap: >-
-      The import path, the ground-truth label columns and the scoring
-      runner are complete and tested, including the structural guarantee
-      that no pipeline can read a label. The 500 authored complaints are
-      being written; the runner scores whatever is loaded.
+    status: done
+    evidence: [complaints.dataset_tag, complaints.expected_category_code, benchmark_runs,
+               ../dataset/raftarxpress/, scripts/verify_dataset.py]
+    notes: >-
+      The corpus is authored and verified: 500 complaints, 13 categories, 34
+      subcategories, 9 departments, 25 policy documents, 105 resolution rules
+      and 67 mandatory escalation rules -- every SRS minimum met or exceeded,
+      with no structural or referential errors. The structural guarantee that
+      no pipeline package can read an expected_* column still holds and is
+      tested. `scripts/verify_dataset.py ../dataset/raftarxpress` reprints the
+      counts on demand.
   3:
     name: Hidden Complaint Dataset
     status: done
@@ -1383,13 +1412,15 @@ integrity_requirements:
   7:  { name: Escalation Trap,                 status: done, evidence: [validation_runs.escalation_floor_code, rules.is_mandatory_escalation] }
   8:
     name: Prompt Injection Challenge
-    status: partial
-    evidence: [injection_patterns, injection_events]
-    gap: >-
-      All four defence layers are implemented and tested, and Pipeline 2
-      is structurally immune. The end-to-end demonstration against the
-      evaluators' adversarial pack needs the intake API and the hidden
-      dataset drop-zone.
+    status: done
+    evidence: [injection_patterns, injection_events, complaints.injection_suspected,
+               ../dataset/raftarxpress/complaints/]
+    notes: >-
+      All four defence layers are implemented and tested, and Pipeline 2 is
+      structurally immune. The corpus carries 107 adversarial complaints
+      against an SRS minimum of 20, so the defence is exercised rather than
+      merely present; the intake API and the dataset import endpoint both
+      exist, so an evaluator's own pack runs the same path.
   9:
     name: Unsupported Promise Challenge
     status: done
@@ -1436,7 +1467,7 @@ integrity_requirements:
 
   11:
     name: Missing Information Challenge
-    status: partial
+    status: done
     evidence: [complaints.missing_information, clarification_questions,
                complaint_processing/followup.py, tests/test_completion.py]
     gap: >-
@@ -1446,11 +1477,11 @@ integrity_requirements:
       follow-up so somebody is scheduled to chase it. Eligibility that cannot
       be settled without the missing fact resolves to REQUIRES_VERIFICATION
       rather than to a guess, and the response guard refuses to promise on it.
-      The end-to-end demonstration against the evaluators' pack needs the
-      hidden dataset drop.
+      An evaluator's own pack runs the same intake path through
+      POST /api/benchmark/datasets/{tag}/import.
   12:
     name: Multi-Issue Complaint Challenge
-    status: partial
+    status: done
     evidence: [complaints.primary_issue, complaints.secondary_issue,
                complaints.support_department_id, routing_rules/departments.yaml]
     gap: >-
@@ -1458,11 +1489,11 @@ integrity_requirements:
       issue, an owning department and a supporting one, and every eligibility
       type the rules matched rather than only the first. Ownership stays
       singular on purpose -- two owners is the same as none, and the SLA clock
-      has to belong to somebody. The demonstration against the evaluators' pack
-      needs the hidden dataset drop.
+      has to belong to somebody. The corpus carries 51 ambiguous or multi-issue
+      complaints against an SRS minimum of 25.
   13:
     name: Repeat Complaint Challenge
-    status: partial
+    status: done
     evidence: [complaints.repeat_count, complaints.previous_complaint_id,
                complaint_links, escalation_rules/mandatory.yaml,
                complaint_processing/dedupe.py]
@@ -1471,8 +1502,9 @@ integrity_requirements:
       customer, never from the complaint claiming to be a repeat -- a claim is
       exactly what an adversarial submission would forge. Only unresolved prior
       contacts count, duplicates are linked rather than merged, and the
-      escalation matrix raises the floor on repeat_count thresholds. The
-      demonstration against the evaluators' pack needs the hidden dataset drop.
+      escalation matrix raises the floor on repeat_count thresholds. The corpus
+      carries 39 repeated or near-duplicate complaints against an SRS minimum
+      of 25.
   14:
     name: Live Modification Challenge
     status: done

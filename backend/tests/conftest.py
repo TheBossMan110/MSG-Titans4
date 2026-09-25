@@ -132,12 +132,12 @@ def _login(client: TestClient, email: str, password: str) -> str:
 def auth_headers(client: TestClient, seed_password: str):
     """``auth_headers("admin")`` -> Authorization header for that seeded role."""
     emails = {
-        "evaluator": "evaluator@zenithra.com",
-        "admin": "admin@zenithra.com",
-        "manager": "manager@zenithra.com",
-        "reviewer": "reviewer@zenithra.com",
-        "agent": "agent.billing@zenithra.com",
-        "customer": "customer@zenithra.com",
+        "evaluator": "evaluator@raftarxpress.com",
+        "admin": "admin@raftarxpress.com",
+        "manager": "manager@raftarxpress.com",
+        "reviewer": "reviewer@raftarxpress.com",
+        "agent": "agent.billing@raftarxpress.com",
+        "customer": "customer@raftarxpress.com",
     }
 
     def _make(role: str) -> dict[str, str]:

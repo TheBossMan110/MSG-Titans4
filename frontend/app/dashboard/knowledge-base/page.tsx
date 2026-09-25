@@ -1,291 +1,124 @@
 'use client'
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { RefreshCw, Search, Upload, ExternalLink, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
-import {
-  DashboardShell, AuthGuard, StatCard, Spinner, ErrorState, Empty, DropZone,
-} from '@/components/ui'
-import { knowledge } from '@/lib/api'
-import type { KnowledgeDocument, DocumentCoverage, SearchResult, ValidationIssue } from '@/lib/api'
 
-type ViewMode = 'documents' | 'search' | 'upload'
+import { useState } from 'react'
+import Link from 'next/link'
+import { AppShell } from '@/components/layout/app-shell'
+import { useAuth } from '@/lib/auth-context'
+import { knowledge } from '@/lib/api'
+import { useApi, fmtDate } from '@/lib/use-api'
+import { Badge, Button, Mono, humanise } from '@/components/ui/primitives'
+import { Card, PanelHeader } from '@/components/ui/surfaces'
+import { Select, SearchBox } from '@/components/ui/forms'
+import { Table, Th, Td, Tr, Pagination, Stat, Ratio } from '@/components/ui/data'
+import { Empty, ErrorState, SkeletonRows, Tabs } from '@/components/ui/feedback'
+
+const STAFF = ['agent', 'reviewer', 'manager', 'admin', 'evaluator'] as const
 
 export default function KnowledgeBasePage() {
   return (
-    <AuthGuard allowedRoles={['manager', 'admin', 'evaluator']}>
-      <KBContent />
-    </AuthGuard>
+    <AppShell eyebrow="Knowledge base" roles={[...STAFF]} wide>
+      <Library />
+    </AppShell>
   )
 }
 
-function KBContent() {
-  const [docs, setDocs] = useState<KnowledgeDocument[]>([])
-  const [coverage, setCoverage] = useState<DocumentCoverage | null>(null)
-  const [issues, setIssues] = useState<ValidationIssue[]>([])
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [query, setQuery] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [searching, setSearching] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<ViewMode>('documents')
-  const [uploadResults, setUploadResults] = useState<{ filename: string; success: boolean; error?: string }[]>([])
-
-  const load = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const [d, c, i] = await Promise.all([
-        knowledge.list(),
-        knowledge.coverage(),
-        knowledge.validationIssues(),
-      ])
-      setDocs(d)
-      setCoverage(c)
-      setIssues(i)
-    } catch (e: unknown) {
-      setError((e as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const search = async () => {
-    if (!query.trim()) return
-    setSearching(true)
-    try {
-      const results = await knowledge.search(query.trim())
-      setSearchResults(results)
-    } catch (e: unknown) {
-      setError((e as Error).message)
-    } finally {
-      setSearching(false)
-    }
-  }
-
-  const handleFiles = async (files: File[]) => {
-    setUploading(true)
-    try {
-      const res = await knowledge.upload(files)
-      setUploadResults(res.results)
-      // Reload docs
-      await load()
-    } catch (e: unknown) {
-      setError((e as Error).message)
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  useEffect(() => { load() }, [])
-
+function Library() {
+  const { user } = useAuth()
+  const [tab, setTab] = useState<'documents' | 'findings'>('documents')
+  const coverage = useApi(() => knowledge.coverage())
+  const cov = coverage.data
   return (
-    <DashboardShell>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Knowledge Base</h1>
-          <p className="page-subtitle">Manage documents that inform the AI pipeline's understanding</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          {(['documents', 'search', 'upload'] as ViewMode[]).map((v) => (
-            <button
-              key={v}
-              className={`btn ${view === v ? 'btn-orange' : 'btn-ghost'} btn-sm`}
-              onClick={() => setView(v)}
-              id={`kb-tab-${v}`}
-            >
-              {v.charAt(0).toUpperCase() + v.slice(1)}
-            </button>
-          ))}
-          <button className="btn btn-ghost btn-sm" onClick={load} disabled={loading}>
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          </button>
-        </div>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div><p className="eyebrow mb-1">Policies and procedures</p><h1 className="display text-h2">Knowledge base</h1></div>
+        <div className="flex gap-2"><Button href="/dashboard/knowledge-base/search" variant="secondary">Search &amp; trace</Button>{user?.role === 'admin' && <Button href="/dashboard/knowledge-base/upload">Upload documents</Button>}</div>
       </div>
 
-      {coverage && (
-        <div className="stats-grid" style={{ marginBottom: 20 }}>
-          <StatCard label="Total Documents" value={coverage.total_documents} icon={<ExternalLink size={18} />} />
-          <StatCard label="Active Documents" value={coverage.active_documents} accent="var(--verified)" />
-          <StatCard label="Total Chunks" value={coverage.total_chunks.toLocaleString()} sub="Indexed text blocks" />
-          <StatCard
-            label="Validation Issues"
-            value={issues.filter((i) => i.severity === 'ERROR').length}
-            accent={issues.some((i) => i.severity === 'ERROR') ? 'var(--critical)' : undefined}
-            sub={`${issues.filter((i) => i.severity === 'WARNING').length} warnings`}
-          />
-        </div>
+      <div className="grid gap-x-8 gap-y-6 rounded-[var(--radius-xl)] border border-line bg-ivory p-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label="Active documents" value={cov ? cov.active_documents : coverage.error ? null : undefined} evidence={cov ? `knowledge base ${cov.knowledge_base_version}` : coverage.error ?? undefined} />
+        <Stat label="Chunks indexed" value={cov ? cov.chunks : undefined} />
+        <div className="flex flex-col justify-end">{cov ? <Ratio numerator={cov.embedded_chunks} denominator={cov.chunks} label="Embedded for semantic search" tone={cov.semantic_search_available ? 'verified' : 'warning'} /> : <SkeletonRows rows={1} />}</div>
+        <Stat label="Semantic search" value={cov ? (cov.semantic_search_available ? 'Available' : 'Lexical only') : undefined} tone={cov?.semantic_search_available ? 'verified' : 'warning'} evidence={cov && !cov.semantic_search_available ? `${cov.unembedded_chunks} chunks without embeddings` : undefined} />
+      </div>
+
+      <Tabs value={tab} onChange={setTab} tabs={[{ id: 'documents', label: 'Documents' }, { id: 'findings', label: 'Validation findings' }]} />
+      {tab === 'documents' ? <Documents /> : <Findings />}
+    </div>
+  )
+}
+
+function Documents() {
+  const [page, setPage] = useState(1)
+  const [qText, setQText] = useState('')
+  const [docType, setDocType] = useState('')
+  const [status, setStatus] = useState('')
+  const q = useApi(() => knowledge.list({ page, page_size: 25, q: qText || undefined, doc_type: docType || undefined, status: status || undefined }), [page, qText, docType, status])
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap gap-2">
+        <SearchBox value={qText} onChange={(v) => { setQText(v); setPage(1) }} placeholder="Title or reference" className="w-full sm:w-[320px]" />
+        <Select value={docType} onChange={(e) => { setDocType(e.target.value); setPage(1) }} aria-label="Type" className="w-auto"><option value="">Any type</option>{['POLICY', 'SOP', 'FAQ', 'TERMS', 'GUIDE', 'NOTICE'].map((t) => <option key={t} value={t}>{humanise(t)}</option>)}</Select>
+        <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }} aria-label="Status" className="w-auto"><option value="">Any status</option>{['ACTIVE', 'DRAFT', 'SUPERSEDED', 'EXPIRED', 'REJECTED'].map((t) => <option key={t} value={t}>{humanise(t)}</option>)}</Select>
+      </div>
+      {q.error ? <ErrorState message={q.error} onRetry={q.refresh} /> : q.loading && !q.data ? <SkeletonRows rows={8} /> : !q.data!.items.length ? <Empty title="No documents" body="Upload PDF or DOCX policies to build the knowledge base." /> : (
+        <>
+          <Table>
+            <thead><tr><Th>Reference</Th><Th>Title</Th><Th>Type</Th><Th>Department</Th><Th>Active version</Th><Th>Format</Th><Th>Effective</Th><Th>Parse</Th><Th align="right">Versions</Th></tr></thead>
+            <tbody>
+              {q.data!.items.map((d) => {
+                const v = d.active_version
+                return (
+                  <Tr key={d.id}>
+                    <Td mono><Link href={`/dashboard/knowledge-base/${d.id}`} className="underline decoration-line underline-offset-4">{d.family_key}</Link></Td>
+                    <Td className="max-w-[360px]"><span className="line-clamp-1">{d.title}</span></Td>
+                    <Td>{humanise(d.doc_type)}</Td>
+                    <Td>{d.department?.name ?? '—'}</Td>
+                    <Td>{v ? <span className="flex items-center gap-1.5"><Mono>{v.version}</Mono><Badge tone={v.status === 'ACTIVE' ? 'verified' : 'neutral'}>{v.status}</Badge></span> : <Badge tone="warning">none active</Badge>}</Td>
+                    <Td mono>{v?.file_format?.toUpperCase() ?? '—'}</Td>
+                    <Td className="whitespace-nowrap">{fmtDate(v?.effective_date, false)}</Td>
+                    <Td>{v ? <Badge tone={v.parse_status === 'PARSED' || v.parse_status === 'OK' ? 'verified' : 'critical'}>{humanise(v.parse_status)}</Badge> : '—'}</Td>
+                    <Td align="right" mono>{d.version_count ?? 0}</Td>
+                  </Tr>
+                )
+              })}
+            </tbody>
+          </Table>
+          <Pagination page={page} size={25} total={q.data!.total} onPage={setPage} />
+        </>
       )}
+    </div>
+  )
+}
 
-      {error && <ErrorState error={error} retry={load} />}
-
-      {/* Documents view */}
-      {view === 'documents' && (
-        loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><Spinner size={28} /></div>
-        ) : docs.length === 0 ? (
-          <div className="table-wrap"><Empty title="No documents" body="Upload documents to populate the knowledge base." action={{ label: 'Upload Documents', onClick: () => setView('upload') }} /></div>
-        ) : (
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Versions</th>
-                  <th>Active Version</th>
-                  <th>Updated</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {docs.map((doc) => (
-                  <tr key={doc.id}>
-                    <td>
-                      <span style={{ fontWeight: 600, fontSize: 13 }}>{doc.title}</span>
-                      {doc.file_type && <span style={{ fontSize: 11, color: 'var(--text-4)', marginLeft: 8 }}>.{doc.file_type}</span>}
-                    </td>
-                    <td style={{ fontSize: 12, color: 'var(--text-3)' }}>{doc.category ?? '—'}</td>
-                    <td>
-                      <span className={`badge ${doc.status === 'ACTIVE' ? 'badge-verified' : doc.status === 'DRAFT' ? 'badge-mismatch' : 'badge-neutral'}`}>
-                        {doc.status}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: 12, fontFamily: 'DM Mono, monospace' }}>{doc.version_count}</td>
-                    <td style={{ fontSize: 12, color: 'var(--text-3)' }}>{doc.active_version ?? '—'}</td>
-                    <td style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'DM Mono, monospace' }}>
-                      {doc.updated_at ? new Date(doc.updated_at).toLocaleDateString() : '—'}
-                    </td>
-                    <td>
-                      <Link href={`/dashboard/knowledge-base/${doc.id}`} className="btn btn-ghost btn-sm">View →</Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )
-      )}
-
-      {/* Search view */}
-      {view === 'search' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="card" style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <input
-                id="kb-search-input"
-                className="input"
-                placeholder="Search knowledge base…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && search()}
-                style={{ flex: 1 }}
-              />
-              <button className="btn btn-orange" onClick={search} disabled={searching || !query.trim()}>
-                {searching ? <Spinner size={14} color="#fff" /> : <Search size={14} />}
-                Search
-              </button>
-            </div>
-          </div>
-
-          {searchResults.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {searchResults.map((r) => (
-                <div key={r.chunk_key} className="card" style={{ padding: '18px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                    <div>
-                      <span style={{ fontWeight: 700, fontSize: 14 }}>{r.document_title}</span>
-                      {r.section_heading && <span style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 10 }}>§ {r.section_heading}</span>}
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <span className={`badge ${r.version_status === 'ACTIVE' ? 'badge-verified' : 'badge-neutral'}`}>{r.version_status}</span>
-                      {r.score != null && (
-                        <span style={{ fontSize: 11, color: 'var(--text-4)', fontFamily: 'DM Mono, monospace' }}>
-                          score: {r.score.toFixed(3)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6 }}>{r.content_snippet}</p>
-                  <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-                    <span style={{ fontSize: 11, color: 'var(--text-4)', fontFamily: 'DM Mono, monospace' }}>
-                      {r.version_label} · {r.chunk_key}
-                    </span>
-                    <Link
-                      href={`/dashboard/knowledge-base/trace/${encodeURIComponent(r.chunk_key)}`}
-                      className="btn btn-ghost btn-sm"
-                      style={{ fontSize: 11 }}
-                    >
-                      <ExternalLink size={10} /> Trace Source
-                    </Link>
-                  </div>
-                </div>
+function Findings() {
+  const [page, setPage] = useState(1)
+  const [outcome, setOutcome] = useState('')
+  const q = useApi(() => knowledge.validationIssues({ page, page_size: 25, outcome: outcome || undefined }), [page, outcome])
+  return (
+    <div className="flex flex-col gap-4">
+      <Card tone="cream" padding="sm"><p className="text-[13.5px] text-espresso-2">Every uploaded file is checked for metadata (reference, version, effective date), duplicate versions, parse quality and contradictions with active policy. Findings are kept even when the file was accepted.</p></Card>
+      <Select value={outcome} onChange={(e) => { setOutcome(e.target.value); setPage(1) }} aria-label="Outcome" className="w-auto"><option value="">Any outcome</option>{['ACCEPTED', 'ACCEPTED_WITH_WARNINGS', 'REQUIRES_REVIEW', 'REJECTED'].map((o) => <option key={o} value={o}>{humanise(o)}</option>)}</Select>
+      {q.error ? <ErrorState message={q.error} onRetry={q.refresh} /> : q.loading && !q.data ? <SkeletonRows rows={6} /> : !q.data!.items.length ? <Empty title="No findings" /> : (
+        <>
+          <Table dense>
+            <thead><tr><Th>When</Th><Th>File</Th><Th>Code</Th><Th>Severity</Th><Th>Outcome</Th><Th>Message</Th><Th>Version</Th></tr></thead>
+            <tbody>
+              {q.data!.items.map((i) => (
+                <Tr key={i.id}>
+                  <Td className="whitespace-nowrap text-taupe-2">{fmtDate(i.created_at)}</Td>
+                  <Td mono className="max-w-[220px] truncate">{i.file_name}</Td>
+                  <Td mono>{i.issue_code}</Td>
+                  <Td><Badge tone={i.severity === 'ERROR' || i.severity === 'CRITICAL' ? 'critical' : i.severity === 'WARNING' ? 'warning' : 'neutral'}>{i.severity}</Badge></Td>
+                  <Td><Badge tone={i.outcome === 'REJECTED' ? 'critical' : i.outcome === 'ACCEPTED' ? 'verified' : 'warning'}>{humanise(i.outcome)}</Badge></Td>
+                  <Td className="max-w-[420px] text-[12.5px]">{i.message}{i.detail && <span className="block text-taupe-2">{i.detail}</span>}</Td>
+                  <Td>{i.document_version_id ? <Link href={`/dashboard/knowledge-base/versions/${i.document_version_id}`} className="text-[12.5px] underline decoration-line underline-offset-4">open</Link> : '—'}</Td>
+                </Tr>
               ))}
-            </div>
-          )}
-
-          {!searching && searchResults.length === 0 && query && (
-            <Empty title="No results" body={`No matches for "${query}"`} />
-          )}
-        </div>
+            </tbody>
+          </Table>
+          <Pagination page={page} size={25} total={q.data!.total} onPage={setPage} />
+        </>
       )}
-
-      {/* Upload view */}
-      {view === 'upload' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 600 }}>
-          <div className="card" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Upload Documents</h3>
-            <DropZone
-              onFiles={handleFiles}
-              accept=".pdf,.txt,.md,.docx"
-              label="Drop PDF, TXT, Markdown or DOCX files here"
-            />
-            {uploading && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, color: 'var(--text-3)', justifyContent: 'center' }}>
-                <Spinner /> Uploading…
-              </div>
-            )}
-          </div>
-
-          {uploadResults.length > 0 && (
-            <div className="card" style={{ padding: '20px' }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Upload Results</h3>
-              {uploadResults.map((r) => (
-                <div key={r.filename} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-                  <span style={{ fontSize: 13 }}>{r.filename}</span>
-                  {r.success ? (
-                    <span className="badge badge-verified"><CheckCircle size={10} /> Uploaded</span>
-                  ) : (
-                    <span className="badge badge-critical"><XCircle size={10} /> {r.error ?? 'Failed'}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Validation issues */}
-      {issues.length > 0 && view === 'documents' && (
-        <div className="card" style={{ padding: '20px', marginTop: 16 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <AlertTriangle size={14} color="var(--mismatch)" />
-            Validation Issues ({issues.length})
-          </h3>
-          {issues.slice(0, 5).map((issue, i) => (
-            <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <span className={`badge ${issue.severity === 'ERROR' ? 'badge-critical' : issue.severity === 'WARNING' ? 'badge-mismatch' : 'badge-neutral'}`}>{issue.severity}</span>
-              <div>
-                <p style={{ fontSize: 13, color: 'var(--text-2)' }}>{issue.description}</p>
-                <p style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 2 }}>
-                  {issue.issue_type} · doc: {issue.document_id.slice(0, 8)}…
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </DashboardShell>
+    </div>
   )
 }

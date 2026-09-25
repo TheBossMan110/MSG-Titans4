@@ -78,8 +78,8 @@ def main(argv: list[str] | None = None) -> int:
     print("\nSeed complete —", _safe_url())
     for key, value in totals.items():
         print(f"  {key:<32} {value}")
-    print("\nEvaluator login: evaluator@zenithra.com")
-    print("Administrator  : admin@zenithra.com")
+    print("\nEvaluator login: evaluator@raftarxpress.com")
+    print("Administrator  : admin@raftarxpress.com")
     from src.db.seed.users import DEFAULT_PASSWORD
 
     print(f"Password       : {DEFAULT_PASSWORD}\n")

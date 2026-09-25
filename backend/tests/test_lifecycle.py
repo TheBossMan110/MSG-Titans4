@@ -69,7 +69,7 @@ def clean(db):
 @pytest.fixture
 def agent(db):
     return db.execute(
-        select(User).where(User.email == "agent.billing@zenithra.com")
+        select(User).where(User.email == "agent.billing@raftarxpress.com")
     ).scalars().one()
 
 
