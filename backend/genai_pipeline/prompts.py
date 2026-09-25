@@ -33,12 +33,13 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, TemplateNotFound
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from security.injection_defense import DATA_NOT_INSTRUCTIONS_NOTICE, fence
 from src.core.config import settings
 from src.core.errors import AppError
 from src.core.logging import get_logger
+from src.core.refcache import reference_data
 from src.db.models import (
     AppConfig,
     Category,
@@ -128,6 +129,7 @@ def checksum_of(name: str, version: str) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+@reference_data("active_prompt_version")
 def active_version(db: Session, name: str) -> str:
     """
     The version the database says is active, falling back to the newest file.
@@ -153,6 +155,7 @@ def active_version(db: Session, name: str) -> str:
 # ══════════════════════════════════════════════════════════════
 # enum injection
 # ══════════════════════════════════════════════════════════════
+@reference_data("enum_context")
 def build_enum_context(db: Session) -> dict[str, Any]:
     """
     Read the live taxonomy for injection into a prompt.
@@ -163,7 +166,10 @@ def build_enum_context(db: Session) -> dict[str, Any]:
     """
     categories: list[dict[str, Any]] = []
     for category in db.execute(
-        select(Category).where(Category.is_active.is_(True)).order_by(Category.code)
+        select(Category)
+        .where(Category.is_active.is_(True))
+        .order_by(Category.code)
+        .options(selectinload(Category.subcategories))
     ).scalars():
         categories.append(
             {
@@ -284,6 +290,15 @@ def render(
     return rendered
 
 
+def _tier(complaint: Any) -> str | None:
+    from python_validation.signals import tier_of
+
+    return tier_of(
+        getattr(getattr(complaint, "customer", None), "tier", None)
+        or getattr(complaint, "customer_type", None)
+    )
+
+
 def render_complaint_intelligence(
     db: Session,
     *,
@@ -306,7 +321,7 @@ def render_complaint_intelligence(
         "product": getattr(complaint, "product", None),
         "order_ref": getattr(complaint, "order_ref", None),
         "channel": getattr(complaint, "channel", None),
-        "customer_tier": getattr(getattr(complaint, "customer", None), "tier", None),
+        "customer_tier": _tier(complaint),
         "previous_contacts": getattr(complaint, "repeat_count", None) or None,
     }
 

@@ -2,16 +2,16 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
-  Activity, BarChart3, BookOpen, Download, FileSearch, FileText, FlaskConical, Gauge,
-  Inbox, LayoutDashboard, ListChecks, LogOut, MessageSquareReply, Plus, ScrollText,
-  Settings, ShieldAlert, Siren, Sparkles, Target, TrendingUp, UserCheck, type LucideIcon,
+  Activity, BarChart3, BookOpen, Building2, ChevronDown, Download, FileSearch, FileText, FlaskConical, Gauge, Headset, Inbox, Info, LayoutDashboard, ListChecks, LogOut, type LucideIcon, Mail, MessageCircle, MessageSquareReply, Plus, ScrollText, Settings, ShieldAlert, Siren, Sparkles, Target, TrendingUp, UserCheck, UserRound,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import type { Role } from '@/lib/api'
-import { Badge, Button, Wordmark } from '@/components/ui/primitives'
+import { Button, Wordmark } from '@/components/ui/primitives'
+import { ADMIN_SECTIONS, AGENT_SECTIONS, USER_SECTIONS } from '@/components/app/dashboard-bits'
+import { getLenis } from '@/components/motion/smooth-scroll'
 import { AuthGuard } from './auth-guard'
 
 type Item = { href: string; label: string; icon: LucideIcon; roles?: Role[]; exact?: boolean }
@@ -25,11 +25,15 @@ const groups: Group[] = [
   {
     title: 'Work',
     items: [
-      { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true, roles: STAFF },
+      { href: '/dashboard', label: 'Admin dashboard', icon: LayoutDashboard, exact: true, roles: OVERSIGHT },
+      { href: '/dashboard/agent', label: 'Agent dashboard', icon: Headset, roles: [...STAFF] },
       { href: '/dashboard/my-complaints', label: 'My complaints', icon: Inbox, roles: ['customer'] },
       { href: '/dashboard/complaints/new', label: 'New complaint', icon: Plus, roles: ['customer'] },
+      { href: '/dashboard/assistant', label: 'Chat with Nova', icon: MessageCircle, roles: ['customer'] },
+      { href: '/dashboard/my-emails', label: 'My emails', icon: Mail, roles: ['customer'] },
       { href: '/dashboard/complaints', label: 'Complaints', icon: Inbox, roles: STAFF },
       { href: '/dashboard/follow-ups', label: 'Follow-ups', icon: MessageSquareReply, roles: STAFF },
+      { href: '/dashboard/email', label: 'Email', icon: Mail, roles: STAFF },
       { href: '/dashboard/review', label: 'Review queue', icon: UserCheck, roles: [...REVIEWERS, 'evaluator', 'agent'] },
       { href: '/dashboard/escalations', label: 'Escalations', icon: Siren, roles: STAFF },
     ],
@@ -37,6 +41,7 @@ const groups: Group[] = [
   {
     title: 'Knowledge',
     items: [
+      { href: '/dashboard/organisation', label: 'Organisation', icon: Building2, roles: STAFF },
       { href: '/dashboard/knowledge-base', label: 'Policies', icon: BookOpen, roles: STAFF },
       { href: '/dashboard/knowledge-base/search', label: 'Search & trace', icon: FileSearch, roles: STAFF },
       { href: '/dashboard/rules', label: 'Rule matrix', icon: ListChecks, roles: OVERSIGHT },
@@ -59,9 +64,92 @@ const groups: Group[] = [
     items: [
       { href: '/dashboard/security', label: 'Security', icon: ShieldAlert, roles: OVERSIGHT },
       { href: '/dashboard/audit', label: 'Audit trail', icon: ScrollText, roles: OVERSIGHT },
+      { href: '/dashboard/profile', label: 'Profile & security', icon: UserRound },
       { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     ],
   },
+]
+
+
+/** What each dashboard contains, as the SRS lists it; shown under the active item. */
+const SECTIONS: Record<string, Array<[string, string]>> = {
+  '/dashboard': ADMIN_SECTIONS,
+  '/dashboard/agent': AGENT_SECTIONS,
+  '/dashboard/my-complaints': USER_SECTIONS,
+}
+
+/**
+ * Links to each section of the current dashboard. A click scrolls to it and
+ * briefly highlights it; while reading, the section in view is marked.
+ */
+function SectionLinks({ sections }: { sections: Array<[string, string]> }) {
+  const [current, setCurrent] = useState<string | null>(null)
+  useEffect(() => {
+    const els = sections.map(([id]) => document.getElementById(id)).filter((e): e is HTMLElement => Boolean(e))
+    if (!els.length) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+        if (visible[0]) setCurrent(visible[0].target.id)
+      },
+      { rootMargin: '-80px 0px -55% 0px' },
+    )
+    els.forEach((e) => observer.observe(e))
+    return () => observer.disconnect()
+  })
+  const go = (id: string) => {
+    const el = document.getElementById(id)
+    if (!el) return
+    const lenis = getLenis()
+    if (lenis) lenis.scrollTo(el, { offset: -88 })
+    else el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    el.dataset.flash = 'true'
+    window.setTimeout(() => { el.dataset.flash = 'false' }, 1600)
+    setCurrent(id)
+  }
+  return (
+    <ul className="mb-1 ml-[22px] mt-1 flex flex-col border-l border-line-soft pl-2.5" aria-label="On this dashboard">
+      {sections.map(([id, label]) => (
+        <li key={id}>
+          <button type="button" onClick={() => go(id)} aria-current={current === id ? 'location' : undefined}
+            className={cn('w-full rounded-lg px-2 py-1 text-left text-[12.5px] transition-colors', current === id ? 'bg-white/80 font-medium text-espresso' : 'text-taupe-2 hover:text-espresso')}>
+            {label}
+          </button>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/**
+ * One sentence per page on what it is for, shown above the page. Staff pages
+ * are dense by necessity; the sentence tells a newcomer which question the
+ * page answers before they have to work it out from the tables.
+ */
+const PAGE_HELP: Array<[RegExp, string]> = [
+  [/^\/dashboard$/, 'The admin view: totals, where complaints go, how urgent they are, SLA risks, AI-versus-rules mismatches and cases waiting on a person.'],
+  [/^\/dashboard\/agent/, 'The agent view: your complaints with the AI recommendation, what the rules confirmed, a suggested reply and any escalation warning.'],
+  [/^\/dashboard\/complaints$/, 'Every complaint in the register. Filter it, then open one to see what the AI proposed and what the rules decided.'],
+  [/^\/dashboard\/complaints\/new$/, 'Submit a complaint on a customer’s behalf. Each step of the analysis appears as it happens.'],
+  [/^\/dashboard\/complaints\/[^/]+$/, 'One complaint. Overview is what happened; Why shows the AI and the rules side by side; the other tabs are the work still to do.'],
+  [/^\/dashboard\/assistant/, ''],
+  [/^\/dashboard\/email/, 'Complaints that arrive by email, and the replies the system sent. Each complaint email is registered and analysed like any other.'],
+  [/^\/dashboard\/follow-ups/, 'Promises the system made to customers, with due dates. Mark each one done when it is done.'],
+  [/^\/dashboard\/review/, 'Complaints a person must check: the AI and the rules disagreed, a rule escalated it, or something looked unsafe.'],
+  [/^\/dashboard\/escalations/, 'Complaints the rules sent above the normal team. The level can be raised, never lowered.'],
+  [/^\/dashboard\/organisation/, 'The company as the dataset defines it: teams, categories, service levels, reply templates and the loaded datasets.'],
+  [/^\/dashboard\/knowledge-base\/search/, 'Search the policy library the way the AI does, and trace any citation back to the exact paragraph.'],
+  [/^\/dashboard\/knowledge-base/, 'The company policies the AI may cite. Only the active version of each can back a decision.'],
+  [/^\/dashboard\/rules\/sandbox/, 'Try any complaint text against the rules without saving anything, and see which rules fire and why.'],
+  [/^\/dashboard\/rules/, 'The rules that make the final decision. Each one cites the policy it comes from.'],
+  [/^\/dashboard\/prompts/, 'The instructions the AI is given, versioned. Changing the active version changes how every new complaint is read.'],
+  [/^\/dashboard\/analytics\/trends/, 'Which categories and teams are rising or falling between snapshots, with unusual jumps flagged.'],
+  [/^\/dashboard\/analytics/, 'Volumes, categories, team load, and how often the rules had to correct the AI.'],
+  [/^\/dashboard\/reports/, 'Ready-made reports on the live register. Pick one on the left; managers and admins can download it.'],
+  [/^\/dashboard\/exports/, 'Every report that has been downloaded, by whom and when.'],
+  [/^\/dashboard\/benchmark/, 'How accurate the AI and the rules are against a labelled dataset, field by field.'],
+  [/^\/dashboard\/security/, 'Attempts to trick the AI, and the safety checks that stop bad replies before a customer sees them.'],
+  [/^\/dashboard\/audit/, 'Who changed what, and when. Every change in the system is recorded here and cannot be edited.'],
 ]
 
 /**
@@ -119,6 +207,7 @@ function Frame({ children, title, eyebrow, actions, wide }: { children: ReactNod
     .filter((g) => g.items.length)
   const flat = visible.flatMap((g) => g.items)
   const signOut = async () => { await logout(); router.replace('/login') }
+  const help = PAGE_HELP.find(([pattern]) => pattern.test(pathname))?.[1]
 
   const nav = (
     <nav aria-label="Application" className="flex flex-col gap-6">
@@ -141,9 +230,10 @@ function Frame({ children, title, eyebrow, actions, wide }: { children: ReactNod
                         : 'text-espresso-2 hover:bg-white/70 hover:text-espresso',
                     )}
                   >
-                    <Icon size={16} strokeWidth={1.9} className={cn('shrink-0 transition-transform duration-300 group-hover/nav:scale-110', active ? 'text-[#b7adff]' : 'text-taupe')} aria-hidden />
+                    <Icon size={16} strokeWidth={1.9} className={cn('shrink-0 transition-transform duration-300 group-hover/nav:scale-110', active ? 'text-[#9cc7e6]' : 'text-taupe')} aria-hidden />
                     <span className="truncate">{i.label}</span>
                   </Link>
+                  {active && SECTIONS[i.href] && <SectionLinks sections={SECTIONS[i.href]} />}
                 </li>
               )
             })}
@@ -187,7 +277,7 @@ function Frame({ children, title, eyebrow, actions, wide }: { children: ReactNod
             <span className="hidden items-center gap-2 rounded-full border border-line-soft bg-white/70 px-3 py-1 text-[12px] text-taupe-2 md:inline-flex">
               <Activity size={13} className="text-verified" aria-hidden /> Live data
             </span>
-            {user && <Badge tone="ink" className="hidden capitalize sm:inline-flex">{user.role}</Badge>}
+            {user && <UserMenu user={user} onLogout={signOut} />}
           </div>
         </header>
 
@@ -199,6 +289,12 @@ function Frame({ children, title, eyebrow, actions, wide }: { children: ReactNod
         )}
 
         <main className={cn('flex-1 px-[var(--gutter)] py-8 lg:px-10 lg:py-10', !wide && 'mx-auto w-full max-w-[1320px]')}>
+          {help && user && user.role !== 'customer' && (
+            <p className="mb-6 flex items-start gap-2 text-[13.5px] leading-relaxed text-taupe-2">
+              <Info size={15} className="mt-0.5 shrink-0 text-taupe" aria-hidden />
+              <span>{help}</span>
+            </p>
+          )}
           {title && (
             <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
               <h1 className="font-display text-h2 leading-none">{title}</h1>
@@ -226,6 +322,67 @@ function UserCard({ user, onLogout }: { user: ReturnType<typeof useAuth>['user']
         </div>
       </div>
       <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={onLogout} icon={<LogOut size={13} aria-hidden />}>Sign out</Button>
+    </div>
+  )
+}
+
+/**
+ * Who is signed in, in the corner where people look for it, and the way to
+ * their profile, settings and sign-out. A real menu: Escape and a click
+ * outside close it, and it is announced as one.
+ */
+function UserMenu({ user, onLogout }: { user: NonNullable<ReturnType<typeof useAuth>['user']>; onLogout: () => void }) {
+  const [open, setOpen] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
+  useEffect(() => setOpen(false), [pathname])
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open])
+
+  const name = user.full_name || user.email
+  const initials = name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+  const item = 'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[14px] text-espresso-2 transition-colors hover:bg-sand/60 hover:text-espresso focus-visible:bg-sand/60 focus-visible:outline-none'
+
+  return (
+    <div ref={box} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="flex items-center gap-2 rounded-full border border-line-soft bg-white/80 py-1 pl-1 pr-2.5 transition-colors hover:bg-white sm:pr-3"
+      >
+        <span className="inline-flex size-8 items-center justify-center rounded-full bg-espresso text-[12px] font-semibold text-ink-on-dark" aria-hidden>{initials}</span>
+        <span className="hidden max-w-[160px] flex-col text-left leading-tight sm:flex">
+          <span className="truncate text-[13px] font-medium text-espresso">{name}</span>
+          <span className="truncate text-[11.5px] capitalize text-taupe-2">{user.role}</span>
+        </span>
+        <ChevronDown size={14} className={cn('text-taupe transition-transform', open && 'rotate-180')} aria-hidden />
+        <span className="sr-only">Account menu</span>
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 top-[calc(100%+8px)] z-50 w-[272px] animate-rise rounded-2xl border border-line-soft bg-ivory p-2 shadow-[0_24px_60px_-24px_rgba(42,31,23,0.45)]">
+          <div className="flex items-center gap-3 border-b border-line-soft px-2.5 pb-3 pt-1.5">
+            <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-espresso text-[13px] font-semibold text-ink-on-dark" aria-hidden>{initials}</span>
+            <div className="min-w-0">
+              <p className="truncate text-[14px] font-medium text-espresso">{name}</p>
+              <p className="truncate text-[12.5px] text-taupe-2">{user.email}</p>
+              <p className="mt-0.5 text-[11.5px] capitalize text-taupe">{user.role}{user.department ? ` · ${user.department.name}` : ''}</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-0.5 pt-2">
+            <Link role="menuitem" href="/dashboard/profile" className={item}><UserRound size={16} className="text-taupe" aria-hidden /> Profile &amp; security</Link>
+            <Link role="menuitem" href="/dashboard/settings" className={item}><Settings size={16} className="text-taupe" aria-hidden /> Settings</Link>
+            <button role="menuitem" type="button" onClick={onLogout} className={cn(item, 'text-critical hover:text-critical')}><LogOut size={16} aria-hidden /> Sign out</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

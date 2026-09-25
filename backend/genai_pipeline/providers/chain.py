@@ -31,7 +31,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from genai_pipeline.providers.base import ProviderServerError, ProviderUnavailable
+from genai_pipeline.providers.base import ProviderServerError, ProviderUnavailable, RateLimited
+from src.core import progress
 
 T = TypeVar("T")
 
@@ -66,10 +67,18 @@ def forget(provider: str | None = None) -> None:
 
 
 def is_model_fault(exc: BaseException) -> bool:
-    """True when another model name on the same account might succeed."""
+    """
+    True when another model name on the same account might succeed.
+
+    A rate limit counts: free-tier quotas are per model, so the next model in
+    the chain has a bucket of its own. A bad key does not -- every model on
+    the account would refuse it the same way.
+    """
+    if isinstance(exc, RateLimited):
+        return True
     if not isinstance(exc, (ProviderUnavailable, ProviderServerError)):
         return False
-    return getattr(exc, "status", None) not in (401, 403)
+    return getattr(exc, "status", None) not in (401, 402, 403)
 
 
 def run_chain(
@@ -89,7 +98,7 @@ def run_chain(
     for index, model in enumerate(order):
         try:
             result = call(model)
-        except (ProviderUnavailable, ProviderServerError) as exc:
+        except (ProviderUnavailable, ProviderServerError, RateLimited) as exc:
             if not is_model_fault(exc):
                 raise  # the key, not the model
             remaining = len(order) - index - 1
@@ -102,6 +111,7 @@ def run_chain(
             )
             if not remaining:
                 raise
+            progress.emit("ai", detail=f"{model} is busy; switching to {order[index + 1]}")
         else:
             remember(provider, model)
             return model, result

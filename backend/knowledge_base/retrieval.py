@@ -33,12 +33,14 @@ Three invariants, all load-bearing:
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+
 import re
 from dataclasses import dataclass, field
 from typing import Any
 
 from sqlalchemy import and_, case, func, literal, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, undefer
 
 from knowledge_base.embeddings import cosine_similarity, embed_query
 from src.core.config import settings
@@ -47,6 +49,9 @@ from src.db.enums import DocStatus
 from src.db.models import Chunk, DocumentVersion
 
 log = get_logger("knowledge_base.retrieval")
+
+# Query embeddings in flight; a few, so concurrent submissions do not queue.
+_EMBED_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="embed")
 
 # RRF constant. 60 is the value from the original Cormack et al. paper and is
 # deliberately left at the default: tuning it on three documents would be
@@ -336,7 +341,7 @@ def _semantic_search(
 
     # SQLite stores vectors as JSON; rank in Python. Fine at corpus scale,
     # and it keeps the offline fallback semantically capable.
-    rows = db.execute(base).all()
+    rows = db.execute(base.options(undefer(Chunk.embedding))).all()
     scored = [
         (cosine_similarity(query_vector, row[0].embedding), row[0])
         for row in rows
@@ -478,6 +483,11 @@ def retrieve(
         log.warning("retrieval_on_empty_kb", query=query_text[:80])
         return result
 
+    # The query embedding is a network round trip to the embedding provider
+    # and touches no database state, so it runs while the lexical search does
+    # rather than after it. A session is not thread-safe; an HTTP call is.
+    pending_vector = _EMBED_POOL.submit(embed_query, query_text) if semantic else None
+
     lexical = _lexical_search(
         db, query_text,
         depth=depth, include_superseded=include_superseded,
@@ -486,8 +496,12 @@ def retrieve(
     result.lexical_count = len(lexical)
 
     semantic_hits: list[Chunk] = []
-    if semantic:
-        query_vector = embed_query(query_text)
+    if pending_vector is not None:
+        try:
+            query_vector = pending_vector.result()
+        except Exception as exc:  # noqa: BLE001 - degrade to lexical, never fail
+            log.warning("embedding_failed", error=type(exc).__name__)
+            query_vector = None
         if query_vector:
             result.semantic_available = True
             semantic_hits = _semantic_search(

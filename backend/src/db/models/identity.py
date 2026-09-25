@@ -12,10 +12,10 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, ForeignKey, Index, String, Text, text
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base, BigIntPK, Name, TimestampMixin, TZDateTime, UUIDPrimaryKey
+from src.db.base import Base, BigIntPK, JSONType, Name, TimestampMixin, TZDateTime, UUIDPrimaryKey
 from src.db.constraints import enum_check
 from src.db.enums import UserRole
 
@@ -37,7 +37,22 @@ class User(UUIDPrimaryKey, TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_login_at: Mapped[datetime | None] = mapped_column(TZDateTime)
 
+    # ── account security (migration 0003) ──
+    # The TOTP secret, Fernet-encrypted; see src/core/totp.py. Set during
+    # setup, but two-step sign-in is only on once ``mfa_enabled_at`` is.
+    mfa_secret: Mapped[str | None] = mapped_column(Text)
+    mfa_enabled_at: Mapped[datetime | None] = mapped_column(TZDateTime)
+    # SHA-256 hashes of the unused recovery codes; each is removed when used.
+    mfa_recovery_codes: Mapped[list[str] | None] = mapped_column(JSONType)
+    failed_login_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(TZDateTime)
+    password_changed_at: Mapped[datetime | None] = mapped_column(TZDateTime)
+
     department = relationship("Department", lazy="joined")
+
+    @property
+    def mfa_enabled(self) -> bool:
+        return self.mfa_enabled_at is not None
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<User {self.email} ({self.role})>"
@@ -53,6 +68,10 @@ class RefreshToken(UUIDPrimaryKey, TimestampMixin, Base):
     expires_at: Mapped[datetime] = mapped_column(TZDateTime, nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(TZDateTime)
     user_agent: Mapped[str | None] = mapped_column(String(255))
+    ip_address: Mapped[str | None] = mapped_column(String(64))
+    # Carried across rotation: the token is replaced on every refresh, the
+    # session it belongs to is not.
+    session_started_at: Mapped[datetime | None] = mapped_column(TZDateTime)
 
 
 class AuditLog(TimestampMixin, Base):

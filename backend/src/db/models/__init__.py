@@ -15,6 +15,7 @@ from src.db.models.complaints import (
     ComplaintStatusHistory,
     Customer,
 )
+from src.db.models.email import EmailMessage
 from src.db.models.identity import AuditLog, RefreshToken, User
 from src.db.models.intelligence import (
     AgentGuidance,
@@ -62,6 +63,7 @@ from src.db.models.workflow import (
 )
 
 __all__ = [
+    "EmailMessage",
     "Base",
     # identity
     "User",

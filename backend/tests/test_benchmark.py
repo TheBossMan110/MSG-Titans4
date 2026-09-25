@@ -143,6 +143,36 @@ class TestImport:
         ).scalars().first()
         assert complaint.expected_category_code in ("SAFETY", "DELIVERY")
 
+    def test_customer_type_and_follow_ups_survive_the_import(self, db, clean):
+        """
+        The corpus labels the kind of customer and marks follow-ups with the id
+        of the complaint they follow. Both used to be dropped on import, so VIP
+        customers read as ordinary ones and no imported repeat was ever linked.
+        """
+        csv_text = (
+            "external_ref,title,description,customer_type,previous_ref\n"
+            'CMP-00001,First contact,"My parcel CN-1112223 is a week late and nobody has called me back.",'
+            "VIP/Premium Account,\n"
+            'CMP-00002,Still waiting,"Second time asking: parcel CN-1112223 is still not delivered at all.",'
+            "Business/Merchant Account,CMP-00001\n"
+        )
+        result = _import(db, csv_text)
+        assert result.imported == 2
+        first, second = db.execute(
+            select(Complaint).where(Complaint.dataset_tag == TAG).order_by(Complaint.public_ref)
+        ).scalars().all()
+        assert first.customer_type == "VIP/Premium Account"
+        assert second.customer_type == "Business/Merchant Account"
+        assert second.previous_complaint_id == first.id
+        assert first.previous_complaint_id is None
+
+    def test_imported_references_continue_one_sequence(self, db, clean):
+        from sqlalchemy import func
+
+        before = db.execute(select(func.count()).select_from(Complaint)).scalar_one()
+        result = _import(db)
+        assert result.public_refs == [f"CMP-{before + 1:06d}", f"CMP-{before + 2:06d}"]
+
     def test_an_unlabelled_file_still_imports(self, db, clean):
         """
         The hidden-dataset case. An evaluator's complaints arrive with no

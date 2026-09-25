@@ -39,6 +39,7 @@ from knowledge_base import retrieval, versioning
 from src.core.logging import get_logger
 from src.db.enums import DocStatus, PolicyApplicability, PolicyRefSource
 from src.db.models import Chunk, ComplaintPolicyRef
+from src.db.fresh import needs_clearing
 
 log = get_logger("hallucination_checks.citations")
 
@@ -298,7 +299,7 @@ def persist(
     policy update must not leave two contradictory traceability records that a
     report would then have to choose between.
     """
-    if replace:
+    if replace and needs_clearing(db, complaint_id, "complaint_policy_refs"):
         db.query(ComplaintPolicyRef).filter(
             ComplaintPolicyRef.complaint_id == complaint_id
         ).delete()

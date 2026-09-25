@@ -48,6 +48,24 @@ _TRUNCATED = {"length", "max_tokens"}
 _REFUSED = {"content_filter"}
 
 
+def _reasoning_effort(model: str) -> str | None:
+    """
+    The configured effort in the vocabulary this model family accepts.
+
+    gpt-oss takes low/medium/high; Qwen 3 takes none/default. Anything else is
+    sent nothing, because an unknown parameter is a 400 on some hosts.
+    """
+    effort = (settings.llm_reasoning_effort or "default").lower()
+    if effort == "default":
+        return None
+    name = model.lower()
+    if "gpt-oss" in name:
+        return "low" if effort == "minimal" else effort
+    if "qwen3" in name:
+        return "none" if effort in ("minimal", "low") else "default"
+    return None
+
+
 class OpenAICompatibleProvider(LLMProvider):
     """Shared implementation for any OpenAI-compatible chat endpoint."""
 
@@ -101,6 +119,9 @@ class OpenAICompatibleProvider(LLMProvider):
         }
         if request.stop:
             payload["stop"] = request.stop
+        effort = _reasoning_effort(model)
+        if effort is not None:
+            payload["reasoning_effort"] = effort
         if request.wants_json:
             # Valid JSON is guaranteed; the right *fields* are not. The schema
             # is also restated in the user content above.
@@ -199,7 +220,9 @@ class OpenAICompatibleProvider(LLMProvider):
 def _from_status(status: int, message: str, provider: str) -> Exception:
     if status == 429:
         return RateLimited(message, provider=provider)
-    if status in (401, 403):
+    if status in (401, 402, 403):
+        # 402 is an empty prepaid balance (DeepSeek): as final as a bad key
+        # until someone tops the account up, so never worth a retry.
         return ProviderUnavailable(message, provider=provider, status=status)
     if status == 404:
         return ProviderUnavailable(
@@ -219,6 +242,16 @@ class GroqProvider(OpenAICompatibleProvider):
             api_key=settings.groq_api_key,
             base_url=settings.groq_base_url,
             model=model or settings.groq_model,
+        )
+
+
+class DeepSeekProvider(OpenAICompatibleProvider):
+    def __init__(self, model: str | None = None):
+        super().__init__(
+            name="deepseek",
+            api_key=settings.deepseek_api_key,
+            base_url=settings.deepseek_base_url,
+            model=model or settings.deepseek_model,
         )
 
 

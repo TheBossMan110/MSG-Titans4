@@ -1,0 +1,192 @@
+/*
+ * The hero's parcel: a CSS-3D box that opens, is scanned and closes on a
+ * ten-second loop, with the AI's proposal and the rules' confirmation
+ * appearing beside it. All text lives in a flat overlay outside the 3D rig,
+ * so it stays crisp and is never hidden behind a face of the box.
+ *
+ * Colours: the site's AI blue and rules green; no purple anywhere.
+ */
+.wrap {
+  --ai: #1b5e8c;
+  --ai-soft: #e4eff7;
+  --ai-rgb: 27, 94, 140;
+  --rule: #1e3a2f;
+  --rule-soft: #e2eee6;
+  --ink: #2a1f17;
+  --ink-soft: #5a4a39;
+  --card-shadow: 0 16px 36px rgba(42, 31, 23, 0.12), 0 3px 8px rgba(42, 31, 23, 0.07);
+  --ease: cubic-bezier(.6, .02, .2, 1);
+  --dur: 10s;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 560 / 500;
+  max-width: 600px;
+  margin-inline: auto;
+}
+
+/* the drawing is authored at 560x500 and scaled to whatever width it gets */
+.canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 560px;
+  height: 500px;
+  transform-origin: top left;
+  transform: scale(var(--s, 1));
+}
+
+.glow {
+  position: absolute;
+  inset: 4% 6%;
+  border-radius: 50%;
+  background:
+    radial-gradient(46% 42% at 60% 40%, rgba(var(--ai-rgb), 0.10), transparent 62%),
+    radial-gradient(40% 38% at 50% 66%, rgba(30, 58, 47, 0.08), transparent 65%);
+  filter: blur(6px);
+}
+
+/* ── 3D scene: the box only ─────────────────────────────── */
+.scene { position: absolute; left: 20px; top: 20px; width: 520px; height: 460px; perspective: 1700px; }
+.rig {
+  position: absolute; left: 50%; top: 54%; width: 0; height: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(-26deg) rotateY(38deg);
+  animation: driftRig var(--dur) ease-in-out infinite;
+}
+@keyframes driftRig {
+  0%, 100% { transform: rotateX(-26deg) rotateY(38deg) translateY(0); }
+  50% { transform: rotateX(-26deg) rotateY(38deg) translateY(-9px); }
+}
+.box { --w: 240px; --d: 190px; --h: 148px; position: absolute; width: 0; height: 0; transform-style: preserve-3d; }
+
+.face { position: absolute; box-shadow: inset 0 0 0 1px rgba(70, 48, 14, 0.2); background-repeat: no-repeat; border-radius: 3px; }
+.face::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; opacity: .5; mix-blend-mode: multiply;
+  background-image: repeating-linear-gradient(180deg, rgba(255,255,255,0.05) 0 1px, rgba(0,0,0,0.032) 1px 3px);
+}
+.front { width: var(--w); height: var(--h); left: calc(var(--w) / -2); top: calc(var(--h) / -2); transform: translateZ(calc(var(--d) / 2)); background: linear-gradient(160deg, #cda666 0%, #b98d4d 55%, #a17838 100%); }
+.right { width: var(--d); height: var(--h); left: calc(var(--d) / -2); top: calc(var(--h) / -2); transform: rotateY(90deg) translateZ(calc(var(--w) / 2)); background: linear-gradient(160deg, #ad8544 0%, #96723a 55%, #7e5e22 100%); }
+.left { width: var(--d); height: var(--h); left: calc(var(--d) / -2); top: calc(var(--h) / -2); transform: rotateY(-90deg) translateZ(calc(var(--w) / 2)); background: linear-gradient(160deg, #a17e3e 0%, #8b6b34 55%, #74581f 100%); }
+.back { width: var(--w); height: var(--h); left: calc(var(--w) / -2); top: calc(var(--h) / -2); transform: rotateY(180deg) translateZ(calc(var(--d) / 2)); background: linear-gradient(160deg, #b08847 0%, #99763c 55%, #816224 100%); }
+.bottom { width: var(--w); height: var(--d); left: calc(var(--w) / -2); top: calc(var(--d) / -2); transform: rotateX(-90deg) translateZ(calc(var(--h) / 2)); background: linear-gradient(160deg, #96733a 0%, #7f6128 55%, #6a4f19 100%); }
+.top {
+  width: var(--w); height: var(--d); left: calc(var(--w) / -2); top: calc(var(--d) / -2);
+  transform: rotateX(90deg) translateZ(calc(var(--h) / 2));
+  background: linear-gradient(160deg, #ead7ae 0%, #d9bd87 55%, #c9a869 100%);
+  border-radius: 4px; transform-style: preserve-3d;
+  animation: lidOpen var(--dur) var(--ease) infinite;
+}
+@keyframes lidOpen { 0%, 14% { opacity: 1; } 22%, 66% { opacity: 0; } 76%, 100% { opacity: 1; } }
+
+.tape {
+  position: absolute; left: calc(50% - 17px); top: 0; width: 34px; height: 100%; opacity: .6; mix-blend-mode: soft-light;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 20%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0.55) 80%, transparent 100%);
+}
+.label {
+  position: absolute; left: 11%; top: 24%; width: 78%; height: 48%; padding: 12px 13px; border-radius: 5px; background: #fbf9f3;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.24), inset 0 0 0 1px rgba(42,31,23,0.06);
+}
+.barcode {
+  height: 17px; width: 90%; margin-bottom: 10px; border-radius: 1px; opacity: .85;
+  background: repeating-linear-gradient(90deg, #2a1f17 0 2px, transparent 2px 4px, #2a1f17 4px 5px, transparent 5px 8px, #2a1f17 8px 9px, transparent 9px 13px);
+}
+.ln { height: 5px; border-radius: 3px; background: rgba(42,31,23,0.18); margin-bottom: 7px; }
+.w1 { width: 80%; }
+.w2 { width: 55%; background: rgba(42,31,23,0.12); }
+.w3 { width: 65%; background: rgba(42,31,23,0.12); }
+
+.cavity {
+  position: absolute; width: calc(var(--w) - 18px); height: calc(var(--d) - 18px);
+  left: calc((var(--w) - 18px) / -2); top: calc((var(--d) - 18px) / -2);
+  transform: rotateX(90deg) translateZ(calc(var(--h) / 2 - 4px));
+  transform-style: preserve-3d; border-radius: 3px; overflow: hidden; opacity: 0;
+  background: radial-gradient(60% 60% at 50% 42%, #4a3a22 0%, #2e2312 78%);
+  box-shadow: inset 0 10px 22px rgba(0,0,0,0.55);
+  animation: cavityIn var(--dur) var(--ease) infinite;
+}
+@keyframes cavityIn { 0%, 16% { opacity: 0; } 24%, 64% { opacity: 1; } 74%, 100% { opacity: 0; } }
+.grid {
+  position: absolute; inset: 0; opacity: 0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(var(--ai-rgb), 0.32) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(90deg, rgba(var(--ai-rgb), 0.32) 0 1px, transparent 1px 20px);
+  animation: gridIn var(--dur) var(--ease) infinite;
+}
+@keyframes gridIn { 0%, 26% { opacity: 0; } 34%, 60% { opacity: .5; } 68%, 100% { opacity: 0; } }
+.beam {
+  position: absolute; left: -6%; right: -6%; height: 3px; top: 0; opacity: 0;
+  background: linear-gradient(90deg, rgba(var(--ai-rgb),0) 0%, rgba(var(--ai-rgb),1) 18%, #fff 50%, rgba(120,200,150,1) 82%, rgba(120,200,150,0) 100%);
+  box-shadow: 0 0 16px 5px rgba(var(--ai-rgb), 0.6), 0 0 16px 5px rgba(120,200,150,0.4);
+  animation: beamSweep var(--dur) var(--ease) infinite;
+}
+@keyframes beamSweep { 0%, 28% { opacity: 0; top: 4%; } 34% { opacity: 1; } 60% { opacity: 1; top: 92%; } 66%, 100% { opacity: 0; top: 92%; } }
+.contents { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); opacity: 0; animation: contentsIn var(--dur) var(--ease) infinite; }
+@keyframes contentsIn {
+  0%, 24% { opacity: 0; transform: translate(-50%, -50%) translateY(6px) scale(0.94); }
+  32%, 62% { opacity: 1; transform: translate(-50%, -50%) translateY(0) scale(1); }
+  72%, 100% { opacity: 0; transform: translate(-50%, -50%) translateY(-6px) scale(0.96); }
+}
+.doc { position: absolute; border-radius: 4px; background: linear-gradient(160deg, #fff, #efeae0); box-shadow: 0 6px 16px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(42,31,23,0.07); }
+.d1 { width: 112px; height: 70px; left: -78px; top: -38px; transform: rotate(-7deg); }
+.d2 { width: 96px; height: 60px; left: -24px; top: -16px; transform: rotate(5deg); }
+.dl { position: absolute; left: 10px; height: 4px; border-radius: 2px; background: rgba(42,31,23,0.16); }
+.d1 .dl1 { top: 14px; width: 68%; }
+.d1 .dl2 { top: 24px; width: 46%; background: rgba(42,31,23,0.1); }
+.d2 .dl1 { top: 12px; width: 58%; }
+.shadow {
+  position: absolute; width: 360px; height: 300px; left: -180px; top: -150px; filter: blur(2px);
+  transform: rotateX(90deg) translateZ(calc(var(--h) / -2 - 2px));
+  background: radial-gradient(50% 50% at 50% 50%, rgba(42,31,23,0.30) 0%, rgba(42,31,23,0) 72%);
+}
+
+/* ── flat overlay: every word, placed clear of the box ───── */
+.overlay { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+
+.tag {
+  position: absolute; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px;
+  font-size: 13px; font-weight: 600; white-space: nowrap; background: #fff; color: var(--ink); box-shadow: var(--card-shadow);
+  opacity: 0; animation: tagPop var(--dur) var(--ease) infinite;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; }
+.category { left: 2%; top: 30%; }
+.category .dot { background: var(--ai); }
+.urgency { right: 1%; top: 47%; animation-delay: .28s; }
+.urgency .dot { background: #c1554a; }
+.policy { left: 28%; bottom: 3%; animation-delay: .56s; }
+.policy .dot { background: var(--rule); }
+@keyframes tagPop {
+  0%, 32% { opacity: 0; transform: translateY(8px) scale(0.94); }
+  40%, 58% { opacity: 1; transform: translateY(0) scale(1); }
+  68%, 100% { opacity: 0; transform: translateY(-8px) scale(0.96); }
+}
+
+.badge {
+  position: absolute; display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 16px;
+  background: #fff; box-shadow: var(--card-shadow); opacity: 0; animation: badgeIn var(--dur) var(--ease) infinite;
+}
+.icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.icon svg { width: 17px; height: 17px; }
+.eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 3px; }
+.line { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+.ai { top: 3%; right: 0; animation-delay: .3s; }
+.ai .icon { background: var(--ai-soft); }
+.ai .icon svg { stroke: var(--ai); }
+.ai .eyebrow { color: var(--ai); }
+.rules { bottom: 16%; left: 0; animation-delay: .58s; }
+.rules .icon { background: var(--rule-soft); }
+.rules .icon svg { stroke: var(--rule); }
+.rules .eyebrow { color: var(--rule); }
+@keyframes badgeIn {
+  0%, 26% { opacity: 0; transform: translateY(10px); }
+  34%, 64% { opacity: 1; transform: translateY(0); }
+  74%, 100% { opacity: 0; transform: translateY(-8px); }
+}
+
+/* "Reduce motion" on: one still frame -- box open, everything labelled. */
+:global(.reduce-motion) .wrap * { animation: none !important; }
+:global(.reduce-motion) .top { opacity: 0; }
+:global(.reduce-motion) .cavity,
+:global(.reduce-motion) .contents,
+:global(.reduce-motion) .tag,
+:global(.reduce-motion) .badge { opacity: 1; }
+:global(.reduce-motion) .grid { opacity: .5; }

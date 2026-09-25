@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
-  ArrowRight, CheckCircle2, ChevronDown, Clock, FileSearch, Inbox, MessageSquareReply,
-  Paperclip, Plus, ShieldCheck, Sparkles,
+  ArrowRight, CheckCircle2, ChevronDown, Clock, FileSearch, Inbox, Lock, Mail, MessageCircleQuestion, MessageSquareReply, Paperclip, Plus, RotateCcw, Scale, Search, ShieldCheck, Sparkles,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
@@ -129,6 +128,8 @@ function Mine() {
       ) : !rows.length ? (
         <Onboarding />
       ) : (
+        <>
+        <AtAGlance rows={rows} onPick={setSelected} />
         <section className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
           <div className="flex flex-col gap-3">
             <div className="flex items-baseline justify-between">
@@ -176,6 +177,7 @@ function Mine() {
             )}
           </aside>
         </section>
+        </>
       )}
 
       <Faq />
@@ -213,7 +215,7 @@ function ComplaintCard({ row, active, onSelect }: { row: Row; active: boolean; o
       className={cn(
         'group/card w-full rounded-[var(--radius-xl)] border p-5 text-left transition-[transform,box-shadow,border-color,background-color] duration-300 ease-[var(--ease-out-expo)]',
         active
-          ? 'border-ai-line bg-white shadow-[0_0_0_3px_rgba(79,63,209,0.10),0_18px_40px_-22px_rgba(42,31,23,0.35)]'
+          ? 'border-ai-line bg-white shadow-[0_0_0_3px_rgba(27,94,140,0.10),0_18px_40px_-22px_rgba(42,31,23,0.35)]'
           : 'border-white/70 bg-white/60 hover:-translate-y-0.5 hover:bg-white/85 hover:shadow-float',
       )}
     >
@@ -268,32 +270,142 @@ function Onboarding() {
   )
 }
 
-const FAQ: Array<[string, string]> = [
-  ['How long will it take?', 'Each complaint gets a target resolution time the moment it is triaged, based on how urgent it is. You can see it on the tracking page, counting down.'],
-  ['Why is a question waiting for me?', 'When something we need is missing — a consignment number, a date, a photo — we ask instead of guessing. Answering moves the complaint straight back to the team.'],
-  ['Who decides what happens?', 'An AI model reads your complaint and proposes an outcome. The company’s written rules then confirm or correct every part of it, and where they disagree a person reviews it. The AI never approves itself.'],
-  ['Can I add photos or receipts later?', 'Yes. Open the complaint’s tracking page and drop files onto the evidence panel at any time. PDF, Word, PNG, JPEG, WEBP or text, up to 10 MB each.'],
-  ['Is my information safe?', 'Only you and the support team can see your complaint. Files are checked by their contents, not their names, and are only ever downloaded — never opened in the browser.'],
+const FAQ: Array<{ q: string; a: string; icon: typeof Clock; topic: string }> = [
+  { topic: 'Timing', icon: Clock, q: 'How long will it take?', a: 'Each complaint gets a target resolution time the moment it is checked, based on how urgent it is. The tracking page shows it counting down, and every step as it happens.' },
+  { topic: 'Tracking', icon: Search, q: 'How do I follow my complaint?', a: 'Open it from the list above, or go to Track by reference and enter the number we gave you (it looks like CMP-000123). You will see each step, the team handling it and how to reach them.' },
+  { topic: 'Questions', icon: MessageCircleQuestion, q: 'Why is a question waiting for me?', a: 'When something we need is missing — a consignment number, a date, a photo — we ask instead of guessing. Answering moves the complaint straight back to the team.' },
+  { topic: 'Decisions', icon: Scale, q: 'Who decides what happens?', a: 'An AI model reads your complaint and proposes an outcome. The company’s written rules then confirm or correct every part of it, and where they disagree a person reviews it. The AI never approves itself.' },
+  { topic: 'Evidence', icon: Paperclip, q: 'Can I add photos or receipts later?', a: 'Yes. Open the complaint’s tracking page and drop files onto the evidence panel at any time. PDF, Word, PNG, JPEG, WEBP or text, up to 10 MB each.' },
+  { topic: 'Decisions', icon: RotateCcw, q: 'What if I disagree with the outcome?', a: 'Add what we missed on the tracking page — a photo, a receipt, the details — and the team looks again. If it is a new problem, raise a new complaint and mention your earlier reference; we link the two.' },
+  { topic: 'Contact', icon: Mail, q: 'Can I talk to the team directly?', a: 'Yes. Once your complaint is with a team, its tracking page shows that team’s email address and support hours. Quote your reference so they find it at once.' },
+  { topic: 'Privacy', icon: Lock, q: 'Is my information safe?', a: 'Only you and the support team can see your complaint. Files are checked by their contents, not their names, and are only ever downloaded — never opened in the browser.' },
 ]
 
+/**
+ * Searchable, one-open-at-a-time answers. Each answer expands with a height
+ * transition (grid rows 0fr -> 1fr) rather than snapping, and the controls
+ * are real buttons that announce whether they are open.
+ */
 function Faq() {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState<number | null>(0)
+  const q = query.trim().toLowerCase()
+  const shown = FAQ.map((f, i) => ({ ...f, i })).filter((f) => !q || f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q) || f.topic.toLowerCase().includes(q))
+
   return (
-    <section className="grid gap-6 lg:grid-cols-[1fr_1.6fr]" aria-label="Questions">
-      <div>
-        <p className="eyebrow mb-2">Help</p>
-        <h2 className="font-display text-h3">Common questions</h2>
-        <p className="mt-2 max-w-[40ch] text-[14px] text-taupe">Short answers to what customers ask most.</p>
+    <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)]" aria-labelledby="faq-title">
+      <div className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
+        <div>
+          <p className="eyebrow mb-2">Help</p>
+          <h2 id="faq-title" className="font-display text-h3">Common questions</h2>
+          <p className="mt-2 max-w-[40ch] text-[14px] text-taupe-2">Short answers to what customers ask most.</p>
+        </div>
+        <label className="relative block">
+          <span className="sr-only">Search the questions</span>
+          <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-taupe" aria-hidden />
+          <input
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setOpen(null) }}
+            placeholder="Search, e.g. refund, photo, how long"
+            className="h-11 w-full rounded-full border border-line bg-white/85 pl-10 pr-4 text-[14px] text-espresso placeholder:text-taupe focus:border-espresso focus:outline-none"
+          />
+        </label>
+        <Card tone="glass" padding="sm" radius="lg" className="flex flex-col gap-3">
+          <p className="text-[14px] font-medium text-espresso">Still need help?</p>
+          <p className="text-[13px] leading-relaxed text-taupe-2">The team handling your complaint is shown on its tracking page, with their email and hours.</p>
+          <div className="flex flex-wrap gap-2">
+            <Button href="/track" size="sm" variant="secondary" icon={<Search size={14} aria-hidden />}>Track by reference</Button>
+            <Button href="/dashboard/complaints/new" size="sm" icon={<Plus size={14} aria-hidden />}>New complaint</Button>
+          </div>
+        </Card>
       </div>
-      <div className="flex flex-col gap-2">
-        {FAQ.map(([question, answer]) => (
-          <details key={question} className="group/faq rounded-2xl border border-white/70 bg-white/60 px-5 py-4 transition-colors open:bg-white/90">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-medium text-espresso">
-              {question}
-              <ChevronDown size={16} className="shrink-0 text-taupe transition-transform duration-300 group-open/faq:rotate-180" aria-hidden />
-            </summary>
-            <p className="mt-3 text-[14px] leading-relaxed text-taupe">{answer}</p>
-          </details>
-        ))}
+
+      <div className="flex flex-col gap-2.5" role="list">
+        {shown.length === 0 && (
+          <p className="rounded-2xl border border-dashed border-line bg-white/60 px-5 py-6 text-center text-[14px] text-taupe-2">
+            No answer mentions “{query}”. Try another word, or raise it as a complaint and we will answer you directly.
+          </p>
+        )}
+        {shown.map((f) => {
+          const isOpen = open === f.i
+          const Icon = f.icon
+          return (
+            <div key={f.q} role="listitem" className={cn('rounded-2xl border transition-[background-color,border-color,box-shadow] duration-300', isOpen ? 'border-line bg-white shadow-card' : 'border-line-soft bg-white/80 hover:bg-white')}>
+              <h3 className="font-sans">
+                <button
+                  type="button"
+                  id={`faq-q-${f.i}`}
+                  aria-expanded={isOpen}
+                  aria-controls={`faq-a-${f.i}`}
+                  onClick={() => setOpen(isOpen ? null : f.i)}
+                  className="flex w-full items-center gap-4 px-5 py-4 text-left"
+                >
+                  <span className={cn('inline-flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors', isOpen ? 'bg-espresso text-ink-on-dark' : 'bg-sand/70 text-espresso-2')}><Icon size={16} aria-hidden /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-sans text-[15px] font-medium leading-snug tracking-normal text-espresso">{f.q}</span>
+                    <span className="mt-0.5 block font-sans text-[12px] tracking-normal text-taupe-2">{f.topic}</span>
+                  </span>
+                  <ChevronDown size={18} className={cn('shrink-0 text-taupe transition-transform duration-300', isOpen && 'rotate-180')} aria-hidden />
+                </button>
+              </h3>
+              <div
+                id={`faq-a-${f.i}`}
+                role="region"
+                aria-labelledby={`faq-q-${f.i}`}
+                className={cn('grid transition-[grid-template-rows] duration-300 ease-out', isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}
+              >
+                <div className="overflow-hidden">
+                  <p className="px-5 pb-5 text-[14px] leading-relaxed text-espresso-2 sm:pl-[4.25rem]">{f.a}</p>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+/**
+ * Every complaint on one table, one column per thing the SRS says a user
+ * sees: ID, status, submitted date, department, latest update and resolution
+ * status. The sidebar links to each column.
+ */
+function AtAGlance({ rows, onPick }: { rows: S['ComplaintStatusOut'][]; onPick: (ref: string) => void }) {
+  const th = 'scroll-mt-28 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.1em] text-taupe-2 transition-colors data-[flash=true]:bg-sand'
+  return (
+    <section aria-labelledby="glance-title" className="flex flex-col gap-3">
+      <h2 id="glance-title" className="font-display text-h3">At a glance</h2>
+      <div className="overflow-x-auto rounded-2xl border border-line-soft bg-white/80 shadow-card">
+        <table className="w-full min-w-[720px] border-separate border-spacing-0 text-[14px]">
+          <thead className="bg-cream/70">
+            <tr>
+              <th id="complaint-id" data-dash-target className={th}>Complaint ID</th>
+              <th id="status" data-dash-target className={th}>Status</th>
+              <th id="submitted" data-dash-target className={th}>Submitted</th>
+              <th id="department" data-dash-target className={th}>Department</th>
+              <th id="latest-update" data-dash-target className={th}>Latest update</th>
+              <th id="resolution" data-dash-target className={th}>Resolution</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const done = DONE.has(r.status)
+              const reached = (r.milestones ?? []).filter((m) => m.reached || m.current)
+              const latest = reached[reached.length - 1]
+              return (
+                <tr key={r.public_ref} className="[&>td]:border-t [&>td]:border-line-soft [&>td]:px-3 [&>td]:py-3 hover:bg-cream/40">
+                  <td><Link href={`/track/${encodeURIComponent(r.public_ref)}`} className="font-mono text-[13px] text-espresso underline decoration-line underline-offset-4 hover:decoration-espresso" onClick={() => onPick(r.public_ref)}>{r.public_ref}</Link></td>
+                  <td><Badge tone={statusTone(r.status)} dot pulse={Boolean(r.action_needed)}>{r.action_needed ? 'Waiting for you' : humanise(r.status)}</Badge></td>
+                  <td className="whitespace-nowrap text-espresso-2">{r.submitted_at ? new Date(r.submitted_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
+                  <td className="text-espresso-2">{r.department?.name ?? <span className="text-taupe">Being assigned</span>}</td>
+                  <td className="text-espresso-2">{latest?.label ?? 'Received'}<span className="block text-[12.5px] text-taupe-2">{fmtRelative(r.last_updated ?? r.submitted_at)}</span></td>
+                  <td>{done ? <span className="inline-flex items-center gap-1.5 text-verified"><CheckCircle2 size={15} aria-hidden /> Resolved</span> : <span className="text-espresso-2">In progress{r.target_resolution_at && <span className="block text-[12.5px] text-taupe-2">target {fmtRelative(r.target_resolution_at)}</span>}</span>}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </section>
   )

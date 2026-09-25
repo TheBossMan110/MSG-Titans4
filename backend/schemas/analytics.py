@@ -118,6 +118,11 @@ class DashboardOut(APIModel):
     traceability: TraceabilityOut
     guard: GuardOut
     review: ReviewOut
+    # Named in the SRS list for administrators and not covered by the panels above.
+    priorities: dict[str, int] = Field(default_factory=dict)
+    sla_risks: list[dict[str, Any]] = Field(default_factory=list)
+    mismatches: list[dict[str, Any]] = Field(default_factory=list)
+    manual_review: list[dict[str, Any]] = Field(default_factory=list)
 
 
 # ══════════════════════════════════════════════════════════════

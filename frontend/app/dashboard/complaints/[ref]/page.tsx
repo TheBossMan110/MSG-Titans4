@@ -3,7 +3,7 @@
 import { use, useState } from 'react'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
-import { complaints, admin } from '@/lib/api'
+import { complaints, admin, type S } from '@/lib/api'
 import { useApi, useAction, fmtDate } from '@/lib/use-api'
 import { useToast } from '@/components/ui/feedback'
 import { Badge, Button, Mono, humanise } from '@/components/ui/primitives'
@@ -111,21 +111,31 @@ function Detail({ refId }: { refId: string }) {
       {tab === 'why' && (
         explain.loading && !explain.data ? <Loading label="Explaining" /> : explain.error ? <ErrorState message={explain.error} onRetry={explain.refresh} /> : (
           <div className="flex flex-col gap-6">
-            <div className="flex flex-wrap items-center gap-3 text-[13px] text-taupe-2">
-              <span>Ruleset <Mono>{explain.data!.ruleset_version ?? '—'}</Mono></span><span>·</span><span>Knowledge base <Mono>{explain.data!.knowledge_base_version ?? '—'}</Mono></span>
-              {explain.data!.escalation_floor && <><span>·</span><span>Floor <EscalationBadge code={explain.data!.escalation_floor} /></span></>}
-              {(explain.data!.reason_codes ?? []).length > 0 && <><span>·</span><span className="flex flex-wrap gap-1">{explain.data!.reason_codes!.map((r) => <Badge key={r}><Mono>{r}</Mono></Badge>)}</span></>}
-            </div>
-            <section><PanelHeader title="Pencil against ink" eyebrow="Field by field" /><ComparisonTable rows={explain.data!.comparisons} /></section>
+            <WhySummary rows={explain.data!.comparisons ?? []} floor={explain.data!.escalation_floor} />
+            <section><PanelHeader title="AI answer against the rules" eyebrow="Field by field" /><ComparisonTable rows={explain.data!.comparisons} /></section>
             <Conflicts rows={explain.data!.policy_conflicts} />
             <div className="grid gap-6 lg:grid-cols-2">
               <section><PanelHeader title="Rules that fired" eyebrow="Pipeline 2" /><RuleHits hits={explain.data!.rule_hits} floor={explain.data!.escalation_floor} /></section>
               <section><PanelHeader title="Policy trace" eyebrow="Every citation, resolved" /><PolicyTrace rows={explain.data!.policy_trace} /></section>
             </div>
-            <section><PanelHeader title="GenAI runs" eyebrow="Pipeline 1" /><GenAIRuns runs={explain.data!.genai_runs} /></section>
-            {explain.data!.reconciled && Object.keys(explain.data!.reconciled).length > 0 && (
-              <details className="text-[13px]"><summary className="cursor-pointer text-taupe-2">Reconciled record (raw)</summary><pre className="mt-2 overflow-x-auto rounded-[var(--radius-md)] bg-espresso p-4 font-mono text-[12px] text-ink-on-dark">{JSON.stringify(explain.data!.reconciled, null, 2)}</pre></details>
-            )}
+            {/* The machinery -- model calls, versions, the raw decision record --
+                is for whoever debugs the system, not for reading a complaint. */}
+            <details className="group rounded-[var(--radius-lg)] border border-line bg-ivory/70 p-4">
+              <summary className="cursor-pointer list-none text-[14px] font-medium text-espresso-2">
+                <span className="mr-2 inline-block transition-transform group-open:rotate-90" aria-hidden>›</span>
+                Technical details <span className="font-normal text-taupe-2">— AI calls, versions and the raw decision record, for troubleshooting</span>
+              </summary>
+              <div className="mt-4 flex flex-col gap-5">
+                <p className="flex flex-wrap items-center gap-2 text-[13px] text-taupe-2">
+                  <span>Rules version <Mono>{explain.data!.ruleset_version ?? '—'}</Mono></span><span>·</span><span>Policy library <Mono>{explain.data!.knowledge_base_version ?? '—'}</Mono></span>
+                  {(explain.data!.reason_codes ?? []).length > 0 && <><span>·</span><span>Review reasons: {explain.data!.reason_codes!.map((r) => humanise(r)).join(', ')}</span></>}
+                </p>
+                <section><PanelHeader title="AI calls" eyebrow="Every attempt, including failed ones" /><GenAIRuns runs={explain.data!.genai_runs} /></section>
+                {explain.data!.reconciled && Object.keys(explain.data!.reconciled).length > 0 && (
+                  <section><p className="eyebrow mb-2">Raw decision record</p><pre className="overflow-x-auto rounded-[var(--radius-md)] bg-espresso p-4 font-mono text-[12px] text-ink-on-dark">{JSON.stringify(explain.data!.reconciled, null, 2)}</pre></section>
+                )}
+              </div>
+            </details>
           </div>
         )
       )}
@@ -157,5 +167,23 @@ function Detail({ refId }: { refId: string }) {
 
       {tab === 'audit' && <section><PanelHeader title="Audit trail" eyebrow="This complaint" />{oversight ? <AuditTrail entityType="complaint" entityId={c.id} /> : <p className="text-[13.5px] text-taupe-2">The audit trail is visible to managers, administrators and evaluators.</p>}</section>}
     </div>
+  )
+}
+
+/** The comparison in one paragraph, before the table that backs it up. */
+function WhySummary({ rows, floor }: { rows: S['ComparisonOut'][]; floor?: string | null }) {
+  if (!rows.length) return null
+  const compared = rows.filter((r) => r.genai_value != null && r.python_value != null)
+  const agreed = compared.filter((r) => r.status === 'MATCH' || r.status === 'AGREED').length
+  const corrected = compared.filter((r) => r.status === 'MISMATCH' || r.status === 'CONFLICT')
+  return (
+    <Card tone="glass" radius="xl">
+      <p className="text-[15px] leading-relaxed text-espresso-2">
+        The AI and the company&rsquo;s rules each decided this complaint on their own.
+        {' '}They <strong className="font-medium text-espresso">agreed on {agreed} of {compared.length}</strong> fields they both answered.
+        {corrected.length > 0 && <> Where they differed ({corrected.map((r) => humanise(r.field).toLowerCase()).join(', ')}), <strong className="font-medium text-espresso">the rules&rsquo; answer was used</strong> and the complaint went to a person to check.</>}
+        {floor && floor !== 'NONE' && <> A mandatory rule sets the lowest allowed escalation at <strong className="font-medium text-espresso">{humanise(floor)}</strong>; nobody can lower it.</>}
+      </p>
+    </Card>
   )
 }

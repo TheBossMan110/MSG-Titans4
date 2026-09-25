@@ -50,10 +50,16 @@ export function Stacked({ parts, className }: { parts: Array<{ label: string; va
   )
 }
 
-export function Sparkline({ values, width = 160, height = 36, className }: { values: number[]; width?: number; height?: number; className?: string }) {
+export function Sparkline({ values, width = 160, height = 36, className, fluid = false }: { values: number[]; width?: number; height?: number; className?: string; fluid?: boolean }) {
   if (values.length < 2) return <span className="text-[12px] text-taupe-2">—</span>
   const min = Math.min(...values), max = Math.max(...values)
   const span = max - min || 1
   const pts = values.map((v, i) => `${(i / (values.length - 1)) * width},${height - ((v - min) / span) * (height - 4) - 2}`).join(' ')
-  return <svg width={width} height={height} className={className} aria-hidden><polyline points={pts} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>
+  // ``fluid`` fills its container's width instead of a fixed pixel size, so a
+  // panel narrower than the chart does not get pushed wider by it.
+  return (
+    <svg width={fluid ? '100%' : width} height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className={className} aria-hidden>
+      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
 }

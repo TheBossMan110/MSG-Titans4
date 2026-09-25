@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 
 from src.core.logging import get_logger
 from src.db.models import AppConfig
+from src.core.refcache import reference_data
 
 log = get_logger("complaint_processing.entities")
 
@@ -163,6 +164,7 @@ def _compile(pattern: str) -> re.Pattern[str] | None:
         return None
 
 
+@reference_data("entity_patterns")
 def load_entity_patterns(db: Session) -> dict[str, str]:
     config = db.get(AppConfig, "entity_patterns")
     if config and isinstance(config.value, dict) and config.value:

@@ -9,6 +9,8 @@ which is what the Unauthorised-Access section of the Security Testing Report
 
 from __future__ import annotations
 
+import threading
+
 from collections.abc import Callable, Generator
 from typing import Annotated
 
@@ -17,6 +19,7 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from src.core.config import settings
 from src.core.errors import AuthError, PermissionError_
 from src.core.security import decode_token, parse_uuid
 from src.db.base import SessionLocal
@@ -41,6 +44,30 @@ def get_db() -> Generator[Session, None, None]:
 DbSession = Annotated[Session, Depends(get_db)]
 
 
+# Sessions signed out in this process, by id, until their access tokens would
+# have expired anyway. Revoking the refresh token stops renewal; this stops the
+# access token already issued, without a database read on every request.
+_revoked: dict[str, float] = {}
+_revoked_lock = threading.Lock()
+
+
+def mark_session_revoked(sid: str) -> None:
+    import time as _time
+
+    with _revoked_lock:
+        _revoked[str(sid)] = _time.time() + settings.access_token_minutes * 60
+        now = _time.time()
+        for key in [k for k, until in _revoked.items() if until < now]:
+            _revoked.pop(key, None)
+
+
+def session_revoked(sid: str) -> bool:
+    import time as _time
+
+    until = _revoked.get(str(sid))
+    return until is not None and until > _time.time()
+
+
 def get_current_user(
     request: Request,
     db: DbSession,
@@ -56,16 +83,38 @@ def get_current_user(
     except jwt.InvalidTokenError as exc:
         raise AuthError("Invalid access token.") from exc
 
+    sid = payload.get("sid")
+    if sid and session_revoked(sid):
+        raise AuthError("This session has been signed out.", code="SESSION_REVOKED")
+
     user_id = parse_uuid(payload.get("sub"))
     user = db.get(User, user_id) if user_id else None
     if user is None or not user.is_active:
         raise AuthError("Account not found or deactivated.")
 
     request.state.user = user
+    request.state.session_id = sid
     return user
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def get_optional_user(
+    request: Request,
+    db: DbSession,
+    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)] = None,
+) -> User | None:
+    """The signed-in user, or ``None`` for a visitor -- never an error."""
+    if creds is None or not creds.credentials:
+        return None
+    try:
+        return get_current_user(request, db, creds)
+    except AuthError:
+        return None
+
+
+OptionalUser = Annotated[User | None, Depends(get_optional_user)]
 
 
 def require_role(*allowed: UserRole | str) -> Callable[..., User]:

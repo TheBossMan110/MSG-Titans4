@@ -20,7 +20,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Response
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from schemas.analytics import (
     DashboardOut,
@@ -350,4 +350,132 @@ def my_queue(db: DbSession, user: CurrentUser) -> dict[str, Any]:
             }
             for row in rows
         ],
+    }
+
+
+
+# ══════════════════════════════════════════════════════════════
+# the agent dashboard
+# ══════════════════════════════════════════════════════════════
+@router.get(
+    "/agent-workspace",
+    dependencies=[Depends(require_role(UserRole.AGENT, UserRole.REVIEWER, UserRole.MANAGER, UserRole.ADMIN, UserRole.EVALUATOR))],
+    summary="The agent dashboard: assigned complaints with what an agent needs to act",
+)
+def agent_workspace(
+    db: DbSession,
+    user: CurrentUser,
+    department: str | None = Query(None, description="Managers and admins: one team, or all when empty."),
+    limit: int = Query(40, ge=1, le=100),
+) -> dict[str, Any]:
+    """
+    Everything the SRS lists for agents, per complaint: category, priority,
+    sentiment, the model's recommendation, the validation status, a suggested
+    response, and escalation warnings.
+
+    An agent sees what is assigned to them plus their team's unassigned open
+    work -- nothing is assigned until someone claims it, and an empty
+    dashboard would hide the team's queue. Managers and admins see every team,
+    or one, so an administrator can look at exactly what an agent sees.
+    """
+    from src.db.models import Department, GenAIRun, Response, SLAEvent, VerificationDecision
+
+    open_only = Complaint.status.not_in(("RESOLVED", "CLOSED"))
+    query = select(Complaint).where(open_only, Complaint.analyzed_at.is_not(None))
+    team = None
+    if user.role in (UserRole.AGENT, UserRole.REVIEWER) and user.department_id:
+        team = db.get(Department, user.department_id)
+        query = query.where(or_(
+            Complaint.assigned_to == user.id,
+            (Complaint.department_id == user.department_id) & Complaint.assigned_to.is_(None),
+        ))
+    elif user.role in (UserRole.AGENT, UserRole.REVIEWER):
+        query = query.where(Complaint.assigned_to == user.id)
+    elif department:
+        team = db.execute(select(Department).where(Department.code == department.strip().upper())).scalars().first()
+        if team is not None:
+            query = query.where(Complaint.department_id == team.id)
+    rows = db.execute(
+        query.order_by(Complaint.priority_code.asc().nulls_last(), Complaint.created_at.asc()).limit(limit)
+    ).scalars().all()
+    ids = [c.id for c in rows]
+
+    # One query per kind of detail, not one per complaint.
+    runs: dict[Any, dict[str, Any]] = {}
+    for run in db.execute(
+        select(GenAIRun).where(GenAIRun.complaint_id.in_(ids), GenAIRun.status.in_(("SUCCESS", "CACHED")))
+        .order_by(GenAIRun.created_at.asc())
+    ).scalars():
+        if isinstance(run.parsed_json, dict):
+            runs[run.complaint_id] = run.parsed_json
+    drafts: dict[Any, Any] = {}
+    for draft in db.execute(select(Response).where(Response.complaint_id.in_(ids)).order_by(Response.version.asc())).scalars():
+        drafts[draft.complaint_id] = draft
+    sla: dict[Any, Any] = {}
+    for event in db.execute(select(SLAEvent).where(SLAEvent.complaint_id.in_(ids), SLAEvent.event_type == "RESOLUTION")).scalars():
+        sla[event.complaint_id] = event
+    decisions: dict[Any, Any] = {}
+    for decision in db.execute(select(VerificationDecision).where(VerificationDecision.complaint_id.in_(ids)).order_by(VerificationDecision.created_at.asc())).scalars():
+        decisions[decision.complaint_id] = decision
+
+    items = []
+    for c in rows:
+        ai = runs.get(c.id) or {}
+        steps = ai.get("resolution_steps") or []
+        recommendation = [s.get("action") if isinstance(s, dict) else str(s) for s in steps[:3]]
+        event = sla.get(c.id)
+        decision = decisions.get(c.id)
+        warnings: list[str] = []
+        if c.escalation_code and c.escalation_code != "NONE":
+            warnings.append(f"Escalated: {c.escalation_code.replace('_', ' ').lower()}")
+        if event is not None and event.breached:
+            warnings.append("Resolution time breached")
+        elif event is not None and event.at_risk:
+            warnings.append("Resolution time at risk")
+        if decision is not None and decision.critical_mismatches:
+            warnings.append("AI and rules disagree on a critical field")
+        if c.injection_suspected:
+            warnings.append("Contains suspicious instructions; read with care")
+        draft = drafts.get(c.id)
+        items.append({
+            "public_ref": c.public_ref,
+            "title": c.title,
+            "status": c.status,
+            "assigned_to_me": c.assigned_to == user.id,
+            "category": c.category.name if c.category else None,
+            "priority": c.priority_code,
+            "urgency": c.urgency,
+            "sentiment": c.sentiment,
+            "team": c.department.name if c.department else None,
+            "summary": c.summary,
+            "recommendation": {
+                "primary_issue": ai.get("primary_issue"),
+                "steps": [r for r in recommendation if r],
+                "escalation_reason": ai.get("escalation_reason"),
+            } if ai else None,
+            "validation": {
+                "outcome": c.verification_outcome,
+                "agreement_pct": float(decision.agreement_score) * 100 if decision is not None and decision.agreement_score is not None else None,
+                "requires_review": bool(decision.requires_review) if decision is not None else False,
+            },
+            "suggested_response": {
+                "text": draft.final_text or draft.draft_text,
+                "guard_status": draft.guard_status,
+                "version": draft.version,
+            } if draft is not None else None,
+            "escalation_warnings": warnings,
+            "due_at": event.due_at.isoformat() if event is not None and event.due_at else None,
+        })
+
+    return {
+        "scope": "mine" if user.role in (UserRole.AGENT, UserRole.REVIEWER) else "all",
+        "team": team.name if team is not None else None,
+        "counts": {
+            "total": len(items),
+            "assigned_to_me": sum(1 for i in items if i["assigned_to_me"]),
+            "with_warnings": sum(1 for i in items if i["escalation_warnings"]),
+            "needs_review": sum(1 for i in items if i["validation"]["requires_review"]),
+            "without_reply": sum(1 for i in items if not i["suggested_response"]),
+        },
+        "complaints": items,
     }

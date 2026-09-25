@@ -32,6 +32,9 @@ it that way is what stops a convenience default from quietly becoming policy.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -46,6 +49,7 @@ from complaint_processing.entities import extract_entities, load_entity_patterns
 from complaint_processing.preprocess import preprocess
 from python_validation import resolution
 from security.injection_defense import record_events, scan
+from src.core import progress
 from src.core.logging import get_logger
 from src.db.enums import (
     Channel,
@@ -72,6 +76,7 @@ from src.db.models import (
     Subcategory,
 )
 from src.services import lifecycle, review, sla
+from src.db.fresh import forget_fresh, mark_fresh, needs_clearing
 
 log = get_logger("complaint_processing.intake")
 
@@ -222,12 +227,21 @@ def submit(
     result = IntakeResult()
 
     # ── 1. pre-process ──
+    progress.emit("read")
     prepared = preprocess(description)
     result.preprocessing = prepared.summary()
+    progress.emit("read", "done", f"{len(prepared.clean.split())} words")
 
     # ── 2. injection scan ──
+    progress.emit("safety")
     scan_result = scan(db, prepared.clean)
     result.injection = scan_result.summary()
+    progress.emit(
+        "safety", "done",
+        "Some wording was set aside and will be read by a person"
+        if scan_result.suspected else "Nothing unusual found",
+    )
+    progress.emit("details")
 
     # ── 3. validate ──
     report = validation.validate_submission(
@@ -256,7 +270,13 @@ def submit(
         log.warning("complaint_rejected", codes=report.codes)
         raise IntakeRejected(report)
 
+    progress.emit(
+        "details", "done",
+        "Looks complete" if not report.issues else f"{len(report.issues)} note(s) recorded for the team",
+    )
+
     # ── 4. duplicates and repeats ──
+    progress.emit("history")
     customer = find_or_create_customer(
         db, email=customer_email, name=customer_name
     )
@@ -275,7 +295,18 @@ def submit(
             similarity=duplicates.exact.similarity,
         )
 
+    # The matched duplicate may be someone else's complaint, so it is never
+    # named here; only the customer's own repeat count is.
+    if duplicates.is_duplicate:
+        history = "Linked to an earlier matching complaint"
+    elif duplicates.repeat_count:
+        history = f"You have {duplicates.repeat_count} earlier open complaint(s) we will consider"
+    else:
+        history = "No earlier complaint about this"
+    progress.emit("history", "done", history)
+
     # ── 5. persist the complaint ──
+    progress.emit("saved")
     complaint = Complaint(
         public_ref=next_public_ref(db),
         customer_id=customer.id if customer else None,
@@ -302,6 +333,7 @@ def submit(
     db.add(complaint)
     db.flush()
     result.complaint = complaint
+    mark_fresh(db, complaint.id)
 
     validation.persist(
         db, report,
@@ -316,6 +348,8 @@ def submit(
             db, scan_result, source_type="COMPLAINT", complaint_id=complaint.id
         )
 
+    progress.emit("saved", "done", complaint.public_ref)
+
     # ── 6. deterministic entity extraction ──
     result.entities_extracted = _persist_entities(db, complaint)
 
@@ -328,6 +362,7 @@ def submit(
     )
 
     if not analyse:
+        forget_fresh(db, complaint.id)
         return result
 
     # ── 7. analyse and write back ──
@@ -350,6 +385,7 @@ def submit(
             exc_info=True,
         )
 
+    forget_fresh(db, complaint.id)
     return result
 
 
@@ -487,7 +523,23 @@ def apply_reconciled(
     # provider here would make ``run_genai=False`` a lie and spend the free-tier
     # quota a caller just declined to spend.
     if reconciled.get("escalation_required") and reconciliation.intelligence is not None:
-        _write_escalation_note(db, complaint, reconciliation, reconciled, eligibility)
+        pending = _deferred_notes.get()
+        if pending is not None:
+            outcome = reconciliation.validation.outcome
+            pending.append(PendingNote(
+                complaint_id=complaint.id,
+                reconciled=dict(reconciled),
+                eligibility=list(eligibility),
+                escalation_rules=list(getattr(outcome, "mandatory_escalation_refs", None) or []),
+            ))
+        else:
+            _write_escalation_note(db, complaint, reconciliation, reconciled, eligibility)
+
+    progress.emit("route")
+    team = db.get(Department, complaint.department_id) if complaint.department_id else None
+    progress.emit(
+        "route", "done", f"{team.name} team" if team else "A specialist will pick it up"
+    )
 
     # The SLA clock is recomputed rather than set once, because the due date
     # derives from the complaint's *current* priority. A re-analysis that
@@ -555,6 +607,74 @@ def _record_escalation(
         "escalation_recorded",
         public_ref=complaint.public_ref, level=level, rules=refs[:3],
     )
+
+
+# ══════════════════════════════════════════════════════════════
+# the handover note, off the customer's wait
+# ══════════════════════════════════════════════════════════════
+@dataclass
+class PendingNote:
+    """An escalation note owed, carried as plain data to a later session."""
+
+    complaint_id: uuid.UUID
+    reconciled: dict[str, Any]
+    eligibility: list[dict[str, Any]]
+    escalation_rules: list[str]
+
+
+_deferred_notes: ContextVar[list[PendingNote] | None] = ContextVar(
+    "deferred_escalation_notes", default=None
+)
+
+
+@contextmanager
+def deferring_escalation_notes() -> Iterator[list[PendingNote]]:
+    """
+    Collect escalation notes instead of writing them inline.
+
+    The note is a second language-model call that only the receiving agent
+    reads, yet inline it adds its whole latency to the customer's wait. The
+    escalation itself -- the rule-derived fact, the routing, the SLA -- is
+    still written inline; only the prose is postponed. Call
+    :func:`write_deferred_notes` with the list after the intake has committed.
+    """
+    pending: list[PendingNote] = []
+    token = _deferred_notes.set(pending)
+    try:
+        yield pending
+    finally:
+        _deferred_notes.reset(token)
+
+
+def write_deferred_notes(pending: list[PendingNote]) -> None:
+    """Write postponed notes in a session of their own. Never raises."""
+    if not pending:
+        return
+    from genai_pipeline import escalation_notes
+    from src.db.base import SessionLocal
+
+    db = SessionLocal()
+    try:
+        for note in pending:
+            complaint = db.get(Complaint, note.complaint_id)
+            if complaint is None:
+                continue
+            try:
+                escalation_notes.generate(
+                    db, complaint,
+                    reconciled=note.reconciled,
+                    eligibility=note.eligibility,
+                    escalation_rules=note.escalation_rules,
+                )
+                db.commit()
+            except Exception as exc:  # noqa: BLE001 - a missing note is a degraded handover
+                db.rollback()
+                log.warning(
+                    "escalation_note_failed",
+                    public_ref=complaint.public_ref, error=f"{type(exc).__name__}: {exc}",
+                )
+    finally:
+        db.close()
 
 
 def _write_escalation_note(
@@ -644,10 +764,11 @@ def _persist_entities(
     """
     source = EntityExtractor.GENAI if intelligence is not None else EntityExtractor.PYTHON
 
-    db.query(ComplaintEntity).filter(
-        ComplaintEntity.complaint_id == complaint.id,
-        ComplaintEntity.extracted_by == source,
-    ).delete()
+    if needs_clearing(db, complaint.id, f"complaint_entities:{source}"):
+        db.query(ComplaintEntity).filter(
+            ComplaintEntity.complaint_id == complaint.id,
+            ComplaintEntity.extracted_by == source,
+        ).delete()
 
     rows = 0
     if intelligence is None:
@@ -698,9 +819,10 @@ def _persist_resolution_steps(
     not readable from generated text, so it stays MISSING until an agent ticks
     it off. Guessing would turn a checklist into a rubber stamp.
     """
-    db.query(ResolutionStep).filter(
-        ResolutionStep.complaint_id == complaint.id
-    ).delete()
+    if needs_clearing(db, complaint.id, "resolution_steps"):
+        db.query(ResolutionStep).filter(
+            ResolutionStep.complaint_id == complaint.id
+        ).delete()
 
     validation_run_id = reconciliation.validation.validation_run_id
     genai_run_id = (
@@ -754,7 +876,8 @@ def _persist_guidance(
     advisory. The difference is the point: "do not confirm a refund before
     eligibility is verified" is policy, not a suggestion.
     """
-    db.query(AgentGuidance).filter(AgentGuidance.complaint_id == complaint.id).delete()
+    if needs_clearing(db, complaint.id, "agent_guidance"):
+        db.query(AgentGuidance).filter(AgentGuidance.complaint_id == complaint.id).delete()
 
     ordinal = 0
     for action in getattr(outcome, "prohibited_actions", None) or []:
@@ -789,9 +912,10 @@ def _persist_guidance(
 
 def _persist_clarifications(db: Session, complaint: Complaint, intelligence: Any) -> None:
     """Store clarification questions (SRS Step 43) — ask, never invent."""
-    db.query(ClarificationQuestion).filter(
-        ClarificationQuestion.complaint_id == complaint.id
-    ).delete()
+    if needs_clearing(db, complaint.id, "clarification_questions"):
+        db.query(ClarificationQuestion).filter(
+            ClarificationQuestion.complaint_id == complaint.id
+        ).delete()
 
     if intelligence is None:
         db.flush()
@@ -819,6 +943,8 @@ def _persist_eligibility(
     eligibility decision is the single most consequential thing in the system,
     and it is the one the response guard checks every promise against.
     """
+    # Always cleared: Pipeline 2 writes its own eligibility rows earlier in the
+    # same intake, so "fresh" does not mean "empty" for this table.
     db.query(EligibilityDecision).filter(
         EligibilityDecision.complaint_id == complaint.id
     ).delete()

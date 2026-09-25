@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { MotionToggle } from '@/components/ui/motion-toggle'
 import { Wordmark } from '@/components/ui/primitives'
 
 export function Footer() {
@@ -21,6 +22,7 @@ export function Footer() {
         <div className="mt-14 flex flex-wrap items-center justify-between gap-3 border-t border-ink-on-dark/15 pt-6 text-[12.5px] text-sand-2">
           <span>SupportNova · ResponseX Intelligence · TechWiz 7, Generative AI PowerPlay</span>
           <span className="font-mono">RaftarXpress Logistics (Pvt) Ltd — fictional organisation</span>
+          <MotionToggle dark />
         </div>
       </div>
     </footer>

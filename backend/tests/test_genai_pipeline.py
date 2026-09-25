@@ -506,8 +506,31 @@ class TestOrchestration:
             select(GenAIRun).where(GenAIRun.complaint_id == complaint.id)
             .order_by(GenAIRun.attempt)
         ).scalars().all()
+        # A rate limit with a backup available fails over at once: a free-tier
+        # quota does not refill in seconds and someone is waiting. The failed
+        # attempt is still a stored row.
         assert [r.status for r in runs] == [
             GenAIRunStatus.RATE_LIMITED,
+            GenAIRunStatus.SUCCESS,
+        ]
+
+    def test_a_rate_limit_with_no_backup_is_still_retried(self, db, complaint):
+        """With nowhere else to go, waiting out the limit is the only option left."""
+        calls = {"n": 0}
+
+        def body(request):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise RateLimited("429", provider="only")
+            return json.dumps(VALID_PAYLOAD)
+
+        result = self._run(db, complaint, [FakeProvider("only", body=body)], max_retries=1)
+        assert result.ok
+        runs = db.execute(
+            select(GenAIRun).where(GenAIRun.complaint_id == complaint.id)
+            .order_by(GenAIRun.attempt)
+        ).scalars().all()
+        assert [r.status for r in runs] == [
             GenAIRunStatus.RATE_LIMITED,
             GenAIRunStatus.SUCCESS,
         ]

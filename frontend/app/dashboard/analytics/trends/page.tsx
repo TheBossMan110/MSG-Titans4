@@ -86,9 +86,9 @@ function Trends() {
           <PanelHeader title="History" eyebrow={selected ? <><Mono>{selected.metric}</Mono> · {selected.dimension_value}</> : 'Select a row'} />
           {!selected ? <p className="text-[13.5px] text-taupe-2">Choose a trend to see its snapshots over time.</p> : history.loading && !history.data ? <SkeletonRows rows={4} /> : history.error ? <p className="text-[13px] text-critical">{history.error}</p> : !history.data?.length ? <Empty title="No history" /> : (
             <div className="flex flex-col gap-4">
-              <div className="text-espresso"><Sparkline values={[...history.data].reverse().map((h) => h.value)} width={320} height={64} /></div>
+              <div className="text-espresso"><Sparkline values={[...history.data].reverse().map((h) => h.value)} width={320} height={64} fluid /></div>
               <ul className="divide-y divide-line-soft text-[13px]">
-                {history.data.map((h, i) => <li key={i} className="flex items-center justify-between py-1.5"><span className="text-taupe-2">{fmtDate(h.period_start, false)}</span><span className="font-mono tnum">{h.value.toLocaleString()}</span><span className={cn('font-mono text-[12px]', h.direction === 'UP' ? 'text-warning' : h.direction === 'DOWN' ? 'text-verified' : 'text-taupe')}>{pct(h.delta_pct, 0)}{h.anomaly && ' !'}</span></li>)}
+                {history.data.map((h, i) => <li key={i} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 py-1.5"><span className="text-taupe-2">{fmtDate(h.period_start, false)}</span><span className="font-mono tnum">{h.value.toLocaleString()}</span><span className={cn('font-mono text-[12px]', h.direction === 'UP' ? 'text-warning' : h.direction === 'DOWN' ? 'text-verified' : 'text-taupe')}>{pct(h.delta_pct, 0)}{h.anomaly && ' !'}</span></li>)}
               </ul>
             </div>
           )}

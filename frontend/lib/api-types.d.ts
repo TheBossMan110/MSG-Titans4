@@ -72,11 +72,32 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Log in and receive an access + refresh token pair
-         * @description Rate-limited to `RATE_LIMIT_LOGIN` per IP.  Failures are audited but the
+         * Log in: a token pair, or a request for the second step
+         * @description Rate-limited to `RATE_LIMIT_LOGIN` per IP, and an account locks for 15
+         *     minutes after 5 wrong passwords in a row. Failures are audited but the
          *     error message never distinguishes an unknown account from a bad password.
+         *
+         *     With two-step sign-in on, a correct password returns ``mfa_required`` and
+         *     a five-minute ``mfa_token`` instead of tokens; ``/auth/login/mfa`` finishes.
          */
         post: operations["login_api_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/login/mfa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish a two-step sign-in with an authenticator or recovery code */
+        post: operations["login_mfa_api_auth_login_mfa_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -131,7 +152,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update your own name */
+        patch: operations["update_me_api_auth_me_patch"];
         trace?: never;
     };
     "/api/auth/change-password": {
@@ -145,6 +167,159 @@ export interface paths {
         put?: never;
         /** Change your own password */
         post: operations["change_password_api_auth_change_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/security": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your account's security at a glance */
+        get: operations["security_overview_api_auth_security_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/mfa/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start setting up two-step sign-in */
+        post: operations["mfa_setup_api_auth_mfa_setup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/mfa/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm the code and switch two-step on */
+        post: operations["mfa_enable_api_auth_mfa_enable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/mfa/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Switch two-step sign-in off */
+        post: operations["mfa_disable_api_auth_mfa_disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/mfa/recovery-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replace your recovery codes */
+        post: operations["mfa_recovery_codes_api_auth_mfa_recovery_codes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Where you are signed in */
+        get: operations["list_sessions_api_auth_sessions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Sign out one session */
+        delete: operations["revoke_session_api_auth_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions/revoke-others": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sign out everywhere else */
+        post: operations["revoke_other_sessions_api_auth_sessions_revoke_others_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent sign-ins and security changes */
+        get: operations["activity_api_auth_activity_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -411,8 +586,36 @@ export interface paths {
          *     unrecognised reference, a suspected injection are all recorded and the
          *     complaint processed on its merits. Only an empty complaint is refused, and
          *     even that attempt is written to ``complaint_validation_issues``.
+         *
+         *     ``POST /api/complaints/stream`` does the same work and reports each step
+         *     as it happens.
          */
         post: operations["create_complaint_api_complaints_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/complaints/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit a complaint and follow its analysis live
+         * @description The same intake as ``POST /api/complaints``, narrated.
+         *
+         *     Analysis takes seconds, most of them waiting on a language model. Rather
+         *     than a spinner, the submitter sees which step is running, which model was
+         *     asked and whether a busy one was swapped for another -- every message
+         *     comes from the pipeline at the moment it happens, none are timed.
+         */
+        post: operations["create_complaint_stream_api_complaints_stream_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -787,6 +990,29 @@ export interface paths {
         get: operations["complaint_lifecycle_api_complaints__ref__lifecycle_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/complaints/{ref}/responses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Drafted replies for a complaint, newest last */
+        get: operations["list_responses_api_complaints__ref__responses_get"];
+        put?: never;
+        /**
+         * Draft a suggested reply from the verified decision
+         * @description Write a reply from the *reconciled* record -- what the rules confirmed --
+         *     and run it through the response guard, which blocks any promise the
+         *     eligibility rules do not authorise. Nothing is sent: an agent reads it.
+         */
+        post: operations["draft_response_api_complaints__ref__responses_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1239,6 +1465,33 @@ export interface paths {
          *     another's workload by guessing an identifier.
          */
         get: operations["my_queue_api_analytics_my_queue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/analytics/agent-workspace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The agent dashboard: assigned complaints with what an agent needs to act
+         * @description Everything the SRS lists for agents, per complaint: category, priority,
+         *     sentiment, the model's recommendation, the validation status, a suggested
+         *     response, and escalation warnings.
+         *
+         *     An agent sees what is assigned to them plus their team's unassigned open
+         *     work -- nothing is assigned until someone claims it, and an empty
+         *     dashboard would hide the team's queue. Managers and admins see every team,
+         *     or one, so an administrator can look at exactly what an agent sees.
+         */
+        get: operations["agent_workspace_api_analytics_agent_workspace_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1830,6 +2083,142 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/organisation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The organisation, its teams, taxonomy, SLAs and templates */
+        get: operations["organisation_api_organisation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** One turn with Nova, the chat receptionist */
+        post: operations["chat_api_assistant_chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Is the mailbox connected, and how are replies sent */
+        get: operations["status_api_email_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Emails received and sent */
+        get: operations["messages_api_email_messages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/messages/{message_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One email, with the rest of its thread */
+        get: operations["message_api_email_messages__message_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/poll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check the inbox now */
+        post: operations["poll_api_email_poll_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Put a pretend email through the whole pipeline */
+        post: operations["simulate_api_email_simulate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The reply template, filled with sample content */
+        get: operations["preview_api_email_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1852,6 +2241,27 @@ export interface components {
             /** Message */
             message: string;
             impact?: components["schemas"]["PolicyImpactOut"] | null;
+        };
+        /** ActivityOut */
+        ActivityOut: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Action */
+            action: string;
+            /** Label */
+            label: string;
+            /** Ip Address */
+            ip_address?: string | null;
+            /** Detail */
+            detail?: string | null;
+            /**
+             * Ok
+             * @default true
+             */
+            ok: boolean;
         };
         /**
          * AffectedComplaintOut
@@ -1992,6 +2402,27 @@ export interface components {
              */
             files: string[];
         };
+        /** CategoryOut */
+        CategoryOut: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Default Department */
+            default_department?: string | null;
+            /**
+             * Subcategories
+             * @default []
+             */
+            subcategories: components["schemas"]["SubcategoryBrief"][];
+            /**
+             * Complaints
+             * @default 0
+             */
+            complaints: number;
+        };
         /** CategorySliceOut */
         CategorySliceOut: {
             /** Code */
@@ -2002,6 +2433,44 @@ export interface components {
             count: number;
             /** Pct */
             pct?: number | null;
+        };
+        /** ChatIn */
+        ChatIn: {
+            /** Messages */
+            messages: components["schemas"]["ChatMessage"][];
+        };
+        /** ChatMessage */
+        ChatMessage: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Content */
+            content: string;
+        };
+        /** ChatOut */
+        ChatOut: {
+            /** Reply */
+            reply: string;
+            /** Intent */
+            intent: string;
+            draft?: components["schemas"]["DraftOut"] | null;
+            /**
+             * Statuses
+             * @default []
+             */
+            statuses: components["schemas"]["StatusBrief"][];
+            /**
+             * Needs Sign In
+             * @default false
+             */
+            needs_sign_in: boolean;
+            /**
+             * Degraded
+             * @default false
+             */
+            degraded: boolean;
         };
         /** ChecklistOut */
         ChecklistOut: {
@@ -2220,6 +2689,10 @@ export interface components {
             repeat_count: number;
             /** Created At */
             created_at?: string | null;
+            /** Customer Type */
+            customer_type?: string | null;
+            /** Dataset Tag */
+            dataset_tag?: string | null;
             /** Description Raw */
             description_raw: string;
             /** Description Clean */
@@ -2382,6 +2855,10 @@ export interface components {
             repeat_count: number;
             /** Created At */
             created_at?: string | null;
+            /** Customer Type */
+            customer_type?: string | null;
+            /** Dataset Tag */
+            dataset_tag?: string | null;
         };
         /**
          * ConfigEntryOut
@@ -2431,6 +2908,13 @@ export interface components {
             /** Semantic Search Available */
             semantic_search_available: boolean;
         };
+        /** CustomerMixOut */
+        CustomerMixOut: {
+            /** Customer Type */
+            customer_type: string;
+            /** Complaints */
+            complaints: number;
+        };
         /**
          * CustomerQuestionOut
          * @description A clarifying question as the customer sees it: answerable, not annotated.
@@ -2475,6 +2959,33 @@ export interface components {
             traceability: components["schemas"]["TraceabilityOut"];
             guard: components["schemas"]["GuardOut"];
             review: components["schemas"]["ReviewOut"];
+            /** Priorities */
+            priorities?: {
+                [key: string]: number;
+            };
+            /** Sla Risks */
+            sla_risks?: {
+                [key: string]: unknown;
+            }[];
+            /** Mismatches */
+            mismatches?: {
+                [key: string]: unknown;
+            }[];
+            /** Manual Review */
+            manual_review?: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** DatasetBrief */
+        DatasetBrief: {
+            /** Dataset Tag */
+            dataset_tag: string;
+            /** Total */
+            total: number;
+            /** Analysed */
+            analysed: number;
+            /** Labelled */
+            labelled: number;
         };
         /**
          * DatasetOut
@@ -2774,6 +3285,19 @@ export interface components {
              */
             created_at: string;
         };
+        /** DraftOut */
+        DraftOut: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Order Ref */
+            order_ref?: string | null;
+            /** Product */
+            product?: string | null;
+            /** Requested Resolution */
+            requested_resolution?: string | null;
+        };
         /** DueFollowUpOut */
         DueFollowUpOut: {
             /** Id */
@@ -2810,6 +3334,75 @@ export interface components {
              * @default
              */
             reason: string;
+        };
+        /** EmailDetail */
+        EmailDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Direction */
+            direction: string;
+            /** From Address */
+            from_address: string;
+            /** From Name */
+            from_name?: string | null;
+            /** To Address */
+            to_address: string;
+            /** Subject */
+            subject: string;
+            /** Preview */
+            preview: string;
+            /** Intent */
+            intent?: string | null;
+            /** Status */
+            status: string;
+            /** Complaint Ref */
+            complaint_ref?: string | null;
+            /** Error */
+            error?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Body Text */
+            body_text: string;
+            /** Body Html */
+            body_html?: string | null;
+            /**
+             * Thread
+             * @default []
+             */
+            thread: components["schemas"]["EmailOut"][];
+        };
+        /** EmailOut */
+        EmailOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Direction */
+            direction: string;
+            /** From Address */
+            from_address: string;
+            /** From Name */
+            from_name?: string | null;
+            /** To Address */
+            to_address: string;
+            /** Subject */
+            subject: string;
+            /** Preview */
+            preview: string;
+            /** Intent */
+            intent?: string | null;
+            /** Status */
+            status: string;
+            /** Complaint Ref */
+            complaint_ref?: string | null;
+            /** Error */
+            error?: string | null;
+            /** Created At */
+            created_at?: string | null;
         };
         /** EntityOut */
         EntityOut: {
@@ -3219,10 +3812,63 @@ export interface components {
             /** Password */
             password: string;
         };
+        /**
+         * LoginResponse
+         * @description Either a signed-in session, or -- with two-step sign-in on -- a request for
+         *     the second step. ``mfa_token`` is accepted only by ``/auth/login/mfa`` and
+         *     only for five minutes.
+         */
+        LoginResponse: {
+            /** Access Token */
+            access_token?: string | null;
+            /** Refresh Token */
+            refresh_token?: string | null;
+            /**
+             * Token Type
+             * @default bearer
+             */
+            token_type: string;
+            /** Expires In */
+            expires_in?: number | null;
+            user?: components["schemas"]["UserOut"] | null;
+            /**
+             * Mfa Required
+             * @default false
+             */
+            mfa_required: boolean;
+            /** Mfa Token */
+            mfa_token?: string | null;
+        };
         /** MessageResponse */
         MessageResponse: {
             /** Message */
             message: string;
+        };
+        /** MfaCodeRequest */
+        MfaCodeRequest: {
+            /** Code */
+            code: string;
+        };
+        /** MfaDisableRequest */
+        MfaDisableRequest: {
+            /** Password */
+            password: string;
+            /** Code */
+            code: string;
+        };
+        /** MfaSetupOut */
+        MfaSetupOut: {
+            /** Secret */
+            secret: string;
+            /** Otpauth Uri */
+            otpauth_uri: string;
+        };
+        /** MfaVerifyRequest */
+        MfaVerifyRequest: {
+            /** Mfa Token */
+            mfa_token: string;
+            /** Code */
+            code: string;
         };
         /**
          * MilestoneOut
@@ -3253,6 +3899,59 @@ export interface components {
             current: boolean;
             /** At */
             at?: string | null;
+        };
+        /** OrganisationOut */
+        OrganisationOut: {
+            profile: components["schemas"]["OrganisationProfileOut"];
+            /** Departments */
+            departments: components["schemas"]["TeamOut"][];
+            /** Categories */
+            categories: components["schemas"]["CategoryOut"][];
+            /** Sla */
+            sla: components["schemas"]["SLARowOut"][];
+            /** Templates */
+            templates: components["schemas"]["TemplateOut"][];
+            /** Customer Mix */
+            customer_mix: components["schemas"]["CustomerMixOut"][];
+            /** Datasets */
+            datasets: components["schemas"]["DatasetBrief"][];
+            /** Knowledge Base */
+            knowledge_base: {
+                [key: string]: unknown;
+            };
+        };
+        /** OrganisationProfileOut */
+        OrganisationProfileOut: {
+            /** Name */
+            name?: string | null;
+            /** Legal Name */
+            legal_name?: string | null;
+            /** Industry */
+            industry?: string | null;
+            /** Founded Year */
+            founded_year?: number | null;
+            /**
+             * Regions
+             * @default []
+             */
+            regions: string[];
+            /**
+             * Branches
+             * @default []
+             */
+            branches: string[];
+            /**
+             * Services
+             * @default []
+             */
+            services: string[];
+            /**
+             * Customer Types
+             * @default []
+             */
+            customer_types: string[];
+            /** Support Hours */
+            support_hours?: string | null;
         };
         /** Page[AuditEntryOut] */
         Page_AuditEntryOut_: {
@@ -3309,6 +4008,23 @@ export interface components {
         Page_DocumentSummary_: {
             /** Items */
             items: components["schemas"]["DocumentSummary"][];
+            /** Total */
+            total: number;
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Page Size
+             * @default 25
+             */
+            page_size: number;
+        };
+        /** Page[EmailOut] */
+        Page_EmailOut_: {
+            /** Items */
+            items: components["schemas"]["EmailOut"][];
             /** Total */
             total: number;
             /**
@@ -3523,6 +4239,11 @@ export interface components {
             /** Hints */
             hints?: components["schemas"]["PreviewHintOut"][];
         };
+        /** ProfileUpdate */
+        ProfileUpdate: {
+            /** Full Name */
+            full_name: string;
+        };
         /**
          * PromptActivateIn
          * @description Switch which version of a prompt is used.
@@ -3587,6 +4308,11 @@ export interface components {
             changed?: {
                 [key: string]: unknown;
             };
+        };
+        /** RecoveryCodesOut */
+        RecoveryCodesOut: {
+            /** Codes */
+            codes: string[];
         };
         /** RefreshRequest */
         RefreshRequest: {
@@ -4217,6 +4943,17 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /** SLARowOut */
+        SLARowOut: {
+            /** Category */
+            category?: string | null;
+            /** Priority */
+            priority: string;
+            /** First Response Mins */
+            first_response_mins: number;
+            /** Resolution Mins */
+            resolution_mins: number;
+        };
         /** SLAStatusOut */
         SLAStatusOut: {
             /** Event Type */
@@ -4342,6 +5079,100 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** SecurityOverview */
+        SecurityOverview: {
+            /** Mfa Enabled */
+            mfa_enabled: boolean;
+            /** Mfa Enabled At */
+            mfa_enabled_at?: string | null;
+            /**
+             * Recovery Codes Left
+             * @default 0
+             */
+            recovery_codes_left: number;
+            /** Password Changed At */
+            password_changed_at?: string | null;
+            /** Last Login At */
+            last_login_at?: string | null;
+            /**
+             * Active Sessions
+             * @default 0
+             */
+            active_sessions: number;
+            /** Locked Until */
+            locked_until?: string | null;
+        };
+        /** SessionOut */
+        SessionOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Device */
+            device: string;
+            /** User Agent */
+            user_agent?: string | null;
+            /** Ip Address */
+            ip_address?: string | null;
+            /** Started At */
+            started_at?: string | null;
+            /** Last Active At */
+            last_active_at?: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Current
+             * @default false
+             */
+            current: boolean;
+        };
+        /** SimulateIn */
+        SimulateIn: {
+            /**
+             * From Address
+             * Format: email
+             */
+            from_address: string;
+            /** From Name */
+            from_name?: string | null;
+            /**
+             * Subject
+             * @default
+             */
+            subject: string;
+            /** Body */
+            body: string;
+            /**
+             * Send Reply
+             * @description Also send the reply for real, if sending is configured.
+             * @default false
+             */
+            send_reply: boolean;
+        };
+        /** StatusBrief */
+        StatusBrief: {
+            /** Public Ref */
+            public_ref: string;
+            /** Title */
+            title: string;
+            /** Status Label */
+            status_label: string;
+            /** Team */
+            team?: string | null;
+            /**
+             * Action Needed
+             * @default false
+             */
+            action_needed: boolean;
+            /** Submitted At */
+            submitted_at?: string | null;
+            /** Target Resolution At */
+            target_resolution_at?: string | null;
+        };
         /**
          * StatusChangeIn
          * @description A requested status change (FR lxv; SRS Step 60).
@@ -4372,6 +5203,13 @@ export interface components {
             /** At */
             at?: string | null;
         };
+        /** SubcategoryBrief */
+        SubcategoryBrief: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+        };
         /**
          * TaxonomyOut
          * @description Every vocabulary the rules are written against.
@@ -4391,6 +5229,54 @@ export interface components {
             priority_levels?: components["schemas"]["CodeOut"][];
             /** Escalation Levels */
             escalation_levels?: components["schemas"]["CodeOut"][];
+        };
+        /** TeamOut */
+        TeamOut: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Escalation Contact */
+            escalation_contact?: string | null;
+            /**
+             * Handles
+             * @default []
+             */
+            handles: string[];
+            /** Sla Response Hours */
+            sla_response_hours?: number | null;
+            /** Sla Resolution Hours */
+            sla_resolution_hours?: number | null;
+            /**
+             * Categories
+             * @default []
+             */
+            categories: string[];
+            /**
+             * Open Complaints
+             * @default 0
+             */
+            open_complaints: number;
+            /**
+             * Total Complaints
+             * @default 0
+             */
+            total_complaints: number;
+        };
+        /** TemplateOut */
+        TemplateOut: {
+            /** Id */
+            id: string;
+            /** Scenario */
+            scenario?: string | null;
+            /** Tone */
+            tone?: string | null;
+            /** Text */
+            text: string;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -4609,6 +5495,11 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /**
+             * Mfa Enabled
+             * @default false
+             */
+            mfa_enabled: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -4912,6 +5803,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_mfa_api_auth_login_mfa_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/json": components["schemas"]["TokenResponse"];
                 };
             };
@@ -5012,6 +5936,39 @@ export interface operations {
             };
         };
     };
+    update_me_api_auth_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     change_password_api_auth_change_password_post: {
         parameters: {
             query?: never;
@@ -5032,6 +5989,247 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    security_overview_api_auth_security_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecurityOverview"];
+                };
+            };
+        };
+    };
+    mfa_setup_api_auth_mfa_setup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MfaSetupOut"];
+                };
+            };
+        };
+    };
+    mfa_enable_api_auth_mfa_enable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecoveryCodesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mfa_disable_api_auth_mfa_disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaDisableRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mfa_recovery_codes_api_auth_mfa_recovery_codes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MfaCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecoveryCodesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sessions_api_auth_sessions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"][];
+                };
+            };
+        };
+    };
+    revoke_session_api_auth_sessions__session_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_other_sessions_api_auth_sessions_revoke_others_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+        };
+    };
+    activity_api_auth_activity_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityOut"][];
                 };
             };
             /** @description Validation Error */
@@ -5470,6 +6668,7 @@ export interface operations {
                 verification_outcome?: string | null;
                 requires_review?: boolean | null;
                 dataset_tag?: string | null;
+                customer_type?: string | null;
                 search?: string | null;
             };
             header?: never;
@@ -5521,6 +6720,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IntakeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_complaint_stream_api_complaints_stream_post: {
+        parameters: {
+            query?: {
+                /** @description Run both pipelines immediately. */
+                analyse?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ComplaintCreate"];
+            };
+        };
+        responses: {
+            /** @description Server-sent events. `step` events report each stage as it starts and finishes; exactly one `result` (the IntakeResponse) or `error` (the usual error body) ends the stream. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
                 };
             };
             /** @description Validation Error */
@@ -6036,6 +7271,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LifecycleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_responses_api_complaints__ref__responses_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_response_api_complaints__ref__responses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -6700,6 +8001,41 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    agent_workspace_api_analytics_agent_workspace_get: {
+        parameters: {
+            query?: {
+                /** @description Managers and admins: one team, or all when empty. */
+                department?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -7554,6 +8890,223 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    organisation_api_organisation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationOut"];
+                };
+            };
+        };
+    };
+    chat_api_assistant_chat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_email_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    messages_api_email_messages_get: {
+        parameters: {
+            query?: {
+                direction?: string | null;
+                intent?: string | null;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_EmailOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    message_api_email_messages__message_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    poll_api_email_poll_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    simulate_api_email_simulate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_api_email_preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
                 };
             };
         };

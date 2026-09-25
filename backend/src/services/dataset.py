@@ -54,7 +54,12 @@ TEXT_COLUMNS = ("title", "description")
 OPTIONAL_COLUMNS = (
     "order_ref", "transaction_ref", "product", "amount", "currency",
     "channel", "customer_email", "customer_name", "requested_resolution",
+    "customer_type", "external_ref", "previous_ref",
 )
+
+# Rows flushed together. Each flush is a round trip to the database; one per
+# row made a 500-row import take minutes against a hosted database.
+FLUSH_EVERY = 50
 
 # Ground truth. Read by the benchmark and by nothing else.
 LABEL_COLUMNS = {
@@ -184,11 +189,6 @@ def _amount(value: Any) -> float | None:
     return float(parsed) if parsed is not None else None
 
 
-def _next_ref(db: Session) -> str:
-    count = db.execute(select(func.count()).select_from(Complaint)).scalar_one()
-    return f"CMP-{count + 1:06d}"
-
-
 def _customer(db: Session, email: str | None, name: str | None) -> Customer | None:
     if not email:
         return None
@@ -235,6 +235,14 @@ def import_rows(
         db.flush()
         log.info("dataset_cleared", dataset_tag=tag, removed=removed)
 
+    # Numbered from one count, not one per row. Same scheme as intake's
+    # next_public_ref, so imported and submitted complaints share a sequence.
+    number = db.execute(select(func.count()).select_from(Complaint)).scalar_one()
+    # The file's own ids, so a row can point at an earlier row: the corpus
+    # marks a follow-up with ``previous_ref`` and repeat detection reads it.
+    by_external: dict[str, Complaint] = {}
+    pending = 0
+
     for index, row in enumerate(rows, start=2):  # row 1 is the header
         title = _clean(row.get("title"))
         description = _clean(row.get("description"))
@@ -255,9 +263,14 @@ def import_rows(
         if channel not in {member.value for member in Channel}:
             channel = Channel.IMPORT
 
+        number += 1
+        previous = by_external.get((_clean(row.get("previous_ref")) or "").upper())
         complaint = Complaint(
-            public_ref=_next_ref(db),
+            id=uuid.uuid4(),
+            public_ref=f"CMP-{number:06d}",
             customer_id=customer.id if customer else None,
+            customer_type=(_clean(row.get("customer_type")) or None) and _clean(row.get("customer_type"))[:32],
+            previous_complaint_id=previous.id if previous else None,
             title=(title or description[:80]),
             description_raw=prepared.raw,
             description_clean=prepared.clean,
@@ -281,12 +294,19 @@ def import_rows(
                 labelled = True
 
         db.add(complaint)
-        db.flush()
+        external = (_clean(row.get("external_ref")) or "").upper()
+        if external:
+            by_external[external] = complaint
+        pending += 1
+        if pending >= FLUSH_EVERY:
+            db.flush()
+            pending = 0
 
         result.imported += 1
         result.labelled += int(labelled)
         result.public_refs.append(complaint.public_ref)
 
+    db.flush()
     log.info(
         "dataset_imported",
         dataset_tag=tag, imported=result.imported,

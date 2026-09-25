@@ -30,6 +30,7 @@ from sqlalchemy.orm import Session
 from src.core.logging import get_logger
 from src.db.enums import Urgency
 from src.db.models import EscalationLevel, PriorityLevel
+from src.core.refcache import reference_data
 
 log = get_logger("comparison_engine.ladders")
 
@@ -46,6 +47,7 @@ URGENCY_RANKS: dict[str, int] = {
 }
 
 
+@reference_data("ladders")
 def load_ladders(db: Session) -> dict[str, dict[str, int]]:
     """
     Severity ranks for every ordered field, keyed by comparison field name.

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
 import { admin, type S } from '@/lib/api'
+import { plainValue } from '@/components/app/complaint-bits'
 import { useApi, useAction } from '@/lib/use-api'
 import { Badge, Button, Mono, humanise, escalationTone } from '@/components/ui/primitives'
 import { Card, PanelHeader } from '@/components/ui/surfaces'
@@ -114,8 +115,8 @@ function Rule({ ruleRef }: { ruleRef: string }) {
             <KV rows={[['Escalation', r.outcome_escalation_code ? <Badge key="e" tone={escalationTone(r.outcome_escalation_code)}>{r.outcome_escalation_code}</Badge> : null], ['Support department', r.outcome_support_department], ['Signals referenced', (r.signals_referenced ?? []).length ? <span key="s" className="flex flex-wrap gap-1">{r.signals_referenced!.map((s) => <Badge key={s}><Mono>{s}</Mono></Badge>)}</span> : null]]} />
             {Array.isArray(r.required_actions) && r.required_actions.length > 0 && <div className="mt-4"><p className="eyebrow mb-1.5">Required actions</p><ul className="list-disc pl-5 text-[13.5px]">{(r.required_actions as unknown[]).map((a, i) => <li key={i}>{typeof a === 'string' ? a : JSON.stringify(a)}</li>)}</ul></div>}
             {Array.isArray(r.prohibited_actions) && r.prohibited_actions.length > 0 && <div className="mt-4"><p className="eyebrow mb-1.5 text-critical">Prohibited actions</p><ul className="list-disc pl-5 text-[13.5px]">{(r.prohibited_actions as unknown[]).map((a, i) => <li key={i}>{typeof a === 'string' ? a : JSON.stringify(a)}</li>)}</ul></div>}
-            {r.eligibility != null && <div className="mt-4"><p className="eyebrow mb-1.5">Eligibility</p><pre className="overflow-x-auto rounded bg-cream p-3 font-mono text-[11.5px]">{JSON.stringify(r.eligibility, null, 2)}</pre></div>}
-            {r.policy_refs != null && <div className="mt-4"><p className="eyebrow mb-1.5">Policy references</p><pre className="overflow-x-auto rounded bg-cream p-3 font-mono text-[11.5px]">{JSON.stringify(r.policy_refs, null, 2)}</pre></div>}
+            {r.eligibility != null && <div className="mt-4"><p className="eyebrow mb-1.5">Eligibility</p><p className="rounded bg-cream p-3 text-[13px] leading-relaxed text-espresso-2">{plainValue(r.eligibility)}</p></div>}
+            {r.policy_refs != null && <div className="mt-4"><p className="eyebrow mb-1.5">Policy references</p><p className="rounded bg-cream p-3 text-[13px] leading-relaxed text-espresso-2">{plainValue(r.policy_refs)}</p></div>}
           </Card>
           <section><PanelHeader title="Change history" eyebrow="Audit trail" /><AuditTrail entityType="rule" entityId={r.rule_ref} /></section>
         </div>

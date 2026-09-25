@@ -73,6 +73,7 @@ from src.db.enums import (
     Severity,
 )
 from src.db.models import Chunk, PromisePattern, ResponseFlag
+from src.core.refcache import reference_data
 
 log = get_logger("security.response_guard")
 
@@ -239,6 +240,7 @@ def _compile(pattern: str) -> re.Pattern[str] | None:
         return None
 
 
+@reference_data("promise_patterns")
 def load_promise_patterns(db: Session) -> list[tuple[str, str, str | None]]:
     """Active promise patterns as ``(pattern, promise_type, requires_eligibility)``."""
     rows = db.execute(

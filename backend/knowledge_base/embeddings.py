@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import threading
 from functools import lru_cache
 
 from sqlalchemy import select
@@ -54,18 +55,41 @@ class EmbeddingUnavailable(Exception):
     """Raised internally only; callers receive ``None`` vectors instead."""
 
 
+_client_lock = threading.Lock()
+
+
 @lru_cache(maxsize=1)
+def _build_client():
+    try:
+        from google import genai
+        from google.genai import types
+    except ImportError as exc:  # pragma: no cover
+        raise EmbeddingUnavailable("google-genai is not installed") from exc
+    # A deadline, so a stalled embedding call degrades retrieval to lexical
+    # instead of holding the complaint.
+    return genai.Client(
+        api_key=settings.gemini_api_key,
+        http_options=types.HttpOptions(
+            timeout=settings.llm_timeout_seconds * 1000,
+            retry_options=types.HttpRetryOptions(attempts=1),
+        ),
+    )
+
+
 def _client():
-    """Create the Gemini client once, or signal that embeddings are off."""
+    """
+    Create the Gemini client once, or signal that embeddings are off.
+
+    Built under a lock: query embeddings run on a thread pool, and two threads
+    racing an ``lru_cache`` each build a client, one of which is then
+    garbage-collected -- closing its connection mid-request.
+    """
     if not settings.embedding_enabled:
         raise EmbeddingUnavailable("embeddings disabled by configuration")
     if not settings.gemini_api_key:
         raise EmbeddingUnavailable("GEMINI_API_KEY is not configured")
-    try:
-        from google import genai
-    except ImportError as exc:  # pragma: no cover
-        raise EmbeddingUnavailable("google-genai is not installed") from exc
-    return genai.Client(api_key=settings.gemini_api_key)
+    with _client_lock:
+        return _build_client()
 
 
 def is_available() -> bool:

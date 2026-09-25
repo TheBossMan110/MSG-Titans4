@@ -51,12 +51,17 @@ def _encode(payload: dict[str, Any], expires: timedelta, token_type: str) -> str
     return jwt.encode(body, settings.jwt_secret, algorithm=ALGORITHM)
 
 
-def create_access_token(*, user_id: str, role: str, email: str) -> str:
-    return _encode(
-        {"sub": str(user_id), "role": role, "email": email},
-        timedelta(minutes=settings.access_token_minutes),
-        "access",
-    )
+def create_access_token(*, user_id: str, role: str, email: str, sid: str | None = None) -> str:
+    """``sid`` is the session (refresh-token row) the token was issued for."""
+    body = {"sub": str(user_id), "role": role, "email": email}
+    if sid:
+        body["sid"] = str(sid)
+    return _encode(body, timedelta(minutes=settings.access_token_minutes), "access")
+
+
+def create_mfa_token(*, user_id: str) -> str:
+    """Proof that the password was right, good for five minutes and one purpose."""
+    return _encode({"sub": str(user_id)}, timedelta(minutes=5), "mfa")
 
 
 def create_refresh_token(*, user_id: str) -> tuple[str, str, datetime]:

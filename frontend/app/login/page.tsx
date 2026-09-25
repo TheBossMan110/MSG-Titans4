@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { errorMessage, type User } from '@/lib/api'
+import { ShieldCheck } from 'lucide-react'
 import { Button, Wordmark, Eyebrow } from '@/components/ui/primitives'
-import { Field, Input } from '@/components/ui/forms'
+import { Field, Input, PasswordInput } from '@/components/ui/forms'
 
 export default function LoginPage() {
   return (
@@ -16,10 +17,10 @@ export default function LoginPage() {
   )
 }
 
-const homeFor = (u: User) => (u.role === 'customer' ? '/dashboard/my-complaints' : '/dashboard')
+const homeFor = (u: User) => (u.role === 'customer' ? '/dashboard/my-complaints' : ['agent', 'reviewer'].includes(u.role) ? '/dashboard/agent' : '/dashboard')
 
 function Login() {
-  const { user, login, loading } = useAuth()
+  const { user, login, completeMfa, loading } = useAuth()
   const router = useRouter()
   const params = useSearchParams()
   const next = params.get('next')
@@ -27,6 +28,9 @@ function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  // Set once the password is accepted on an account with two-step sign-in.
+  const [mfaToken, setMfaToken] = useState<string | null>(null)
+  const [code, setCode] = useState('')
 
   useEffect(() => {
     if (!loading && user) router.replace(next && next.startsWith('/') ? next : homeFor(user))
@@ -37,9 +41,15 @@ function Login() {
     setPending(true)
     setError(null)
     try {
-      const u = await login(email.trim(), password)
+      const u = mfaToken ? await completeMfa(mfaToken, code.trim()) : await login(email.trim(), password)
+      if ('mfaToken' in u) {
+        setMfaToken(u.mfaToken)
+        return
+      }
       router.replace(next && next.startsWith('/') ? next : homeFor(u))
     } catch (err) {
+      // A step token lasts five minutes; after that the password is needed again.
+      if (mfaToken && /took too long/i.test(errorMessage(err))) { setMfaToken(null); setCode('') }
       setError(errorMessage(err))
     } finally {
       setPending(false)
@@ -71,10 +81,27 @@ function Login() {
           <p className="mt-3 text-[14px] text-taupe-2">Use the account your administrator provisioned.</p>
 
           <form onSubmit={submit} className="mt-8 flex flex-col gap-4" noValidate>
-            <Field label="Email" required>{(id) => <Input id={id} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />}</Field>
-            <Field label="Password" required>{(id) => <Input id={id} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />}</Field>
+            {mfaToken ? (
+              <>
+                <div className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-line bg-ivory p-4">
+                  <ShieldCheck size={20} className="mt-0.5 shrink-0 text-rule" aria-hidden />
+                  <p className="text-[13.5px] leading-relaxed text-espresso-2">
+                    Your password was right. Now enter the 6-digit code from your authenticator app, or one of your recovery codes.
+                  </p>
+                </div>
+                <Field label="Verification code" required>{(id) => (
+                  <Input id={id} inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} required autoFocus maxLength={16} className="text-center font-mono text-[20px] tracking-[0.3em]" placeholder="000000" />
+                )}</Field>
+              </>
+            ) : (
+              <>
+                <Field label="Email" required>{(id) => <Input id={id} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />}</Field>
+                <Field label="Password" required>{(id) => <PasswordInput id={id} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />}</Field>
+              </>
+            )}
             {error && <p role="alert" className="rounded-[var(--radius-md)] border border-critical/30 bg-critical-dim px-3.5 py-2.5 text-[13.5px] text-espresso">{error}</p>}
-            <Button type="submit" size="lg" loading={pending} className="mt-2 w-full">Sign in</Button>
+            <Button type="submit" size="lg" loading={pending} className="mt-2 w-full">{mfaToken ? 'Verify and sign in' : 'Sign in'}</Button>
+            {mfaToken && <button type="button" onClick={() => { setMfaToken(null); setCode(''); setError(null) }} className="text-[13px] text-taupe-2 underline underline-offset-4">Use a different account</button>}
           </form>
 
           <div className="mt-8 rounded-[var(--radius-lg)] border border-line bg-ivory p-5 text-[13px] text-taupe-2">

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { applyMotionClass, prefersReducedMotion } from '@/lib/motion-pref'
 import Lenis from 'lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -24,14 +25,15 @@ export function getLenis(): Lenis | null {
  * ScrollTrigger is updated on each Lenis scroll, and lag smoothing is off so
  * a dropped frame is dropped rather than replayed.
  *
- * Under reduced motion it does not mount at all: native scrolling is the
- * accessible default and nothing else depends on Lenis existing.
+ * With "Reduce motion" switched on it does not mount at all: native scrolling
+ * is the accessible default and nothing else depends on Lenis existing.
  */
 export default function SmoothScroll() {
   useScrollTriggerRefresh()
 
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    applyMotionClass()
+    if (prefersReducedMotion()) return
 
     const lenis = new Lenis({
       duration: 1.05,

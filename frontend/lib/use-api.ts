@@ -23,11 +23,17 @@ export function useApi<T>(fetcher: () => Promise<T>, deps: DependencyList = [], 
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(enabled)
   const seq = useRef(0)
+  // Whether a request has ever started. A query enabled after mount (a report
+  // chosen from a list) renders once before its effect runs, with no data and
+  // ``loading`` still false -- and a page that trusted ``!loading`` to mean
+  // "data is here" crashed on that one render.
+  const started = useRef(false)
   const fn = useRef(fetcher)
   fn.current = fetcher
 
   const run = useCallback(async () => {
     const id = ++seq.current
+    started.current = true
     setLoading(true)
     setError(null)
     try {
@@ -50,21 +56,27 @@ export function useApi<T>(fetcher: () => Promise<T>, deps: DependencyList = [], 
     setData((prev) => (typeof u === 'function' ? (u as (p: T | null) => T | null)(prev) : u))
   }, [])
 
-  return { data, error, loading, refresh: run, setData: set }
+  return { data, error, loading: loading || (enabled && !started.current), refresh: run, setData: set }
 }
 
 /** A mutation with its own pending/error state. */
 export function useAction<A extends unknown[], R>(action: (...args: A) => Promise<R>) {
   const [pending, setPending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [, setError] = useState<string | null>(null)
+  // Read through a ref: callers check ``error`` straight after ``await run()``,
+  // inside the same closure, where the state value would still be the one
+  // from before the call -- so the first failure showed no message at all.
+  const errorRef = useRef<string | null>(null)
   const run = useCallback(
     async (...args: A): Promise<R | undefined> => {
       setPending(true)
+      errorRef.current = null
       setError(null)
       try {
         return await action(...args)
       } catch (e) {
-        setError(errorMessage(e))
+        errorRef.current = errorMessage(e)
+        setError(errorRef.current)
         return undefined
       } finally {
         setPending(false)
@@ -72,7 +84,12 @@ export function useAction<A extends unknown[], R>(action: (...args: A) => Promis
     },
     [action],
   )
-  return { run, pending, error, clear: () => setError(null) }
+  return {
+    run,
+    pending,
+    get error() { return errorRef.current },
+    clear: () => { errorRef.current = null; setError(null) },
+  }
 }
 
 /* ------------------------------------------------------------------ formatting */

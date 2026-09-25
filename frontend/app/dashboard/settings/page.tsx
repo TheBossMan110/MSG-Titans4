@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { MotionToggle } from '@/components/ui/motion-toggle'
 import { useRouter } from 'next/navigation'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
-import { admin, auth, system, type S } from '@/lib/api'
+import { admin, system, type S } from '@/lib/api'
 import { useApi, useAction, fmtDate, fmtMinutes } from '@/lib/use-api'
 import { Badge, Button, Mono, humanise } from '@/components/ui/primitives'
 import { Card, PanelHeader } from '@/components/ui/surfaces'
@@ -47,9 +48,6 @@ function Settings() {
 function Account() {
   const { user, logout } = useAuth()
   const router = useRouter()
-  const toast = useToast()
-  const [cur, setCur] = useState(''); const [nw, setNw] = useState(''); const [again, setAgain] = useState('')
-  const change = useAction((a: string, b: string) => auth.changePassword(a, b))
   if (!user) return null
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -59,13 +57,17 @@ function Account() {
         <Button variant="secondary" size="sm" className="mt-6" onClick={async () => { await logout(); router.replace('/login') }}>Sign out</Button>
       </Card>
       <Card>
-        <PanelHeader title="Change password" />
-        <form className="flex flex-col gap-4" onSubmit={async (e) => { e.preventDefault(); if (nw !== again) { toast('err', 'The new passwords do not match.'); return } const r = await change.run(cur, nw); if (r) { toast('ok', r.message); setCur(''); setNw(''); setAgain('') } else if (change.error) toast('err', change.error) }}>
-          <Field label="Current password">{(id) => <Input id={id} type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} required />}</Field>
-          <Field label="New password" hint="At least 12 characters.">{(id) => <Input id={id} type="password" autoComplete="new-password" value={nw} onChange={(e) => setNw(e.target.value)} required minLength={12} />}</Field>
-          <Field label="Repeat new password" error={again && again !== nw ? 'Does not match.' : null}>{(id) => <Input id={id} type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} required />}</Field>
-          <div><Button type="submit" loading={change.pending} disabled={!cur || !nw || nw !== again}>Change password</Button></div>
-        </form>
+        <PanelHeader title="Password and sign-in security" />
+        <p className="text-[14px] leading-relaxed text-espresso-2">
+          Change your password, turn on two-step sign-in with an authenticator app, see every device
+          you are signed in on and sign them out, and review recent sign-ins — all on one page.
+        </p>
+        <Button href="/dashboard/profile" className="mt-5">Open profile &amp; security</Button>
+      </Card>
+      <Card>
+        <PanelHeader title="Display" />
+        <p className="mb-4 text-[14px] leading-relaxed text-espresso-2">Animations are on by default. Switch this on if motion is uncomfortable; it applies to the whole site on this device.</p>
+        <MotionToggle />
       </Card>
     </div>
   )

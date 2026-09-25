@@ -13,23 +13,24 @@ gsap.registerPlugin(ScrollTrigger)
 /* ------------------------------------------------------------------ 7. Pencil becomes ink (centrepiece) */
 
 const FIELDS = [
-  { field: 'Category', ai: 'DELIVERY', rules: 'LOST_SHIPMENT', status: 'CORRECTED' },
-  { field: 'Department', ai: 'CUSTOMER_RELATIONS', rules: 'LOGISTICS_OPS', status: 'CORRECTED' },
-  { field: 'Urgency', ai: 'HIGH', rules: 'HIGH', status: 'AGREED' },
-  { field: 'Priority', ai: 'P2', rules: 'P1', status: 'RAISED' },
-  { field: 'Escalation', ai: 'NONE', rules: 'COMPLIANCE_REVIEW', status: 'FLOOR' },
-  { field: 'Refund', ai: 'Full refund today', rules: 'REQUIRES_VERIFICATION · DOC-007 §3', status: 'BLOCKED' },
-]
+  { field: 'Category', ai: 'Delivery', rules: 'Lost shipment', status: 'Corrected', tone: 'warning' },
+  { field: 'Department', ai: 'Customer Relations', rules: 'Delivery & Logistics Ops', status: 'Corrected', tone: 'warning' },
+  { field: 'Urgency', ai: 'High', rules: 'High', status: 'Agreed', tone: 'verified' },
+  { field: 'Priority', ai: 'P2 · medium', rules: 'P1 · high', status: 'Raised', tone: 'warning' },
+  { field: 'Escalation', ai: 'None', rules: 'Compliance review', status: 'Floor held', tone: 'critical' },
+  { field: 'Refund', ai: 'Full refund today', rules: 'Verify first · DOC-007 §3', status: 'Blocked', tone: 'critical' },
+] as const
 
 /**
  * The centrepiece. Each row starts as the model's proposal in pencil. As the
  * reader scrolls, an espresso layer sweeps across from the left and the
  * rules' verdict is written over it in ink. Transform and opacity only.
  *
- * The pin is held for 85% of a viewport and the rows overlap, so the whole
- * sequence resolves well inside it. A pin long enough for the reader to
- * wonder whether scrolling still works has cost more than the animation is
- * worth.
+ * Only the comparison itself is pinned, centred in the viewport, so the whole
+ * table is on screen for as long as it is held. Pinning the heading with it
+ * made a block taller than the screen, and the table stopped with its
+ * bottom rows cut off. The pin is held for 70% of a viewport and the rows
+ * overlap, so the sequence resolves well inside it.
  */
 export function PencilToInk() {
   const root = useRef<HTMLDivElement>(null)
@@ -41,7 +42,7 @@ export function PencilToInk() {
     const tl = gsap.timeline({
       scrollTrigger: compact
         ? { trigger: el, start: 'top 70%', once: true }
-        : { trigger: el.querySelector('[data-pin]'), start: 'top 12%', end: '+=85%', scrub: 0.5, pin: true, anticipatePin: 1 },
+        : { trigger: el.querySelector('[data-pin]'), start: 'center center+=36', end: '+=70%', scrub: 0.5, pin: true, anticipatePin: 1 },
     })
     rows.forEach((row, i) => {
       const ink = row.querySelector('[data-ink]')
@@ -60,7 +61,7 @@ export function PencilToInk() {
   return (
     <Section className="!py-0">
       <div ref={root}>
-        <div data-pin className="py-[clamp(72px,10vw,140px)]">
+        <div className="pt-[clamp(72px,10vw,140px)]">
           <div className="mb-10 grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-end">
             <div>
               <Eyebrow index="04" className="mb-6">AI versus ground truth</Eyebrow>
@@ -73,9 +74,14 @@ export function PencilToInk() {
             </p>
           </div>
 
+        </div>
+        {/* Padding lives outside the pinned block: centring a block that
+            carried 140px of it pushed the table under the nav on short screens. */}
+        <div className="pb-[clamp(72px,10vw,140px)]">
+        <div data-pin>
           <div className="overflow-hidden rounded-[var(--radius-xl)] border border-line bg-ivory shadow-card">
             <div className="hidden grid-cols-[1fr_1.3fr_1.3fr_auto] gap-x-4 border-b border-line bg-cream/70 px-5 py-3 text-[11px] eyebrow md:grid">
-              <span>Field</span><span>AI proposed</span><span>Rules decided</span><span className="w-24 text-right">Outcome</span>
+              <span>Field</span><span>AI proposed</span><span>Rules decided</span><span className="w-28 text-right">Outcome</span>
             </div>
             {/* Four columns is a desktop idea. On a phone each row reads as a
                 small record: field and outcome on one line, then the proposal,
@@ -87,21 +93,25 @@ export function PencilToInk() {
                 className="relative grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2.5 border-b border-line-soft px-4 py-4 last:border-b-0 md:grid-cols-[1fr_1.3fr_1.3fr_auto] md:gap-y-0 md:px-5"
               >
                 <span className="order-1 text-[13.5px] font-medium text-espresso">{f.field}</span>
-                <span data-status className="order-2 translate-y-1 justify-self-end opacity-0 md:order-4 md:w-24 md:justify-self-auto md:text-right">
-                  <Badge tone={f.status === 'AGREED' ? 'verified' : f.status === 'BLOCKED' || f.status === 'FLOOR' ? 'critical' : 'warning'}>{f.status}</Badge>
+                <span data-status className="order-2 translate-y-1 justify-self-end opacity-0 md:order-4 md:w-28 md:justify-self-auto md:text-right">
+                  <Badge tone={f.tone}>{f.status}</Badge>
                 </span>
                 <span data-pencil-text className="order-3 col-span-2 font-display italic text-[16px] text-ai md:order-2 md:col-span-1">{f.ai}</span>
-                <span className="relative order-4 col-span-2 min-h-[28px] md:order-3 md:col-span-1">
-                  <span data-ink className="absolute -inset-y-1.5 -left-2 -right-2 origin-left scale-x-0 rounded-[8px] bg-espresso" aria-hidden />
-                  <span data-ink-text className="relative block translate-y-1 px-1 font-medium text-[14px] text-ink-on-dark opacity-0">{f.rules}</span>
+                <span className="order-4 col-span-2 md:order-3 md:col-span-1">
+                  {/* The ink is as wide as the verdict it carries, not the column. */}
+                  <span className="relative inline-flex max-w-full">
+                    <span data-ink className="absolute inset-0 origin-left scale-x-0 rounded-[10px] bg-espresso" aria-hidden />
+                    <span data-ink-text className="relative translate-y-1 px-3 py-1.5 text-[14px] font-medium leading-snug text-ink-on-dark opacity-0">{f.rules}</span>
+                  </span>
                 </span>
               </div>
             ))}
           </div>
 
           <p data-verdict className="mt-6 translate-y-2 text-[14px] text-taupe-2 opacity-0">
-            Verification outcome: <Badge tone="warning">CORRECTED_BY_RULES</Badge> &nbsp;·&nbsp; agreement 50% &nbsp;·&nbsp; queued for human review with the reasons attached.
+            Verification outcome: <Badge tone="warning">Corrected by rules</Badge> &nbsp;·&nbsp; agreement 50% &nbsp;·&nbsp; queued for human review with the reasons attached.
           </p>
+        </div>
         </div>
       </div>
     </Section>
@@ -110,19 +120,22 @@ export function PencilToInk() {
 
 /* ------------------------------------------------------------------ 8. Knowledge base */
 
+// The two versions of DOC-003 sit side by side: the point of the section is
+// that one replaced the other, and the reader should see that at a glance.
 const DOCS = [
-  { ref: 'DOC-003', title: 'Lost & Damaged Shipment Claims Policy', version: 'v2.1', effective: '01 Feb 2026', status: 'ACTIVE', format: 'PDF' },
-  { ref: 'DOC-007', title: 'Refund, Credit & Compensation Ceilings', version: 'v1.4', effective: '15 Jan 2026', status: 'ACTIVE', format: 'DOCX' },
-  { ref: 'DOC-003', title: 'Lost & Damaged Shipment Claims Policy', version: 'v2.0', effective: '01 Aug 2025', status: 'SUPERSEDED', format: 'PDF' },
-  { ref: 'DOC-012', title: 'Dangerous Goods & Safety Escalation SOP', version: 'v3.0', effective: '01 Mar 2026', status: 'ACTIVE', format: 'PDF' },
+  { ref: 'DOC-003', title: 'Lost & Damaged Shipment Claims Policy', version: 'v2.1', effective: '01 Feb 2026', status: 'Active', format: 'PDF', note: 'In force' },
+  { ref: 'DOC-003', title: 'Lost & Damaged Shipment Claims Policy', version: 'v2.0', effective: '01 Aug 2025', status: 'Superseded', format: 'PDF', note: 'Replaced by v2.1' },
+  { ref: 'DOC-007', title: 'Refund, Credit & Compensation Ceilings', version: 'v1.4', effective: '15 Jan 2026', status: 'Active', format: 'DOCX', note: 'In force' },
+  { ref: 'DOC-012', title: 'Dangerous Goods & Safety Escalation SOP', version: 'v3.0', effective: '01 Mar 2026', status: 'Active', format: 'PDF', note: 'In force' },
 ]
 
 export function KnowledgeBase() {
   const root = useRef<HTMLDivElement>(null)
   useReveal(root)
   useGsap((ctx, el) => {
-    el.querySelectorAll<HTMLElement>('[data-float]').forEach((card, i) => {
-      gsap.to(card, { yPercent: -6 - i * 5, ease: 'none', scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: 0.8 } })
+    gsap.from(el.querySelectorAll('[data-doc]'), {
+      opacity: 0, y: 22, duration: 0.8, ease: 'expo.out', stagger: 0.08,
+      scrollTrigger: { trigger: el, start: 'top 72%', once: true },
     })
   }, root)
 
@@ -144,19 +157,20 @@ export function KnowledgeBase() {
             <li><span className="block font-display text-[28px] text-espresso">104</span>sections indexed</li>
           </ul>
         </div>
-        <div className="relative grid gap-4 sm:grid-cols-2">
-          {DOCS.map((d, i) => (
-            <div key={d.ref + d.version} data-float className={cn(i % 2 === 1 && 'sm:translate-y-8')}>
-              <Card tone={d.status === 'ACTIVE' ? 'ivory' : 'ghost'} lift className="h-full">
-                <div className="mb-4 flex items-center justify-between">
+        <div className="grid content-center gap-4 sm:grid-cols-2">
+          {DOCS.map((d) => (
+            <div key={d.ref + d.version} data-doc>
+              <Card tone="ivory" lift className="flex h-full flex-col">
+                <div className="mb-4 flex items-center justify-between gap-3">
                   <Mono className="text-[12px] text-taupe-2">{d.ref} · {d.version}</Mono>
-                  <Badge tone={d.status === 'ACTIVE' ? 'verified' : 'neutral'}>{d.status}</Badge>
+                  <Badge tone={d.status === 'Active' ? 'verified' : 'neutral'} dot>{d.status}</Badge>
                 </div>
                 <h3 className="font-display text-[20px] leading-tight">{d.title}</h3>
-                <dl className="mt-5 grid grid-cols-2 gap-2 text-[12.5px] text-taupe-2">
+                <dl className="mt-auto grid grid-cols-2 gap-2 pt-5 text-[12.5px] text-taupe-2">
                   <div><dt className="eyebrow text-[10px]">Effective</dt><dd className="text-espresso-2">{d.effective}</dd></div>
                   <div><dt className="eyebrow text-[10px]">Format</dt><dd className="text-espresso-2">{d.format}</dd></div>
                 </dl>
+                <p className="mt-4 border-t border-line-soft pt-3 text-[12.5px] text-taupe-2">{d.note}</p>
               </Card>
             </div>
           ))}

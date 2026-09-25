@@ -48,6 +48,7 @@ from sqlalchemy.orm import Session
 from src.core.logging import get_logger
 from src.db.enums import InjectionAction, Severity
 from src.db.models import InjectionEvent, InjectionPattern
+from src.core.refcache import reference_data
 
 log = get_logger("security.injection")
 
@@ -230,6 +231,7 @@ def _compile(pattern: str) -> re.Pattern[str] | None:
         return None
 
 
+@reference_data("injection_patterns")
 def load_patterns(db: Session) -> list[tuple[str, str, str]]:
     """Active patterns as ``(pattern, label, severity)``."""
     rows = db.execute(

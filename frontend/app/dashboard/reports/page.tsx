@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
 import { analytics, type ReportFilters } from '@/lib/api'
+import { plainValue } from '@/components/app/complaint-bits'
 import { useApi, useAction, fmtDate } from '@/lib/use-api'
 import { Badge, Button, Mono, humanise } from '@/components/ui/primitives'
 import { Card, PanelHeader } from '@/components/ui/surfaces'
@@ -69,7 +70,7 @@ function Reports() {
         </div>
 
         <div>
-          {!type ? <Empty title="Choose a report" body="Each report is a live query against the register with the filters on the left." /> : report.error ? <ErrorState message={report.error} onRetry={report.refresh} /> : report.loading && !report.data ? <SkeletonRows rows={10} /> : (
+          {!type ? <Empty title="Choose a report" body="Each report is a live query against the register with the filters on the left." /> : report.error ? <ErrorState message={report.error} onRetry={report.refresh} /> : !report.data ? <SkeletonRows rows={10} /> : (
             <div className="flex flex-col gap-4">
               <PanelHeader title={report.data!.title} eyebrow={<><Mono>{report.data!.report_type}</Mono> · {report.data!.row_count ?? report.data!.rows?.length ?? 0} rows · generated {fmtDate(report.data!.generated_at)}</>} />
               {!report.data!.rows?.length ? <Empty title="No rows" body="Nothing matches these filters." /> : (
@@ -91,8 +92,8 @@ function cell(v: unknown): React.ReactNode {
   if (v === null || v === undefined || v === '') return <span className="text-taupe">—</span>
   if (typeof v === 'boolean') return <Badge tone={v ? 'verified' : 'neutral'}>{v ? 'yes' : 'no'}</Badge>
   if (typeof v === 'number') return <span className="font-mono tnum">{v.toLocaleString()}</span>
-  if (typeof v === 'object') return <span className="font-mono text-[11.5px]">{JSON.stringify(v)}</span>
+  if (typeof v === 'object') return plainValue(v)
   const s = String(v)
   if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return fmtDate(s)
-  return s
+  return plainValue(s)
 }

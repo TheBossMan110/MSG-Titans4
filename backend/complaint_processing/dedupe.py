@@ -43,6 +43,7 @@ from src.core.config import settings
 from src.core.logging import get_logger
 from src.db.enums import ComplaintStatus, LinkType
 from src.db.models import Complaint, ComplaintLink
+from src.db.fresh import needs_clearing
 
 log = get_logger("complaint_processing.dedupe")
 
@@ -314,7 +315,7 @@ def persist_links(
     graph reads chronologically and an agent opening the original does not see
     it pointing forward at something that did not exist when it was filed.
     """
-    if replace:
+    if replace and needs_clearing(db, complaint_id, "complaint_links"):
         db.query(ComplaintLink).filter(
             ComplaintLink.complaint_id == complaint_id
         ).delete()

@@ -120,7 +120,7 @@ export function PanelHeader({
 /**
  * The product's central visual: a proposal beside a decision.
  *
- * Left is what the AI wrote — violet, dashed, italic: provisional. Right is
+ * Left is what the AI wrote — blue, dashed, italic: provisional. Right is
  * what the rules confirmed — espresso, solid, shielded: final. Used on the
  * landing page, the complaint's "Why" tab and the review desk, so the reading
  * is learnt once.
@@ -144,7 +144,7 @@ export function PencilInk({
         <p className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ai">
           <Sparkles size={12} strokeWidth={2.2} aria-hidden /> {pencilLabel}
         </p>
-        <div className="font-display text-[18px] italic leading-snug text-[#2c2380]">{pencil}</div>
+        <div className="font-display text-[18px] italic leading-snug text-[#123f5e]">{pencil}</div>
       </div>
       <div className="ink relative overflow-hidden rounded-[var(--radius-lg)] p-5">
         <span aria-hidden className="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full bg-rule-2/40 blur-2xl" />

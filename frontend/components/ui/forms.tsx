@@ -1,6 +1,7 @@
 'use client'
 
-import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { forwardRef, useId, useState, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const control =
@@ -45,6 +46,32 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
   ref,
 ) {
   return <input ref={ref} className={cn(control, 'h-11', className)} {...rest} />
+})
+
+/**
+ * A password field with a show/hide toggle. The toggle is a real button with
+ * a label that says what it will do, so it works for keyboard and screen
+ * reader users, and it never submits the form.
+ */
+export const PasswordInput = forwardRef<HTMLInputElement, Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>>(function PasswordInput(
+  { className, ...rest },
+  ref,
+) {
+  const [shown, setShown] = useState(false)
+  return (
+    <div className="relative">
+      <input ref={ref} type={shown ? 'text' : 'password'} className={cn(control, 'h-11 pr-12', className)} {...rest} />
+      <button
+        type="button"
+        onClick={() => setShown((v) => !v)}
+        aria-label={shown ? 'Hide password' : 'Show password'}
+        aria-pressed={shown}
+        className="absolute inset-y-0 right-1 my-auto inline-flex size-9 items-center justify-center rounded-[var(--radius-md)] text-taupe-2 transition-colors hover:bg-sand/60 hover:text-espresso focus-visible:outline focus-visible:outline-2 focus-visible:outline-espresso"
+      >
+        {shown ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
+      </button>
+    </div>
+  )
 })
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
@@ -126,7 +153,7 @@ export function SearchBox({
 const floatControl =
   'peer w-full rounded-2xl border border-line bg-white/85 px-4 text-[15px] text-charcoal placeholder-transparent ' +
   'shadow-[0_1px_2px_rgba(42,31,23,0.04)] transition-[border-color,box-shadow,background-color] duration-200 ' +
-  'hover:border-taupe focus:border-ai focus:bg-white focus:shadow-[0_0_0_4px_rgba(79,63,209,0.12)] focus:outline-none ' +
+  'hover:border-taupe focus:border-ai focus:bg-white focus:shadow-[0_0_0_4px_rgba(27,94,140,0.14)] focus:outline-none ' +
   'aria-[invalid=true]:border-critical'
 
 const floatLabel =

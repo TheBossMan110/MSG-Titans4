@@ -7,7 +7,9 @@ interface AuthCtx {
   user: User | null
   loading: boolean
   error: string | null
-  login: (email: string, password: string) => Promise<User>
+  /** A user, or the step token when two-step sign-in asks for a code next. */
+  login: (email: string, password: string) => Promise<User | { mfaToken: string }>
+  completeMfa: (mfaToken: string, code: string) => Promise<User>
   register: (email: string, fullName: string, password: string) => Promise<User>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
@@ -50,6 +52,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null)
     try {
       const res = await authApi.login(email, password)
+      if ('mfa_required' in res) return { mfaToken: res.mfa_token }
+      setUser(res.user)
+      return res.user
+    } catch (e) {
+      setError(errorMessage(e))
+      throw e
+    }
+  }, [])
+
+  const completeMfa = useCallback(async (mfaToken: string, code: string) => {
+    setError(null)
+    try {
+      const res = await authApi.loginMfa(mfaToken, code)
       setUser(res.user)
       return res.user
     } catch (e) {
@@ -79,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(await authApi.me())
   }, [])
 
-  return <Ctx.Provider value={{ user, loading, error, login, register, logout, refreshUser }}>{children}</Ctx.Provider>
+  return <Ctx.Provider value={{ user, loading, error, login, completeMfa, register, logout, refreshUser }}>{children}</Ctx.Provider>
 }
 
 export function useAuth(): AuthCtx {

@@ -54,6 +54,7 @@ from src.core.config import settings
 from src.core.logging import get_logger
 from src.db.enums import GenAIPipeline, GenAIRunStatus, GuardStatus, ResponseTone
 from src.db.models import AppConfig, Complaint, GenAIRun, Response
+from src.core.refcache import reference_data
 
 log = get_logger("genai_pipeline.response")
 
@@ -157,6 +158,7 @@ class FailureReason:
 # ══════════════════════════════════════════════════════════════
 # configuration
 # ══════════════════════════════════════════════════════════════
+@reference_data("guard_config")
 def load_guard_config(db: Session) -> dict[str, Any]:
     row = db.get(AppConfig, "response_guard")
     return row.value if row and isinstance(row.value, dict) else {}

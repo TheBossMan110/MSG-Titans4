@@ -120,13 +120,12 @@ def test_when_every_model_fails_the_last_error_is_raised(monkeypatch):
 @pytest.mark.parametrize(
     "error",
     [
-        RateLimited("quota exhausted", provider="x"),
         ProviderRefused("blocked for safety", provider="x"),
         ProviderTimeout("took too long", provider="x"),
         ProviderUnavailable("api key invalid", provider="x", status=403),
         ProviderUnavailable("unauthenticated", provider="x", status=401),
     ],
-    ids=["rate-limited", "refused", "timeout", "forbidden", "unauthenticated"],
+    ids=["refused", "timeout", "forbidden", "unauthenticated"],
 )
 @pytest.mark.parametrize("cls, name", PROVIDERS)
 def test_account_level_failures_do_not_try_other_models(monkeypatch, cls, name, error):
@@ -145,6 +144,35 @@ def test_account_level_failures_do_not_try_other_models(monkeypatch, cls, name, 
 
 
 # ── remembering what worked ────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("cls, name", PROVIDERS)
+def test_a_rate_limited_model_hands_over_to_the_next(monkeypatch, cls, name):
+    """
+    Free-tier quotas are per model: the next model in the chain has a bucket of
+    its own, so a 429 on one is a reason to try another, not to give up.
+    """
+    tried: list[str] = []
+
+    def fake(self, model, request):
+        tried.append(model)
+        if model == "first":
+            raise RateLimited("quota exhausted", provider="x")
+        return _answer(model, name)
+
+    monkeypatch.setattr(cls, "_generate_with", fake, raising=True)
+    _provider(cls, ["first", "second", "third"])._generate(_request())
+    assert tried == ["first", "second"]
+
+
+@pytest.mark.parametrize("cls, name", PROVIDERS)
+def test_every_model_rate_limited_surfaces_as_a_rate_limit(monkeypatch, cls, name):
+    def fake(self, model, request):
+        raise RateLimited("quota exhausted", provider="x")
+
+    monkeypatch.setattr(cls, "_generate_with", fake, raising=True)
+    with pytest.raises(RateLimited):
+        _provider(cls, ["first", "second"])._generate(_request())
 
 
 def test_the_model_that_answered_is_tried_first_next_time(monkeypatch):

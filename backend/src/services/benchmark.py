@@ -379,7 +379,7 @@ def _escalation_check(
 # the run
 # ══════════════════════════════════════════════════════════════
 def _process_one(
-    complaint_id: uuid.UUID, *, run_genai: bool
+    complaint_id: uuid.UUID, *, run_genai: bool, apply: bool = True
 ) -> dict[str, Any]:
     """
     Analyse one complaint on its own session.
@@ -387,6 +387,14 @@ def _process_one(
     Each worker gets a session of its own: SQLAlchemy sessions are not
     thread-safe, and sharing one across a pool produces corruption that looks
     like a logic bug and is anything but.
+
+    ``apply`` runs the complaint through exactly the path a submitted one
+    takes -- classification written back, routed, SLA set, escalated, queued
+    for review -- so what is scored is what the system does, and a benchmarked
+    dataset is browsable like any other complaints afterwards. Escalation
+    handover notes are the one thing skipped: they are prose for an agent,
+    nothing scores them, and writing one for every escalated complaint would
+    spend a large share of the free-tier quota on text nobody reads.
     """
     started = time.perf_counter()
     db = SessionLocal()
@@ -395,7 +403,19 @@ def _process_one(
         if complaint is None:
             return {"complaint_id": complaint_id, "error": "complaint not found"}
 
-        reconciliation = reconcile(db, complaint, run_genai=run_genai)
+        if apply:
+            from complaint_processing.intake import (
+                IntakeResult,
+                analyse_complaint,
+                deferring_escalation_notes,
+            )
+
+            with deferring_escalation_notes():  # collected, then deliberately dropped
+                reconciliation = analyse_complaint(
+                    db, complaint, IntakeResult(), run_genai=run_genai
+                )
+        else:
+            reconciliation = reconcile(db, complaint, run_genai=run_genai)
         ladders = load_ladders(db)
         rows, escalation = score_complaint(
             complaint, reconciliation, ladders=ladders
@@ -432,6 +452,7 @@ def run(
     run_genai: bool = True,
     workers: int = DEFAULT_WORKERS,
     resume: bool = True,
+    apply: bool = True,
 ) -> BenchmarkOutcome:
     """
     Score a dataset.
@@ -494,7 +515,7 @@ def run(
     results: list[dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=safe_workers(workers)) as pool:
         futures = {
-            pool.submit(_process_one, cid, run_genai=run_genai): cid for cid in ids
+            pool.submit(_process_one, cid, run_genai=run_genai, apply=apply): cid for cid in ids
         }
         for future in as_completed(futures):
             results.append(future.result())

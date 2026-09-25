@@ -12,5 +12,9 @@ export async function POST(req: Request) {
     cache: 'no-store',
   })
   if (!upstream.ok) return relayError(upstream)
-  return tokenResponse(await upstream.json())
+  const body = await upstream.json()
+  // Two-step sign-in: no tokens yet, so no cookie. The browser gets the
+  // short-lived step token and finishes at /api/session/login/mfa.
+  if (body.mfa_required) return NextResponse.json({ mfa_required: true, mfa_token: body.mfa_token })
+  return tokenResponse(body)
 }

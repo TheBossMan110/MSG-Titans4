@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session
 
 from src.core.logging import get_logger
@@ -471,6 +471,80 @@ def review_activity(db: Session, *, days: int | None = DEFAULT_WINDOW_DAYS) -> d
 # ══════════════════════════════════════════════════════════════
 # the dashboard
 # ══════════════════════════════════════════════════════════════
+def priority_levels(db: Session, *, days: int | None = DEFAULT_WINDOW_DAYS) -> dict[str, int]:
+    """How many complaints sit at each priority (SRS: administrators see priority levels)."""
+    since = _window(days)
+    query = select(Complaint.priority_code, func.count()).group_by(Complaint.priority_code)
+    if since is not None:
+        query = query.where(Complaint.created_at >= since)
+    return {(code or "UNSET"): count for code, count in db.execute(query).all()}
+
+
+_CLOSED = ("RESOLVED", "CLOSED")
+
+
+def sla_risks(db: Session, *, limit: int = 8) -> list[dict[str, Any]]:
+    """Open complaints whose resolution clock is at risk or already breached, soonest first."""
+    rows = db.execute(
+        select(SLAEvent, Complaint)
+        .join(Complaint, SLAEvent.complaint_id == Complaint.id)
+        .where(
+            SLAEvent.event_type == "RESOLUTION",
+            SLAEvent.met_at.is_(None),
+            or_(SLAEvent.at_risk.is_(True), SLAEvent.breached.is_(True)),
+            Complaint.status.not_in(_CLOSED),
+        )
+        .order_by(SLAEvent.due_at.asc())
+        .limit(limit)
+    ).all()
+    return [
+        {
+            "public_ref": c.public_ref, "title": c.title, "priority": c.priority_code,
+            "team": c.department.name if c.department else None,
+            "due_at": e.due_at.isoformat() if e.due_at else None, "breached": bool(e.breached),
+        }
+        for e, c in rows
+    ]
+
+
+def recent_mismatches(db: Session, *, limit: int = 8) -> list[dict[str, Any]]:
+    """The latest complaints where the rules overruled the model, with how many fields differed."""
+    rows = db.execute(
+        select(VerificationDecision, Complaint)
+        .join(Complaint, VerificationDecision.complaint_id == Complaint.id)
+        .where(VerificationDecision.genai_available.is_(True))
+        .where((VerificationDecision.total_fields - VerificationDecision.matched_fields) > 0)
+        .order_by(VerificationDecision.created_at.desc())
+        .limit(limit)
+    ).all()
+    return [
+        {
+            "public_ref": c.public_ref, "title": c.title, "outcome": d.outcome,
+            "mismatched_fields": int((d.total_fields or 0) - (d.matched_fields or 0)),
+            "critical": int(d.critical_mismatches or 0),
+        }
+        for d, c in rows
+    ]
+
+
+def manual_review_cases(db: Session, *, limit: int = 8) -> list[dict[str, Any]]:
+    """Complaints waiting on a person, most urgent first."""
+    rows = db.execute(
+        select(Complaint)
+        .where(Complaint.status == "MANUAL_REVIEW")
+        .order_by(Complaint.priority_code.asc().nulls_last(), Complaint.created_at.asc())
+        .limit(limit)
+    ).scalars().all()
+    return [
+        {
+            "public_ref": c.public_ref, "title": c.title, "priority": c.priority_code,
+            "team": c.department.name if c.department else None,
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+        }
+        for c in rows
+    ]
+
+
 def dashboard(db: Session, *, days: int | None = DEFAULT_WINDOW_DAYS) -> dict[str, Any]:
     """
     Everything the administrator dashboard shows, in one query pass.
@@ -492,6 +566,10 @@ def dashboard(db: Session, *, days: int | None = DEFAULT_WINDOW_DAYS) -> dict[st
         "traceability": traceability(db, days=days),
         "guard": guard_activity(db, days=days),
         "review": review_activity(db, days=days),
+        "priorities": priority_levels(db, days=days),
+        "sla_risks": sla_risks(db),
+        "mismatches": recent_mismatches(db),
+        "manual_review": manual_review_cases(db),
     }
     log.info(
         "dashboard_generated",

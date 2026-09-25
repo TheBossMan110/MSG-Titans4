@@ -29,7 +29,7 @@ const MILESTONE_ICON: Record<string, typeof CircleDot> = {
  * Where the complaint is, in the customer's words.
  *
  * Built from the milestones the server derives from the status history, so
- * it cannot drift from what actually happened. The AI step is violet and the
+ * it cannot drift from what actually happened. The AI step is blue and the
  * policy check forest — the same two colours the staff screens use for the
  * same two things.
  */

@@ -50,6 +50,7 @@ export function ComplaintTable({ items, hrefFor = (r) => `/dashboard/complaints/
                 <span aria-hidden>·</span><span>{fmtRelative(c.created_at)}</span>
               </span>
               <span className="mt-0.5 block truncate font-medium text-espresso">{c.title}</span>
+              {c.customer_type && <span className="mt-0.5 block truncate text-[12.5px] text-taupe">{c.customer_type}</span>}
               {(c.injection_suspected || c.is_duplicate || (c.repeat_count ?? 0) > 1) && (
                 <span className="mt-1.5 flex flex-wrap gap-1.5">
                   {c.injection_suspected && <Badge tone="critical" pulse>Injection</Badge>}
@@ -125,19 +126,20 @@ function Score({ label, value, note }: { label: string; value?: number | null; n
 export function ComparisonTable({ rows }: { rows?: S['ComparisonOut'][] }) {
   if (!rows?.length) return <Empty title="No comparison recorded" body="Both pipelines have to run before their answers can be compared." />
   const tone = (s: string) => (s === 'MATCH' || s === 'AGREED' ? 'verified' : s === 'MISMATCH' || s === 'CONFLICT' ? (rows ? 'critical' : 'warning') : 'warning')
+  const winner = (w?: string | null) => (!w ? '—' : /python|rule/i.test(w) ? 'Rules' : /genai|ai/i.test(w) ? 'AI' : /agree/i.test(w) ? 'Both agreed' : humanise(w))
+  const status = (st: string) => (st === 'PYTHON_MISSING' ? 'Rules silent' : st === 'GENAI_MISSING' ? 'AI silent' : humanise(st))
   return (
     <Table>
-      <thead><tr><Th>Field</Th><Th>AI proposed</Th><Th>Rules decided</Th><Th>Final</Th><Th>Status</Th><Th>Winner</Th><Th>Reason</Th></tr></thead>
+      <thead><tr><Th>Field</Th><Th>AI proposed</Th><Th>Rules decided</Th><Th>Used</Th><Th>Result</Th><Th>Why</Th></tr></thead>
       <tbody>
         {rows.map((r) => (
           <Tr key={r.field}>
             <Td className="font-medium">{humanise(r.field)}</Td>
-            <Td><span className="pencil rounded-md px-2 py-0.5 font-display italic text-[14px]">{r.genai_value ?? <span className="text-taupe not-italic">—</span>}</span></Td>
-            <Td><span className="ink rounded-md px-2 py-0.5 text-[13px]">{r.python_value ?? '—'}</span></Td>
-            <Td mono>{r.final_value ?? '—'}</Td>
-            <Td><Badge tone={tone(r.status)}>{humanise(r.status)}</Badge>{r.severity && r.severity !== 'NONE' && <Badge tone={r.severity === 'CRITICAL' ? 'critical' : r.severity === 'HIGH' ? 'warning' : 'neutral'} className="ml-1">{r.severity}</Badge>}</Td>
-            <Td>{r.winner ? humanise(r.winner) : '—'}</Td>
-            <Td className="max-w-[360px] text-[12.5px] text-taupe-2"><span title={r.explanation ?? ''}>{r.reason_code && <Mono className="mr-1 text-espresso-2">{r.reason_code}</Mono>}{r.explanation}</span></Td>
+            <Td><span className="pencil inline-block rounded-md px-2 py-0.5 font-display italic text-[14px]">{plainValue(r.genai_value)}</span></Td>
+            <Td><span className="ink inline-block rounded-md px-2 py-0.5 text-[13px]">{plainValue(r.python_value)}</span></Td>
+            <Td className="font-medium text-espresso">{plainValue(r.final_value)}<span className="block text-[12px] font-normal text-taupe-2">{winner(r.winner)}</span></Td>
+            <Td><span className="flex flex-wrap gap-1"><Badge tone={tone(r.status)}>{status(r.status)}</Badge>{r.severity && !['NONE', 'INFORMATIONAL'].includes(r.severity) && <Badge tone={r.severity === 'CRITICAL' ? 'critical' : r.severity === 'HIGH' ? 'warning' : 'neutral'}>{humanise(r.severity)}</Badge>}</span></Td>
+            <Td className="min-w-[220px] max-w-[360px] text-[12.5px] leading-relaxed text-taupe-2"><span title={r.reason_code ?? ''}>{plainSentence(r.explanation)}</span></Td>
           </Tr>
         ))}
       </tbody>
@@ -159,7 +161,7 @@ export function RuleHits({ hits, floor }: { hits?: S['RuleHitOut'][]; floor?: st
             {h.applied === false && <Badge>superseded by precedence</Badge>}
           </div>
           {h.rationale && <p className="mt-1.5 text-[13.5px] text-espresso-2">{h.rationale}</p>}
-          {h.signals && h.signals.length > 0 && <p className="mt-1.5 font-mono text-[11.5px] text-taupe-2">{(h.signals as unknown[]).map(String).join('  ')}</p>}
+          {h.signals && h.signals.length > 0 && <p className="mt-1.5 text-[12px] text-taupe-2">Matched on: {(h.signals as unknown[]).map((x) => String(x).replace(/_/g, ' ')).join(' · ')}</p>}
         </div>
       ))}
     </div>
@@ -448,7 +450,7 @@ export function EscalationPanel({ refId }: { refId: string }) {
     <Card tone={e.escalation_code && e.escalation_code !== 'NONE' ? 'sand' : 'ghost'}>
       <div className="flex flex-wrap items-center gap-2"><EscalationBadge code={e.escalation_code} /><span className="text-[13px] text-taupe-2">triggered by {humanise(e.triggered_by)}</span>{e.rule_ref && <Mono className="text-[12px]">{e.rule_ref}</Mono>}{e.acknowledged_at && <Badge tone="verified">acknowledged {fmtRelative(e.acknowledged_at)}</Badge>}</div>
       {e.reason && <p className="mt-2 text-[13.5px]">{e.reason}</p>}
-      {e.notes ? <blockquote className="pencil mt-3 rounded-[var(--radius-md)] p-4 font-display italic text-[14.5px] leading-relaxed whitespace-pre-wrap">{e.notes}</blockquote> : e.note_available === false ? <p className="mt-2 text-[12.5px] text-taupe-2">No escalation note was generated (GenAI unavailable or not required).</p> : null}
+      {e.notes ? <blockquote className="pencil mt-3 rounded-[var(--radius-md)] p-4 font-display italic text-[14.5px] leading-relaxed whitespace-pre-wrap">{e.notes}</blockquote> : e.note_available === false ? <p className="mt-2 text-[12.5px] text-taupe-2">No handover note on file. The escalation itself is recorded above; a note is written for complaints submitted live, and is skipped when the AI is unavailable or for bulk-processed datasets.</p> : null}
     </Card>
   )
 }
@@ -463,7 +465,7 @@ export function AuditTrail({ entityType, entityId }: { entityType: string; entit
     <ol className="flex flex-col gap-2">
       {rows.map((r) => (
         <li key={r.id} className="rounded-[var(--radius-md)] border border-line bg-ivory px-4 py-3">
-          <div className="flex flex-wrap items-center gap-2 text-[13px]"><Mono className="font-medium">{r.action}</Mono><span className="text-taupe-2">{r.actor ?? 'system'}{r.actor_role ? ` (${r.actor_role})` : ''} · {fmtDate(r.at)}</span>{r.request_id && <Mono className="text-[11px] text-taupe">{r.request_id}</Mono>}</div>
+          <div className="flex flex-wrap items-center gap-2 text-[13px]"><span className="font-medium text-espresso">{humanise(r.action)}</span><span className="text-taupe-2">{r.actor ?? 'system'}{r.actor_role ? ` (${r.actor_role})` : ''} · {fmtDate(r.at)}</span></div>
           {r.reason && <p className="mt-1.5 text-[13.5px]">{r.reason}</p>}
           <BeforeAfter before={r.before} after={r.after} />
         </li>
@@ -477,16 +479,45 @@ export function BeforeAfter({ before, after }: { before?: Record<string, unknown
   const keys = Array.from(new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})]))
   if (!keys.length) return null
   return (
-    <dl className="mt-2 grid grid-cols-[max-content_1fr_1fr] gap-x-4 gap-y-1 font-mono text-[11.5px]">
-      <dt className="eyebrow text-[9px]">field</dt><dt className="eyebrow text-[9px]">before</dt><dt className="eyebrow text-[9px]">after</dt>
+    <dl className="mt-2 grid grid-cols-[max-content_1fr_1fr] gap-x-4 gap-y-1 text-[12.5px]">
+      <dt className="eyebrow text-[9px]">What</dt><dt className="eyebrow text-[9px]">Before</dt><dt className="eyebrow text-[9px]">After</dt>
       {keys.map((k) => (
-        <div key={k} className="contents"><dt className="text-taupe-2">{k}</dt><dd className="pencil rounded px-1.5 py-0.5 break-all">{fmtVal(before?.[k])}</dd><dd className="ink rounded px-1.5 py-0.5 break-all">{fmtVal(after?.[k])}</dd></div>
+        <div key={k} className="contents"><dt className="text-taupe-2">{humanise(k)}</dt><dd className="pencil rounded px-1.5 py-0.5 [overflow-wrap:anywhere]">{fmtVal(before?.[k])}</dd><dd className="ink rounded px-1.5 py-0.5 [overflow-wrap:anywhere]">{fmtVal(after?.[k])}</dd></div>
       ))}
     </dl>
   )
 }
 
-const fmtVal = (v: unknown) => (v === undefined ? '' : v === null ? 'null' : typeof v === 'object' ? JSON.stringify(v) : String(v))
+/** A stored code as words: TECHNICAL_SUPPORT -> Technical support. P0, DOC-007 and ids stay as they are. */
+const CODE = /^[A-Z][A-Z0-9]*(_[A-Z0-9]+)+$|^[A-Z]{4,}$/
+export function plainCode(v: string): string {
+  return CODE.test(v) ? humanise(v) : v
+}
+
+/** Any stored value as something a person reads: no JSON, no true/false, no SHOUTING_CODES. */
+export function plainValue(v: unknown): string {
+  if (v === undefined || v === null || v === '') return '—'
+  if (typeof v === 'boolean') return v ? 'Yes' : 'No'
+  if (typeof v === 'number') return v.toLocaleString()
+  if (typeof v === 'string') return v.toLowerCase() === 'true' ? 'Yes' : v.toLowerCase() === 'false' ? 'No' : plainCode(v)
+  if (Array.isArray(v)) return v.length ? v.map(plainValue).join(', ') : '—'
+  if (typeof v === 'object') {
+    const entries = Object.entries(v as Record<string, unknown>).filter(([, x]) => x !== null && x !== undefined && x !== '')
+    return entries.length ? entries.map(([k, x]) => `${humanise(k)}: ${plainValue(x)}`).join('; ') : '—'
+  }
+  return String(v)
+}
+
+/** Replace codes inside a sentence: "GenAI derived DELIVERY" -> "GenAI derived Delivery". */
+export function plainSentence(text?: string | null): string {
+  if (!text) return ''
+  return text
+    .replace(/^(AGREED|GENAI_PYTHON_DISAGREEMENT|PYTHON_DOES_NOT_DERIVE|[A-Z_]{6,})\s+/, '')
+    .replace(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b|\b[A-Z]{4,}\b/g, (m) => (m === 'GENAI' ? 'GenAI' : humanise(m)))
+    .replace(/\bPython\b/g, 'the rules')
+}
+
+const fmtVal = plainValue
 
 /* ------------------------------------------------------------------ review action form */
 

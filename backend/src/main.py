@@ -59,6 +59,16 @@ async def lifespan(app: FastAPI):
     )
     settings.storage_local_dir.mkdir(parents=True, exist_ok=True)
     settings.reports_dir.mkdir(parents=True, exist_ok=True)
+    if settings.app_env != "test":
+        # Rules, lexicon and taxonomy load in the background, so the first
+        # complaint after a restart is as fast as every other one.
+        from src.core.refcache import start_refresher
+
+        start_refresher()
+        # The support mailbox, read every EMAIL_POLL_SECONDS once connected.
+        from src.services.email_channel import start_poller
+
+        start_poller()
     yield
     log.info("shutdown")
 

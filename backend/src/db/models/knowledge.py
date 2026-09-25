@@ -197,7 +197,14 @@ class Chunk(UUIDPrimaryKey, TimestampMixin, Base):
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     text: Mapped[str] = mapped_column(Text, nullable=False)
     token_count: Mapped[int | None] = mapped_column(Integer)
-    embedding: Mapped[list[float] | None] = mapped_column(Vector(settings.embedding_dim))
+    # Deferred: ~3 KB per row that only the database's own similarity ranking
+    # reads. Loading it with every retrieved passage made each policy search
+    # ship megabytes over the wire to throw them away -- measured at 10-24 s of
+    # a 30 s intake against the hosted database. Code that does need the
+    # vector (SQLite ranking, re-embedding) asks for it with ``undefer``.
+    embedding: Mapped[list[float] | None] = mapped_column(
+        Vector(settings.embedding_dim), deferred=True
+    )
 
     document_version = relationship("DocumentVersion", back_populates="chunks")
 

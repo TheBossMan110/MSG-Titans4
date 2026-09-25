@@ -4,6 +4,7 @@ import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
 import SmoothScroll from '@/components/motion/smooth-scroll'
 import { ToastProvider } from '@/components/ui/feedback'
+import { ChatLauncher } from '@/components/app/chat'
 
 // Three faces, one job each. Self-hosted through next/font: no layout shift,
 // no request to a font CDN at runtime.
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ToastProvider>
             <SmoothScroll />
             {children}
+            <ChatLauncher />
           </ToastProvider>
         </AuthProvider>
       </body>

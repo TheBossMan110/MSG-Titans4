@@ -61,7 +61,7 @@ export function Ticker() {
     <section aria-label="What this deployment is running" className="relative overflow-hidden border-y border-line-soft bg-cream/70 py-4 backdrop-blur-sm">
       <div className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-24 bg-gradient-to-r from-cream to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-24 bg-gradient-to-l from-cream to-transparent" />
-      <div className="flex w-max animate-marquee hover:[animation-play-state:paused] motion-reduce:animate-none">
+      <div className="flex w-max animate-marquee hover:[animation-play-state:paused] [.reduce-motion_&]:animate-none">
         {row(false)}
         {row(true)}
       </div>

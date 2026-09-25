@@ -194,11 +194,100 @@ export function uploadWithProgress<T>(
   })
 }
 
+/* ------------------------------------------------------------------ live intake */
+
+/** One step of a complaint's analysis, as the backend reports it. */
+export interface ProgressStep {
+  step: string
+  state: 'active' | 'done' | 'skipped'
+  label: string
+  detail: string | null
+  elapsed_ms: number
+}
+
+/**
+ * Submit a complaint and follow its analysis step by step.
+ *
+ * The backend streams server-sent events: `step` as each stage starts and
+ * finishes, then one `result` or `error`. EventSource cannot POST or send a
+ * bearer header, so the stream is read from `fetch` directly.
+ */
+export async function submitWithProgress(
+  data: S['ComplaintCreate'],
+  analyse: boolean,
+  onStep: (step: ProgressStep) => void,
+  retried = false,
+): Promise<S['IntakeResponse']> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', Accept: 'text/event-stream' }
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`
+
+  let res: Response
+  try {
+    res = await fetch(`${API_BASE}/api/complaints/stream${qs({ analyse })}`, {
+      method: 'POST', headers, body: JSON.stringify(data),
+    })
+  } catch {
+    throw new ApiError(0, 'The server could not be reached. Is the backend running?')
+  }
+  if (res.status === 401 && !retried) {
+    if (await refreshSession()) return submitWithProgress(data, analyse, onStep, true)
+    accessToken = null
+    sessionUser = null
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('auth:expired'))
+  }
+  if (!res.ok || !res.body) {
+    let parsed: unknown = null
+    try { parsed = await res.json() } catch {}
+    throw new ApiError(res.status, describe(res.status, parsed), parsed)
+  }
+
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader()
+  let buffer = ''
+  let savedRef: string | null = null
+  for (;;) {
+    const { value, done } = await reader.read()
+    if (done) break
+    buffer += value
+    let cut: number
+    while ((cut = buffer.indexOf('\n\n')) >= 0) {
+      const block = buffer.slice(0, cut)
+      buffer = buffer.slice(cut + 2)
+      let kind = ''
+      let payload = ''
+      for (const line of block.split('\n')) {
+        if (line.startsWith('event: ')) kind = line.slice(7)
+        else if (line.startsWith('data: ')) payload += line.slice(6)
+      }
+      if (!kind || !payload) continue // a keep-alive comment
+      const parsed = JSON.parse(payload)
+      if (kind === 'step') {
+        const step = parsed as ProgressStep
+        if (step.step === 'saved' && step.state === 'done' && step.detail) savedRef = step.detail
+        onStep(step)
+      } else if (kind === 'result') {
+        return parsed as S['IntakeResponse']
+      } else if (kind === 'error') {
+        const status = parsed?.error?.code === 'VALIDATION_ERROR' ? 422 : 500
+        throw new ApiError(status, describe(status, parsed), parsed)
+      }
+    }
+  }
+  // The connection closed early. If the complaint was already saved it is not lost.
+  throw new ApiError(
+    0,
+    savedRef
+      ? `The connection dropped, but your complaint was saved as ${savedRef}. You can follow it from My complaints.`
+      : 'The connection dropped before your complaint was saved. Please try again.',
+  )
+}
+
 /* ------------------------------------------------------------------ shared types */
 
 export type Role = 'customer' | 'agent' | 'reviewer' | 'manager' | 'admin' | 'evaluator'
 export type User = Omit<S['UserOut'], 'role'> & { role: Role }
 export interface SessionResponse { access_token: string; expires_in: number; user: User }
+/** A correct password on an account with two-step sign-in: the code is still to come. */
+export interface MfaChallenge { mfa_required: true; mfa_token: string }
 
 export interface Page<T> { items: T[]; total: number; page?: number; page_size?: number }
 
@@ -231,11 +320,31 @@ export interface MyQueue {
 
 export const auth = {
   /** Via the session proxy so the refresh token becomes an httpOnly cookie. */
-  login: async (email: string, password: string): Promise<SessionResponse> => {
+  login: async (email: string, password: string): Promise<SessionResponse | MfaChallenge> => {
     const res = await fetch('/api/session/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
+      credentials: 'same-origin',
+    })
+    if (!res.ok) {
+      let parsed: unknown = null
+      try { parsed = await res.json() } catch {}
+      throw new ApiError(res.status, describe(res.status, parsed), parsed)
+    }
+    const data = (await res.json()) as SessionResponse | MfaChallenge
+    if ('mfa_required' in data && data.mfa_required) return data
+    const session = data as SessionResponse
+    accessToken = session.access_token
+    sessionUser = session.user
+    return session
+  },
+  /** Second step of a two-step sign-in: an authenticator code or a recovery code. */
+  loginMfa: async (mfa_token: string, code: string): Promise<SessionResponse> => {
+    const res = await fetch('/api/session/login/mfa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mfa_token, code }),
       credentials: 'same-origin',
     })
     if (!res.ok) {
@@ -270,6 +379,16 @@ export const auth = {
   me: () => apiFetch<User>('/api/auth/me'),
   changePassword: (current_password: string, new_password: string) =>
     apiFetch<S['MessageResponse']>('/api/auth/change-password', { method: 'POST', body: { current_password, new_password } }),
+  updateMe: (full_name: string) => apiFetch<User>('/api/auth/me', { method: 'PATCH', body: { full_name } }),
+  security: () => apiFetch<S['SecurityOverview']>('/api/auth/security'),
+  sessions: () => apiFetch<S['SessionOut'][]>('/api/auth/sessions'),
+  revokeSession: (id: string) => apiFetch<S['MessageResponse']>(`/api/auth/sessions/${enc(id)}`, { method: 'DELETE' }),
+  revokeOtherSessions: () => apiFetch<S['MessageResponse']>('/api/auth/sessions/revoke-others', { method: 'POST' }),
+  activity: (limit = 30) => apiFetch<S['ActivityOut'][]>(`/api/auth/activity${qs({ limit })}`),
+  mfaSetup: () => apiFetch<S['MfaSetupOut']>('/api/auth/mfa/setup', { method: 'POST' }),
+  mfaEnable: (code: string) => apiFetch<S['RecoveryCodesOut']>('/api/auth/mfa/enable', { method: 'POST', body: { code } }),
+  mfaDisable: (password: string, code: string) => apiFetch<S['MessageResponse']>('/api/auth/mfa/disable', { method: 'POST', body: { password, code } }),
+  mfaRecoveryCodes: (code: string) => apiFetch<S['RecoveryCodesOut']>('/api/auth/mfa/recovery-codes', { method: 'POST', body: { code } }),
   logout: async () => {
     try {
       await fetch('/api/session/logout', {
@@ -296,7 +415,27 @@ export const system = {
 export interface ComplaintFilters {
   page?: number; size?: number; status?: string; category?: string; department?: string
   urgency?: string; priority?: string; verification_outcome?: string; requires_review?: boolean
-  dataset_tag?: string; search?: string
+  dataset_tag?: string; customer_type?: string; sentiment?: string; escalation?: string
+  date_from?: string; date_to?: string; search?: string
+}
+
+export interface ResponseDraft {
+  version: number; tone?: string; draft_text?: string | null; final_text?: string | null
+  guard_status?: string; citations?: unknown[]; flags?: unknown[]; approved_at?: string | null; sent_at?: string | null
+}
+export interface AgentItem {
+  public_ref: string; title: string; status: string; assigned_to_me: boolean
+  category: string | null; priority: string | null; urgency: string | null; sentiment: string | null
+  team: string | null; summary: string | null
+  recommendation: { primary_issue?: string | null; steps: string[]; escalation_reason?: string | null } | null
+  validation: { outcome: string | null; agreement_pct: number | null; requires_review: boolean }
+  suggested_response: { text: string | null; guard_status: string; version: number } | null
+  escalation_warnings: string[]; due_at: string | null
+}
+export interface AgentWorkspace {
+  scope: 'mine' | 'all'; team: string | null
+  counts: { total: number; assigned_to_me: number; with_warnings: number; needs_review: number; without_reply: number }
+  complaints: AgentItem[]
 }
 
 export const complaints = {
@@ -319,6 +458,8 @@ export const complaints = {
     apiFetch<S['FollowUpOut'][]>(`/api/complaints/${enc(ref)}/follow-ups/${enc(id)}/complete`, { method: 'POST' }),
   escalation: (ref: string) => apiFetch<S['schemas__complaints__EscalationOut']>(`/api/complaints/${enc(ref)}/escalation`),
   lifecycle: (ref: string) => apiFetch<S['LifecycleOut']>(`/api/complaints/${enc(ref)}/lifecycle`),
+  responses: (ref: string) => apiFetch<ResponseDraft[]>(`/api/complaints/${enc(ref)}/responses`),
+  draftResponse: (ref: string) => apiFetch<ResponseDraft>(`/api/complaints/${enc(ref)}/responses`, { method: 'POST' }),
 
   /* ── what the customer can do after submitting ── */
   answer: (ref: string, questionId: string, answer: string) =>
@@ -393,6 +534,8 @@ export const analytics = {
   },
   exports: (limit?: number) => apiFetch<S['ExportHistoryOut'][]>(`/api/analytics/exports${qs({ limit })}`),
   myQueue: () => apiFetch<MyQueue>('/api/analytics/my-queue'),
+  /** The agent dashboard: assigned/team complaints with recommendation, validation, reply and warnings. */
+  agentWorkspace: (department?: string) => apiFetch<AgentWorkspace>(`/api/analytics/agent-workspace${qs({ department })}`),
 }
 
 /* ------------------------------------------------------------------ knowledge base */
@@ -468,6 +611,27 @@ export const admin = {
 }
 
 /* ------------------------------------------------------------------ audit */
+
+/** The support mailbox: what arrived, what was answered, and a way to test without Gmail. */
+export const mail = {
+  status: () => apiFetch<Record<string, unknown> & { address: string | null; receiving: boolean; sending: string | null; resend_key_present: boolean; last_poll_at: string | null; last_error: string | null }>('/api/email/status'),
+  messages: (f?: { direction?: 'IN' | 'OUT'; intent?: string; page?: number; size?: number }) => apiFetch<Page<S['EmailOut']>>(`/api/email/messages${qs(f)}`),
+  message: (id: string) => apiFetch<S['EmailDetail']>(`/api/email/messages/${enc(id)}`),
+  poll: () => apiFetch<Record<string, unknown>>('/api/email/poll', { method: 'POST' }),
+  simulate: (body: S['SimulateIn']) => apiFetch<S['EmailDetail']>('/api/email/simulate', { method: 'POST', body }),
+  preview: () => apiFetch<{ html: string }>('/api/email/preview'),
+}
+
+/** Nova, the chat receptionist. It only talks; filing goes through complaints.stream. */
+export const assistant = {
+  chat: (messages: Array<{ role: 'user' | 'assistant'; content: string }>) =>
+    apiFetch<S['ChatOut']>('/api/assistant/chat', { method: 'POST', body: { messages } }),
+}
+
+/** The organisation the dataset defines: profile, teams, taxonomy, SLAs, templates. */
+export const organisation = {
+  get: () => apiFetch<S['OrganisationOut']>('/api/organisation'),
+}
 
 export const audit = {
   list: (f?: { page?: number; size?: number; entity_type?: string; action?: string; actor?: string; entity_id?: string }) =>

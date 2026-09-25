@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
-import { complaints, errorMessage, type S } from '@/lib/api'
+import { complaints, errorMessage, submitWithProgress, type S } from '@/lib/api'
 import {
   AiBadge, Badge, Button, Mono, Pulse, RuleBadge, humanise, escalationTone,
   priorityTone, statusTone, urgencyTone, verificationTone,
@@ -16,6 +16,7 @@ import { Card } from '@/components/ui/surfaces'
 import { Checkbox, FloatInput, FloatTextarea } from '@/components/ui/forms'
 import { ErrorState } from '@/components/ui/feedback'
 import { MilestoneTimeline, TeamCard } from '@/components/app/customer'
+import { LiveAnalysis, applyStep, type StepMap } from '@/components/app/live-analysis'
 import { cn } from '@/lib/utils'
 
 const CHANNELS = ['WEB', 'EMAIL', 'PHONE', 'CHAT', 'SOCIAL', 'IN_PERSON']
@@ -39,6 +40,8 @@ function Intake() {
   const [phase, setPhase] = useState<'form' | 'running' | 'done'>('form')
   const [result, setResult] = useState<S['IntakeResponse'] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [steps, setSteps] = useState<StepMap>({})
+  const [finished, setFinished] = useState(false)
   const set = <K extends keyof S['ComplaintCreate']>(k: K, v: S['ComplaintCreate'][K]) => setForm((f) => ({ ...f, [k]: v }))
   const preview = usePreview(form.title, form.description)
 
@@ -49,11 +52,16 @@ function Intake() {
     e.preventDefault()
     if (!ready) return
     setError(null)
+    setSteps({})
+    setFinished(false)
     setPhase('running')
     const body: S['ComplaintCreate'] = { ...form }
     for (const k of Object.keys(body) as Array<keyof S['ComplaintCreate']>) if (body[k] === '' || body[k] === undefined) delete body[k]
     try {
-      const r = await complaints.create(body, staff ? analyse : true)
+      const r = await submitWithProgress(body, staff ? analyse : true, (e) => setSteps((m) => applyStep(m, e)))
+      // Let the finished list register before it gives way to the result.
+      setFinished(true)
+      await new Promise((resolve) => setTimeout(resolve, 900))
       setResult(r)
       setPhase('done')
     } catch (err) {
@@ -62,7 +70,7 @@ function Intake() {
     }
   }
 
-  if (phase === 'running') return <AnalysisProgress genai={staff ? analyse : true} />
+  if (phase === 'running') return <LiveAnalysis steps={steps} finished={finished} />
   if (phase === 'done' && result) return <Result result={result} staff={staff} onAnother={() => { setForm(BLANK); setResult(null); setPhase('form') }} />
 
   const suggestedRef = !form.order_ref ? preview.data?.entities?.find((e) => e.type === 'ORDER_ID' || e.type === 'TRACKING_ID')?.value : undefined
@@ -180,7 +188,7 @@ function Intake() {
         <div className="flex flex-wrap items-center gap-4">
           <Button type="submit" size="lg" disabled={!ready} arrow>Submit complaint</Button>
           <span className="text-[13px] text-taupe">
-            {ready ? 'Takes about 15–30 seconds: the AI reads it, then the rules check every decision.' : 'A title and a sentence or two are enough to start.'}
+            {ready ? 'Usually under 20 seconds — you will see every step as it happens.' : 'A title and a sentence or two are enough to start.'}
           </span>
         </div>
       </form>
@@ -262,7 +270,7 @@ function LivePreview({ description, state }: { description: string; state: Previ
                   {(data.entities ?? []).map((e, i) => {
                     const Icon = ENTITY_ICON[e.type] ?? Hash
                     return (
-                      <span key={`${e.type}-${e.value}-${i}`} className="inline-flex animate-rise items-center gap-1.5 rounded-full border border-ai-line bg-white px-2.5 py-1 text-[12.5px] shadow-[0_1px_2px_rgba(79,63,209,0.08)]">
+                      <span key={`${e.type}-${e.value}-${i}`} className="inline-flex animate-rise items-center gap-1.5 rounded-full border border-ai-line bg-white px-2.5 py-1 text-[12.5px] shadow-[0_1px_2px_rgba(27,94,140,0.08)]">
                         <Icon size={12} className="text-ai" aria-hidden />
                         <span className="text-taupe">{humanise(e.type)}</span>
                         <span className="font-mono font-medium text-espresso">{e.value}</span>
@@ -337,77 +345,6 @@ function highlight(text: string, entities: S['PreviewEntityOut'][]) {
 }
 
 /* ------------------------------------------------------------------ analysis progress */
-
-const STEPS: Array<{ label: string; detail: string; at: number; kind: 'ai' | 'rule' | 'plain' }> = [
-  { label: 'Reading the complaint', detail: 'Cleaning the text and checking it is complete', at: 0, kind: 'plain' },
-  { label: 'Screening for manipulation', detail: 'Instructions hidden in the text are neutralised, never obeyed', at: 1.2, kind: 'rule' },
-  { label: 'Retrieving policy', detail: 'Finding the sections of company policy that apply', at: 2.6, kind: 'plain' },
-  { label: 'Understanding intent', detail: 'The AI proposes category, urgency and a resolution', at: 4.2, kind: 'ai' },
-  { label: 'Checking against the rules', detail: 'The deterministic engine decides every field independently', at: 11, kind: 'rule' },
-  { label: 'Comparing and preparing', detail: 'Where the two disagree, the rules win and a person reviews it', at: 15, kind: 'rule' },
-]
-
-/**
- * The submit call is one request, so the stages below advance on the times
- * they typically take rather than on server events. The last stage holds
- * until the response arrives — it never claims to be finished early.
- */
-function AnalysisProgress({ genai }: { genai: boolean }) {
-  const [elapsed, setElapsed] = useState(0)
-  useEffect(() => {
-    const start = Date.now()
-    const id = window.setInterval(() => setElapsed((Date.now() - start) / 1000), 200)
-    return () => clearInterval(id)
-  }, [])
-  const steps = genai ? STEPS : STEPS.filter((s) => s.kind !== 'ai')
-  const activeIndex = steps.reduce((acc, s, i) => (elapsed >= s.at ? i : acc), 0)
-
-  return (
-    <div className="mx-auto flex max-w-[720px] flex-col gap-7 py-6">
-      <div className="animate-rise text-center">
-        <p className="eyebrow mb-3 flex items-center justify-center gap-2"><Pulse tone="ai" /> Analysing</p>
-        <h1 className="display text-h2">Two opinions, one decision.</h1>
-        <p className="mx-auto mt-3 max-w-[52ch] text-[15px] text-taupe">
-          The AI reads your complaint and proposes what should happen. Then the company&rsquo;s own rules
-          check every part of it, independently.
-        </p>
-      </div>
-      <Card tone="glass" padding="lg" radius="xl">
-        <ol className="flex flex-col gap-1">
-          {steps.map((s, i) => {
-            const done = i < activeIndex
-            const active = i === activeIndex
-            return (
-              <li key={s.label} className={cn('flex items-center gap-4 rounded-2xl px-3 py-3 transition-colors duration-500', active && 'bg-white/80')}>
-                <span className="w-7 font-mono text-[12px] text-taupe">{String(i + 1).padStart(2, '0')}</span>
-                <span
-                  className={cn(
-                    'relative inline-flex size-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-500',
-                    done ? (s.kind === 'ai' ? 'border-ai bg-ai text-white' : s.kind === 'rule' ? 'border-rule bg-rule text-white' : 'border-espresso bg-espresso text-ink-on-dark')
-                      : active ? 'border-ai bg-white text-ai' : 'border-line bg-white text-taupe',
-                  )}
-                >
-                  {active && <span aria-hidden className="absolute inset-0 rounded-full border-2 border-ai animate-pulse-ring" />}
-                  {done ? <CheckCircle2 size={15} aria-hidden /> : s.kind === 'ai' ? <Sparkles size={14} aria-hidden /> : s.kind === 'rule' ? <ShieldCheck size={14} aria-hidden /> : <Hash size={13} aria-hidden />}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className={cn('text-[15px] font-medium', done || active ? 'text-espresso' : 'text-taupe')}>{s.label}</p>
-                  <p className="text-[13px] text-taupe">{s.detail}</p>
-                </div>
-                {s.kind === 'ai' && <AiBadge>AI</AiBadge>}
-                {s.kind === 'rule' && <RuleBadge>rules</RuleBadge>}
-              </li>
-            )
-          })}
-        </ol>
-        <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-sand/80">
-          <div className="h-full rounded-full bg-gradient-to-r from-ai via-ai-2 to-rule-2 transition-[width] duration-700" style={{ width: `${Math.min(94, (elapsed / 22) * 100)}%` }} />
-        </div>
-        <p className="mt-3 text-center text-[12.5px] tnum text-taupe">{elapsed.toFixed(0)} s</p>
-      </Card>
-    </div>
-  )
-}
 
 /* ------------------------------------------------------------------ result */
 

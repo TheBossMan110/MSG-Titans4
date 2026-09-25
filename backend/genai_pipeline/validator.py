@@ -50,6 +50,7 @@ from sqlalchemy.orm import Session
 from schemas.genai import ComplaintIntelligence
 from src.core.logging import get_logger
 from src.db.models import Category, Chunk, Department, EscalationLevel, PriorityLevel, Subcategory
+from src.core.refcache import reference_data
 
 log = get_logger("genai_pipeline.validator")
 
@@ -218,11 +219,18 @@ class ReferenceData:
         return {code for group in self.subcategories.values() for code in group}
 
 
+@reference_data("reference_data")
 def load_reference_data(db: Session) -> ReferenceData:
     categories = {c.code for c in db.execute(select(Category)).scalars()}
     subcategories: dict[str, set[str]] = {}
-    for sub in db.execute(select(Subcategory)).scalars():
-        subcategories.setdefault(sub.category.code, set()).add(sub.code)
+    # One join, not ``sub.category`` per row: that lazy load was a round trip
+    # per subcategory, a dozen of them on every complaint.
+    for category_code, sub_code in db.execute(
+        select(Category.code, Subcategory.code).join(
+            Category, Subcategory.category_id == Category.id
+        )
+    ).all():
+        subcategories.setdefault(category_code, set()).add(sub_code)
     return ReferenceData(
         categories=categories,
         subcategories=subcategories,

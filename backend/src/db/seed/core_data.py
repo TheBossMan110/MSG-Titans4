@@ -146,6 +146,35 @@ def seed_taxonomy(db: Session) -> dict[str, int]:
                 "description": "Fictional organisation profile (SRS 1.8 #1)."},
     )
 
+    # What the dataset says about each team beyond its name and mailbox: who
+    # it escalates to, what it handles, the hours it commits to. Display-only,
+    # so it lives beside the profile rather than as columns nothing queries.
+    upsert(
+        db, AppConfig,
+        match={"key": "department_profiles"},
+        values={
+            "value": {
+                row["code"]: {
+                    "escalation_contact": row.get("escalation_contact"),
+                    "handles": row.get("handles") or [],
+                    "sla_response_hours": row.get("sla_response_hours"),
+                    "sla_resolution_hours": row.get("sla_resolution_hours"),
+                    "source_id": row.get("source_id"),
+                }
+                for row in data.get("departments", [])
+            },
+            "description": "Per-department escalation contact, remit and SLA hours, from the dataset.",
+        },
+    )
+    upsert(
+        db, AppConfig,
+        match={"key": "response_templates"},
+        values={
+            "value": data.get("response_templates", []),
+            "description": "The organisation's reply templates, as authored in the dataset.",
+        },
+    )
+
     log.info("seeded_taxonomy", **counts)
     return counts
 

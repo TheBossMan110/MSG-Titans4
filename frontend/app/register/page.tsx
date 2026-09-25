@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { errorMessage } from '@/lib/api'
 import { Badge, Button, Eyebrow, Wordmark } from '@/components/ui/primitives'
-import { Field, Input } from '@/components/ui/forms'
+import { Field, Input, PasswordInput } from '@/components/ui/forms'
 import { cn } from '@/lib/utils'
 
 const MIN_PASSWORD = 12
@@ -93,7 +93,7 @@ function Register() {
               error={tooShort ? `At least ${MIN_PASSWORD} characters.` : null}
               hint={!tooShort ? `At least ${MIN_PASSWORD} characters. A passphrase beats a short complicated word.` : undefined}
             >
-              {(id) => <Input id={id} type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required minLength={MIN_PASSWORD} />}
+              {(id) => <PasswordInput id={id} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" required minLength={MIN_PASSWORD} />}
             </Field>
 
             {password.length > 0 && (
@@ -114,7 +114,7 @@ function Register() {
             )}
 
             <Field label="Repeat password" required error={mismatch ? 'The two passwords do not match.' : null}>
-              {(id) => <Input id={id} type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required />}
+              {(id) => <PasswordInput id={id} value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required />}
             </Field>
 
             {error && (

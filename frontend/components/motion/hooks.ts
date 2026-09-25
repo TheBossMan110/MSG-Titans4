@@ -4,19 +4,20 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 're
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
+import { MOTION_EVENT, prefersReducedMotion } from '@/lib/motion-pref'
+
 gsap.registerPlugin(ScrollTrigger)
 
 const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
-/** True when the visitor has asked for less motion. Re-evaluates if they change it. */
+/** True when the visitor switched on "Reduce motion" (see lib/motion-pref). Re-evaluates if they change it. */
 export function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false)
   useEffect(() => {
-    const query = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const update = () => setReduced(query.matches)
+    const update = () => setReduced(prefersReducedMotion())
     update()
-    query.addEventListener('change', update)
-    return () => query.removeEventListener('change', update)
+    window.addEventListener(MOTION_EVENT, update)
+    return () => window.removeEventListener(MOTION_EVENT, update)
   }, [])
   return reduced
 }
@@ -88,11 +89,11 @@ export function useReveal(
     const lines = Array.from(root.querySelectorAll<HTMLElement>('[data-line]'))
     if (!items.length && !lines.length) return
 
-    gsap.set(items, { opacity: 0, y, willChange: 'transform, opacity' })
-    gsap.set(lines, { yPercent: 115, willChange: 'transform' })
+    if (items.length) gsap.set(items, { opacity: 0, y, willChange: 'transform, opacity' })
+    if (lines.length) gsap.set(lines, { yPercent: 135, willChange: 'transform' })
 
     // What we OBSERVE is not always what we ANIMATE. A headline line sits at
-    // yPercent 115 inside an overflow-hidden mask, which means it is entirely
+    // yPercent 135 inside an overflow-hidden mask, which means it is entirely
     // clipped — and IntersectionObserver honours ancestor clipping, so it
     // would report such a line as never on screen and the headline would stay
     // hidden for ever. Observe the unclipped headline instead, and animate

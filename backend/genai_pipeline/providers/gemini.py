@@ -14,6 +14,7 @@ regardless of which provider produced the text.
 
 from __future__ import annotations
 
+import threading
 import time
 from functools import lru_cache
 from typing import Any
@@ -41,15 +42,66 @@ _TRUNCATED = {"MAX_TOKENS", "LENGTH"}
 _REFUSED = {"SAFETY", "RECITATION", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII"}
 
 
+_client_lock = threading.Lock()
+
+
 @lru_cache(maxsize=1)
-def _client() -> Any:
-    if not settings.gemini_api_key:
-        raise ProviderUnavailable("GEMINI_API_KEY is not configured", provider="gemini")
+def _build_client() -> Any:
     try:
         from google import genai
     except ImportError as exc:  # pragma: no cover
         raise ProviderUnavailable("google-genai is not installed", provider="gemini") from exc
-    return genai.Client(api_key=settings.gemini_api_key)
+    from google.genai import types
+
+    # The SDK has no deadline of its own and retries 5xx internally, which
+    # together let one overloaded model hold a complaint for minutes. The
+    # deadline here, and one attempt per call, leave retrying to the chain,
+    # which knows to move to the next model instead.
+    return genai.Client(
+        api_key=settings.gemini_api_key,
+        http_options=types.HttpOptions(
+            timeout=settings.llm_timeout_seconds * 1000,
+            retry_options=types.HttpRetryOptions(attempts=1),
+        ),
+    )
+
+
+def _client() -> Any:
+    """
+    The one shared SDK client, built once under a lock.
+
+    ``lru_cache`` alone is not enough: workers arriving together each build a
+    client, one is cached, and the others are garbage-collected -- closing
+    their connection under a request still in flight ("Cannot send a request,
+    as the client has been closed"). The lock makes the first build the only
+    one.
+    """
+    if not settings.gemini_api_key:
+        raise ProviderUnavailable("GEMINI_API_KEY is not configured", provider="gemini")
+    with _client_lock:
+        return _build_client()
+
+
+# Thinking-token budgets for the 2.5 family, which predates thinking levels.
+_BUDGET_25 = {"minimal": 0, "low": 512, "medium": 2048, "high": -1}
+
+
+def _thinking_config(model: str) -> Any | None:
+    """The configured reasoning effort, in whichever form this model accepts."""
+    from google.genai import types
+
+    effort = (settings.llm_reasoning_effort or "default").lower()
+    if effort == "default":
+        return None
+    if model.startswith("gemini-2.5"):
+        budget = _BUDGET_25.get(effort)
+        if budget == 0 and "pro" in model:
+            budget = 128  # 2.5 Pro cannot switch thinking off entirely
+        return None if budget is None else types.ThinkingConfig(thinking_budget=budget)
+    if model.startswith("gemini-2.0") or model.startswith("gemini-1"):
+        return None  # no thinking to configure
+    level = getattr(types.ThinkingLevel, effort.upper(), None)
+    return None if level is None else types.ThinkingConfig(thinking_level=level)
 
 
 class GeminiProvider(LLMProvider):
@@ -95,6 +147,9 @@ class GeminiProvider(LLMProvider):
         if request.json_schema is not None:
             config["response_mime_type"] = "application/json"
             config["response_schema"] = request.json_schema
+        thinking = _thinking_config(model)
+        if thinking is not None:
+            config["thinking_config"] = thinking
 
         started = time.perf_counter()
         try:

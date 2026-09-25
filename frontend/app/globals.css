@@ -6,8 +6,8 @@
    Warm ground, two cool signals. Cream and espresso carry the brand; two
    accents carry the meaning, and every screen uses them the same way:
 
-     AI  — violet. What the model proposed. Drawn in "pencil": a lavender
-           wash, a dashed violet edge, italic serif. Provisional.
+     AI  — blue. What the model proposed. Drawn in "pencil": a pale blue
+           wash, a dashed blue edge, italic serif. Provisional.
      RULES — forest. What the deterministic engine confirmed. Solid, upright,
            marked with a shield. Final.
 
@@ -39,10 +39,10 @@
   --color-line-soft:  #e9e0d1;
 
   /* -- meaning: AI (pencil) and rules (ink) -- */
-  --color-ai:         #4f3fd1;   /* 6.25:1 on cream */
-  --color-ai-2:       #7b6ff0;
-  --color-ai-soft:    #efecff;
-  --color-ai-line:    #cfc7ff;
+  --color-ai:         #1b5e8c;   /* 6.2:1 on cream */
+  --color-ai-2:       #3b8cc4;
+  --color-ai-soft:    #e4eff7;
+  --color-ai-line:    #bdd6ea;
   --color-rule:       #1e3a2f;   /* 10.35:1 on rule-soft */
   --color-rule-2:     #2f5a47;
   --color-rule-soft:  #e2eee6;
@@ -96,7 +96,10 @@
   --text-h1--line-height: 0.98;
   --text-h1--letter-spacing: -0.032em;
 
-  --text-hero: clamp(2.7rem, 1.95rem + 3.6vw, 5.15rem);
+  /* Bounded by height as well as width: the hero headline shares one screen
+     with its statistics, and on a 657px-tall laptop the width-only size
+     pushed them off the bottom. */
+  --text-hero: clamp(2.4rem, min(1.95rem + 3.6vw, 8.6vh), 5.15rem);
   --text-hero--line-height: 0.93;
   --text-hero--letter-spacing: -0.038em;
 
@@ -109,7 +112,7 @@
   --shadow-card:  0 1px 2px rgba(42, 31, 23, 0.04), 0 12px 32px -18px rgba(42, 31, 23, 0.28);
   --shadow-float: 0 2px 6px rgba(42, 31, 23, 0.06), 0 30px 64px -26px rgba(42, 31, 23, 0.42);
   --shadow-glass: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 18px 40px -22px rgba(42, 31, 23, 0.32);
-  --shadow-ai:    0 0 0 1px rgba(79, 63, 209, 0.14), 0 10px 30px -12px rgba(79, 63, 209, 0.45);
+  --shadow-ai:    0 0 0 1px rgba(27, 94, 140, 0.14), 0 10px 30px -12px rgba(27, 94, 140, 0.45);
   --shadow-rule:  0 0 0 1px rgba(30, 58, 47, 0.16), 0 10px 30px -14px rgba(30, 58, 47, 0.45);
 
   /* -- motion -- */
@@ -152,6 +155,15 @@
    ========================================================================== */
 
 @layer base {
+  /* A grid track's minimum defaults to its content's width, so one wide table
+     inside a grid cell pushed the whole grid, and the panel beside it, off
+     the right of the screen (the Trends history panel on a laptop). Letting
+     grid children shrink hands the overflow to the table's own scroller.
+     :where() keeps this at zero specificity, so any min-w-* still wins. */
+  :where([class~="grid"], [class*=":grid"]) > * {
+    min-width: 0;
+  }
+
   :root {
     color-scheme: light;
     --gutter: clamp(20px, 4.2vw, 72px);
@@ -243,7 +255,7 @@
   font-weight: 300;
 }
 
-/* Pencil — what the AI proposed. Lavender wash, dashed violet edge. */
+/* Pencil — what the AI proposed. pale blue wash, dashed blue edge. */
 @utility pencil {
   background: var(--color-ai-soft);
   border: 1.5px dashed color-mix(in oklab, var(--color-ai) 55%, transparent);
@@ -281,12 +293,12 @@
 }
 
 /* Gradient meshes: static layered radial gradients — no animation, no
-   images, painted once. Warm peach, a breath of violet, a hint of sage. */
+   images, painted once. Warm peach, a breath of blue, a hint of sage. */
 @utility mesh-app {
   background-color: var(--color-cream);
   background-image:
     radial-gradient(60rem 40rem at 8% -10%, rgba(255, 214, 180, 0.55), transparent 60%),
-    radial-gradient(48rem 36rem at 96% 0%, rgba(207, 199, 255, 0.45), transparent 62%),
+    radial-gradient(48rem 36rem at 96% 0%, rgba(189, 214, 234, 0.45), transparent 62%),
     radial-gradient(56rem 40rem at 70% 110%, rgba(185, 211, 195, 0.40), transparent 60%);
   background-attachment: fixed;
 }
@@ -294,7 +306,7 @@
 @utility mesh-hero {
   background-color: var(--color-cream);
   background-image:
-    radial-gradient(42rem 30rem at 78% 42%, rgba(207, 199, 255, 0.55), transparent 62%),
+    radial-gradient(42rem 30rem at 78% 42%, rgba(189, 214, 234, 0.55), transparent 62%),
     radial-gradient(38rem 28rem at 92% 88%, rgba(255, 206, 168, 0.55), transparent 60%),
     radial-gradient(30rem 26rem at 8% 12%, rgba(255, 230, 204, 0.6), transparent 65%);
 }
@@ -302,7 +314,7 @@
 @utility mesh-banner {
   background-color: var(--color-espresso);
   background-image:
-    radial-gradient(38rem 22rem at 90% -20%, rgba(123, 111, 240, 0.55), transparent 60%),
+    radial-gradient(38rem 22rem at 90% -20%, rgba(59, 140, 196, 0.55), transparent 60%),
     radial-gradient(30rem 20rem at 0% 120%, rgba(217, 161, 58, 0.35), transparent 60%),
     radial-gradient(24rem 18rem at 55% 50%, rgba(47, 90, 71, 0.35), transparent 70%);
 }
@@ -319,7 +331,7 @@
 
 /* A gradient text fill for the single AI word in a heading. */
 @utility text-ai-gradient {
-  background: linear-gradient(100deg, var(--color-ai) 0%, #9b6ff0 55%, #c56fd6 100%);
+  background: linear-gradient(100deg, var(--color-ai) 0%, #2f7fb3 55%, #2a8a82 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -358,8 +370,9 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
 .lenis.lenis-stopped { overflow: hidden; }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+/* The site's own switch (lib/motion-pref), not the OS setting. */
+.reduce-motion {
+  & *, & *::before, & *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

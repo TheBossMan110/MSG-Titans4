@@ -1,10 +1,11 @@
 'use client'
 
 import { useRef } from 'react'
+import { prefersReducedMotion } from '@/lib/motion-pref'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGsap, useReveal } from '@/components/motion/hooks'
-import { Badge, Display, Eyebrow, Mono } from '@/components/ui/primitives'
+import { AiBadge, Display, Eyebrow, Mono, RuleBadge } from '@/components/ui/primitives'
 import { Card, Section } from '@/components/ui/surfaces'
 import { cn } from '@/lib/utils'
 
@@ -39,17 +40,23 @@ const SAMPLE = {
   text: 'My parcel CN-482913 was marked delivered on 14 March but never arrived. The driver signed it himself. I have paid Rs. 5,000 COD and nobody at the Lahore hub picks up. If this is not sorted by Friday I will go to the ombudsman.',
 }
 
+// What each decision reads as, not the code it is stored under: a visitor
+// should not have to parse MARKED_DELIVERED_NOT_RECEIVED to follow the point.
 const DIMENSIONS = [
-  ['Category', 'LOST_SHIPMENT', 'ink'],
-  ['Subcategory', 'MARKED_DELIVERED_NOT_RECEIVED', 'ink'],
-  ['Department', 'LOGISTICS_OPS', 'ink'],
-  ['Urgency', 'HIGH', 'warning'],
-  ['Priority', 'P1', 'warning'],
-  ['Sentiment', 'FRUSTRATED', 'neutral'],
-  ['Escalation floor', 'COMPLIANCE_REVIEW', 'critical'],
-  ['Eligibility', 'REFUND · REQUIRES_VERIFICATION', 'pencil'],
+  ['Category', 'Lost shipment', 'ink'],
+  ['Subcategory', 'Marked delivered, not received', 'ink'],
+  ['Department', 'Delivery & Logistics Ops', 'ink'],
+  ['Urgency', 'High', 'warning'],
+  ['Priority', 'P1 · high', 'warning'],
+  ['Sentiment', 'Frustrated', 'neutral'],
+  ['Escalation floor', 'Compliance review', 'critical'],
+  ['Eligibility', 'Refund, once verified', 'ai'],
   ['Missing', 'Proof-of-delivery photo', 'neutral'],
 ] as const
+
+const DOT = {
+  ink: 'bg-espresso', warning: 'bg-warning-glow', neutral: 'bg-taupe', critical: 'bg-alert', ai: 'bg-ai',
+} as const
 
 export function Dimensions() {
   const root = useRef<HTMLDivElement>(null)
@@ -83,12 +90,18 @@ export function Dimensions() {
             </footer>
           </blockquote>
         </div>
-        <ul className="grid gap-3 self-center sm:grid-cols-2 lg:grid-cols-3">
-          {DIMENSIONS.map(([label, value, tone]) => (
+        <ul className="grid grid-cols-2 gap-3 self-center sm:grid-cols-3">
+          {DIMENSIONS.map(([label, value, tone], i) => (
             <li key={label} data-dim>
-              <Card tone="ivory" padding="sm" radius="md" className="flex h-full flex-col gap-2">
-                <p className="eyebrow">{label}</p>
-                <Badge tone={tone} className="w-fit max-w-full whitespace-normal [overflow-wrap:anywhere] text-[11.5px] leading-snug">{value}</Badge>
+              <Card tone="ivory" padding="sm" radius="md" className="flex h-full min-h-[104px] flex-col justify-between gap-3">
+                <p className="eyebrow flex items-center justify-between gap-2">
+                  <span>{label}</span>
+                  <span className="font-mono text-[10px] tnum text-taupe/70">{String(i + 1).padStart(2, '0')}</span>
+                </p>
+                <p className="flex items-start gap-2 text-[15px] font-medium leading-snug text-espresso">
+                  <span aria-hidden className={cn('mt-[7px] size-2 shrink-0 rounded-full', DOT[tone])} />
+                  <span className="min-w-0">{value}</span>
+                </p>
               </Card>
             </li>
           ))}
@@ -181,35 +194,84 @@ export function Understanding() {
 
 /* ------------------------------------------------------------------ 6. Pipeline */
 
-const STAGES = [
-  ['Intake', 'Validated, normalised, checked for injection and for duplicates of earlier complaints.'],
-  ['Retrieval', 'Lexical, exact-reference and semantic search over the active policy versions only.'],
-  ['Pipeline 1 · GenAI', 'Gemini proposes classification, priority, resolution steps and a response draft, citing chunks.'],
-  ['Pipeline 2 · Rules', '619 deterministic rules run over the same text. No model call anywhere in this path.'],
-  ['Comparison', 'Field by field. Agreement is scored; disagreement is resolved in favour of the rules.'],
-  ['Hallucination checks', 'Every citation is resolved against the knowledge base; every claim against the cited text.'],
-  ['Response guard', 'Unsupported promises, ceilings exceeded and lowered escalations are blocked before send.'],
-  ['Resolution', 'A checklist of required steps, follow-ups with due dates, and an escalation note when needed.'],
+const STAGES: Array<[string, string, 'ai' | 'rule' | null]> = [
+  ['Intake', 'Validated, normalised, checked for injection and for duplicates of earlier complaints.', null],
+  ['Retrieval', 'Lexical, exact-reference and semantic search over the active policy versions only.', null],
+  ['Pipeline 1 · GenAI', 'Gemini proposes classification, priority, resolution steps and a response draft, citing chunks.', 'ai'],
+  ['Pipeline 2 · Rules', '619 deterministic rules run over the same text. No model call anywhere in this path.', 'rule'],
+  ['Comparison', 'Field by field. Agreement is scored; disagreement is resolved in favour of the rules.', null],
+  ['Hallucination checks', 'Every citation is resolved against the knowledge base; every claim against the cited text.', null],
+  ['Response guard', 'Unsupported promises, ceilings exceeded and lowered escalations are blocked before send.', null],
+  ['Resolution', 'A checklist of required steps, follow-ups with due dates, and an escalation note when needed.', null],
 ]
 
+// Node geometry, shared by the markup and the scroll maths.
+const NODE = 32
+
+/**
+ * One rail from the first node's centre to the last, filled as the reader
+ * scrolls; each node fills when the line reaches it. The rail is a plain
+ * element scaled on Y -- an SVG dash pattern measured in viewBox units drew
+ * the "one continuous line" as broken segments once the stroke was scaled.
+ */
 export function Pipeline() {
   const root = useRef<HTMLDivElement>(null)
   useReveal(root)
   useGsap((ctx, el) => {
-    const line = el.querySelector<SVGPathElement>("[data-rail]")
-    if (line) {
-      const len = line.getTotalLength()
-      gsap.set(line, { strokeDasharray: len, strokeDashoffset: len })
-      gsap.to(line, { strokeDashoffset: 0, ease: 'none', scrollTrigger: { trigger: el, start: 'top 60%', end: 'bottom 70%', scrub: 0.4 } })
+    const list = el.querySelector<HTMLElement>('[data-stages]')
+    const track = el.querySelector<HTMLElement>('[data-track]')
+    const fill = el.querySelector<HTMLElement>('[data-rail]')
+    const items = Array.from(el.querySelectorAll<HTMLElement>('[data-stage]'))
+    const nodes = items.map((li) => li.querySelector<HTMLElement>('[data-node]')!)
+    if (!list || !track || !fill || !items.length) return
+
+    // Where each node sits along the rail, as a fraction of its length.
+    let marks: number[] = []
+    const measure = () => {
+      const first = items[0].offsetTop + NODE / 2
+      const last = items[items.length - 1].offsetTop + NODE / 2
+      const length = Math.max(1, last - first)
+      for (const bar of [track, fill]) {
+        bar.style.top = `${first}px`
+        bar.style.height = `${length}px`
+      }
+      marks = items.map((li) => (li.offsetTop + NODE / 2 - first) / length)
     }
-    el.querySelectorAll<HTMLElement>('[data-stage]').forEach((s) => {
-      gsap.from(s, { opacity: 0, x: 18, duration: 0.8, ease: 'expo.out', scrollTrigger: { trigger: s, start: 'top 78%', once: true } })
+    const paint = (progress: number) => {
+      nodes.forEach((n, i) => { n.dataset.on = String(progress >= marks[i] - 0.001) })
+    }
+    measure()
+
+    if (prefersReducedMotion()) {
+      gsap.set(fill, { scaleY: 1 })
+      paint(1)
+      return
+    }
+    gsap.set(fill, { scaleY: 0, transformOrigin: 'top center' })
+    paint(0)
+    ScrollTrigger.create({
+      trigger: list,
+      start: 'top 62%',
+      end: 'bottom 62%',
+      scrub: 0.35,
+      invalidateOnRefresh: true,
+      onRefresh: () => measure(),
+      onUpdate: (self) => {
+        gsap.set(fill, { scaleY: self.progress })
+        paint(self.progress)
+      },
+    })
+    items.forEach((li) => {
+      gsap.from(li.querySelector('[data-stage-body]'), {
+        opacity: 0, x: 18, duration: 0.8, ease: 'expo.out',
+        scrollTrigger: { trigger: li, start: 'top 80%', once: true },
+      })
     })
   }, root)
 
   return (
     <Section id="intelligence">
-      <div ref={root} className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+      <div ref={root} className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="lg:sticky lg:top-28 lg:self-start">
           <Eyebrow index="03" className="mb-6">The pipeline</Eyebrow>
           <Display lines={['Eight stages.', 'One continuous line.']} size="h1" italicLast />
@@ -219,23 +281,26 @@ export function Pipeline() {
             decision is marked degraded, not invented.
           </p>
         </div>
-        <ol className="relative pl-10">
-          {/* The rail scales to the list rather than running a fixed 4000
-              units past it — an overflowing path drew a stray line straight
-              down through every section below. */}
-          <svg
-            className="absolute left-[11px] top-3 h-[calc(100%-24px)] w-[2px]"
-            viewBox="0 0 2 100"
-            preserveAspectRatio="none"
-            aria-hidden
-          >
-            <path data-rail d="M1 0 V 100" stroke="var(--color-espresso)" strokeWidth="2" fill="none" vectorEffect="non-scaling-stroke" />
-          </svg>
-          {STAGES.map(([title, body], i) => (
-            <li key={title} data-stage className="relative mb-9 last:mb-0">
-              <span className={cn('absolute -left-10 top-1.5 flex size-6 items-center justify-center rounded-full border-2 border-espresso bg-cream font-mono text-[10px]', i === 3 && 'bg-espresso text-ink-on-dark', i === 2 && 'pencil')}>{i + 1}</span>
-              <h3 className="font-display text-h3 leading-none">{title}</h3>
-              <p className="mt-2 max-w-[54ch] text-[14.5px] text-espresso-2">{body}</p>
+        <ol data-stages className="relative">
+          <span aria-hidden data-track className="absolute left-[15px] top-4 bottom-4 w-[2px] rounded-full bg-line" />
+          <span aria-hidden data-rail className="absolute left-[15px] top-4 bottom-4 w-[2px] rounded-full bg-espresso" />
+          {STAGES.map(([title, body, kind], i) => (
+            <li key={title} data-stage className="relative grid grid-cols-[32px_1fr] gap-x-5 pb-10 last:pb-0">
+              <span
+                data-node
+                data-on="false"
+                className="relative z-[1] flex size-8 items-center justify-center rounded-full border-2 border-line bg-ivory font-mono text-[11px] tnum text-taupe transition-[background-color,border-color,color] duration-300 data-[on=true]:border-espresso data-[on=true]:bg-espresso data-[on=true]:text-ink-on-dark"
+              >
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <div data-stage-body className="min-w-0 pt-0.5">
+                <h3 className="flex flex-wrap items-center gap-x-3 gap-y-1 font-display text-h3 leading-tight">
+                  {title}
+                  {kind === 'ai' && <AiBadge>AI</AiBadge>}
+                  {kind === 'rule' && <RuleBadge>rules</RuleBadge>}
+                </h3>
+                <p className="mt-2 max-w-[54ch] text-[14.5px] leading-relaxed text-espresso-2">{body}</p>
+              </div>
             </li>
           ))}
         </ol>

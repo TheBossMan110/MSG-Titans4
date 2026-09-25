@@ -59,6 +59,7 @@ from genai_pipeline.validator import (
 from knowledge_base import retrieval, versioning
 from schemas.genai import INTELLIGENCE_SCHEMA, ComplaintIntelligence
 from security.injection_defense import ScanResult, record_events, scan
+from src.core import progress
 from src.core.config import settings
 from src.core.logging import get_logger
 from src.db.enums import GenAIPipeline, GenAIRunStatus
@@ -300,7 +301,13 @@ def analyse_complaint(
         record_events(db, scan_result, source_type="COMPLAINT", complaint_id=complaint_id)
 
     # ── 2. retrieval ───────────────────────────────────────────
+    progress.emit("policy")
     retrieved = retrieval.retrieve(db, scan_result.sanitised, top_k=top_k)
+    progress.emit(
+        "policy", "done",
+        f"{len(retrieved.chunks)} passages from {len(retrieved.cited_documents)} policy documents"
+        if retrieved.chunks else "No matching policy passage; the AI is told not to cite one",
+    )
     result.retrieved_chunk_keys = list(retrieved.chunk_keys)
     result.knowledge_base_version = versioning.knowledge_base_version(db)
     result.retrieval_diagnostics = {
@@ -336,6 +343,7 @@ def analyse_complaint(
     policy_snapshot = [chunk.citation() for chunk in retrieved]
 
     if not chain.available:
+        progress.emit("ai", "skipped", "No AI model is configured; the company rules decide alone")
         result.failure_reason = FailureReason.NO_PROVIDER_CONFIGURED
         result.failure_detail = "no GenAI provider is configured"
         log.error("genai_no_provider_configured", complaint_id=str(complaint_id))
@@ -354,6 +362,7 @@ def analyse_complaint(
     prompt_text = rendered.text
     attempt_offset = 0
 
+    progress.emit("ai", detail=f"Asking {chain.providers[0].model}")
     for repair_round in range(MAX_REPAIR_ATTEMPTS + 1):
         response, failure, cache_key = _generate_once(
             db,
@@ -374,6 +383,7 @@ def analyse_complaint(
         attempt_offset = result.attempts
 
         if response is None:
+            progress.emit("ai", "skipped", "Every AI model is busy; the company rules decide alone")
             result.failure_reason = FailureReason.PROVIDERS_EXHAUSTED
             result.failure_detail = failure
             log.error(
@@ -408,6 +418,11 @@ def analyse_complaint(
                 _cache_store(db, cache_key, response)
             result.ok = True
             result.intelligence = validation.intelligence
+            progress.emit(
+                "ai", "done",
+                "Answered from an identical earlier analysis" if result.cache_hit
+                else f"Answered by {response.model} in {response.latency_ms / 1000:.1f}s",
+            )
             return result
 
         if repair_round >= MAX_REPAIR_ATTEMPTS or not validation.repairable:
@@ -420,8 +435,10 @@ def analyse_complaint(
             fields=[i.field_path for i in validation.issues],
         )
         result.repair_attempts += 1
+        progress.emit("ai", detail="The answer missed a required field; asking the AI to correct it")
         prompt_text = f"{rendered.text}\n\n{validation.correction_instruction()}"
 
+    progress.emit("ai", "done", "The AI's answer was incomplete; the company rules take over")
     # Validation never passed. The parsed object is kept: the comparison engine
     # records what the model actually said, and a result rejected for one bad
     # field still carries evidence about the others.

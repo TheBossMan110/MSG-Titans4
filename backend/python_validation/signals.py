@@ -36,6 +36,7 @@ from sqlalchemy.orm import Session
 from complaint_processing.entities import EntitySet, extract_for_complaint
 from src.core.logging import get_logger
 from src.db.models import AppConfig, LexiconTerm
+from src.core.refcache import reference_data
 
 log = get_logger("python_validation.signals")
 
@@ -160,6 +161,25 @@ def _compile_term(term: str, match_type: MatchType) -> re.Pattern[str] | None:
         return None
 
 
+def tier_of(label: Any) -> str | None:
+    """
+    A customer tier from whatever the source called it.
+
+    A customer record says ``VIP``; a dataset says "VIP/Premium Account" or
+    "Corporate Freight Client". Comparing the raw label against the tier names
+    silently treated every labelled VIP as an ordinary customer.
+    """
+    if not label:
+        return None
+    text = str(label).upper()
+    if "VIP" in text or "PREMIUM" in text:
+        return "VIP"
+    if any(word in text for word in ("BUSINESS", "MERCHANT", "CORPORATE", "FREIGHT", "ENTERPRISE")):
+        return "BUSINESS"
+    return "STANDARD"
+
+
+@reference_data("lexicon")
 def load_lexicon(db: Session) -> list[tuple[str, str, str, float]]:
     """Active lexicon terms as ``(signal_key, term, match_type, weight)``."""
     rows = db.execute(
@@ -171,6 +191,7 @@ def load_lexicon(db: Session) -> list[tuple[str, str, str, float]]:
     ]
 
 
+@reference_data("analytics_only")
 def load_analytics_only(db: Session) -> frozenset[str]:
     """Signal keys that must never reach the rule engine (SRS 1.8 #6)."""
     config = db.get(AppConfig, "analytics_only_signals")
@@ -250,9 +271,9 @@ def _derive_facts(
 
     if complaint is not None:
         customer = getattr(complaint, "customer", None)
-        tier = getattr(customer, "tier", None) or getattr(complaint, "customer_type", None)
+        tier = tier_of(getattr(customer, "tier", None) or getattr(complaint, "customer_type", None))
         facts["customer_tier"] = tier
-        facts["is_vip"] = str(tier).upper() in {"VIP", "BUSINESS", "PREMIUM"} if tier else False
+        facts["is_vip"] = tier in {"VIP", "BUSINESS", "PREMIUM"}
         facts["channel"] = getattr(complaint, "channel", None)
         facts["product"] = getattr(complaint, "product", None)
         facts["has_previous_complaint"] = getattr(complaint, "previous_complaint_id", None) is not None
@@ -278,6 +299,7 @@ def _derive_facts(
     return facts
 
 
+@reference_data("signal_thresholds")
 def load_thresholds(db: Session) -> dict[str, Any]:
     config = db.get(AppConfig, "thresholds")
     if config and isinstance(config.value, dict):

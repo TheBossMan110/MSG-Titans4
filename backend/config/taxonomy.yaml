@@ -36,54 +36,140 @@ departments:
     email: logistics-ops@raftarxpress.com
     escalation_contact: Regional Operations Director
     source_id: DEPT-01
+    handles: [Delayed Delivery, Missed Delivery Attempt, Incorrect Route Dispatch, Damaged Parcel in Transit, Rider Misconduct]
+    sla_response_hours: 2
+    sla_resolution_hours: 24
   - code: BILLING
     name: Billing & Accounts
     description: Oversees Cash-on-Delivery (COD) reconciliation, merchant payment disbursements, tariff disputes, corporate invoicing, and fuel surcharge queries.
     email: billing@raftarxpress.com
     escalation_contact: Head of Financial Operations
     source_id: DEPT-02
+    handles: [COD Remittance Delay, Overcharging & Weight Discrepancy, Invoice Dispute, Duplicate Payment, GST Invoicing Error]
+    sla_response_hours: 4
+    sla_resolution_hours: 48
   - code: RETURNS_REFUNDS
     name: Returns & Refunds
     description: Coordinates reverse logistics, Return to Origin (RTO) processing, failed-delivery return verification, and customer reimbursement authorizations.
     email: returns-refunds@raftarxpress.com
     escalation_contact: Reverse Logistics Lead
     source_id: DEPT-03
+    handles: [RTO Delay, Incorrect Item Returned, Refund Processing Delay, Restocking Fee Dispute, Return Pickup Cancellation]
+    sla_response_hours: 4
+    sla_resolution_hours: 48
   - code: WARRANTY_CLAIMS
     name: Warranty & Claims
     description: Investigates parcel loss, high-value shipment damage, cargo insurance claims, and merchant compensation settlements.
     email: warranty-claims@raftarxpress.com
     escalation_contact: Chief Claims Assessor
     source_id: DEPT-04
+    handles: [Lost Parcel Claim, Total Freight Damage, Tampered Contents, Insurance Payout Delay, Declared Value Discrepancy]
+    sla_response_hours: 6
+    sla_resolution_hours: 72
   - code: CUSTOMER_RELATIONS
     name: Customer Relations
     description: Serves as the primary touchpoint for general inquiries, VIP customer care, corporate account management, and overall satisfaction tracking.
     email: customer-relations@raftarxpress.com
     escalation_contact: Customer Experience Director
     source_id: DEPT-05
+    handles: [General Inquiry, VIP SLA Breach, Customer Service Dissatisfaction, Account Onboarding, Service Information Request]
+    sla_response_hours: 1
+    sla_resolution_hours: 12
   - code: ACCOUNT_SECURITY
     name: Account Security & Fraud Prevention
     description: Monitors fraudulent COD collection attempts, portal account breaches, unauthorized profile alterations, and counterfeit shipping manifests.
     email: account-security@raftarxpress.com
     escalation_contact: Head of Information Security
     source_id: DEPT-06
+    handles: [Unauthorized Account Access, COD Theft Allegation, Identity Spoofing, Phishing Attack via SMS, Fraudulent Merchant Registration]
+    sla_response_hours: 1
+    sla_resolution_hours: 8
   - code: COMPLIANCE
     name: Compliance & Legal Affairs
     description: Handles regulatory compliance, contract violations, prohibited cargo violations, consumer court notices, and dispute resolutions under trade laws.
     email: compliance@raftarxpress.com
     escalation_contact: General Legal Counsel
     source_id: DEPT-07
+    handles: [Prohibited Item Transport, Contractual Breach, Consumer Court Notice, Customs & Regulatory Dispute, Terms of Service Violation]
+    sla_response_hours: 12
+    sla_resolution_hours: 96
   - code: SAFETY
     name: Safety & Risk Management
     description: Evaluates operational hazards, dangerous goods mishandling, fleet vehicle accidents during transit, and warehouse safety incidents.
     email: safety@raftarxpress.com
     escalation_contact: Director of Safety & Operational Risk
     source_id: DEPT-08
+    handles: [Hazardous Goods Leakage, Transit Fleet Accident, Warehouse Safety Hazard, Perishable Cargo Spoilage, High-Risk Zone Delivery Incident]
+    sla_response_hours: 2
+    sla_resolution_hours: 24
   - code: MGMT_ESCALATIONS
     name: Management Escalations
     description: Resolves multi-department deadlock complaints, executive office referrals, severe brand reputation risks, and unresolved tier-3 grievances.
     email: mgmt-escalations@raftarxpress.com
     escalation_contact: Chief Operating Officer
     source_id: DEPT-09
+    handles: [Executive Office Referral, Cross-Department SLA Failure, Severe Brand Reputation Risk, Unresolved High-Value Dispute, Public Relations Escalation]
+    sla_response_hours: 1
+    sla_resolution_hours: 12
+
+# -- response templates (14) ----------------------------------------
+response_templates:
+  - id: TMPL-01
+    scenario: Apology + Resolution Update
+    tone: Empathetic
+    text: "Dear {{customer_name}},\n\nThank you for reaching out to RaftarXpress Logistics. We sincerely apologize for the inconvenience you experienced regarding consignment {{order_reference}}.\n\nWe have investigated the matter with our {{department_name}} team. We are pleased to inform you that {{resolution_summary}}. Our team is actively monitoring the status to ensure smooth completion.\n\nIf you have any further questions or require additional assistance, please reply to this message referencing complaint ticket {{complaint_id}}.\n\nWarm regards,\nCustomer Care Team\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-02
+    scenario: Refund Approved
+    tone: Professional
+    text: "Dear {{customer_name}},\n\nRegarding your complaint {{complaint_id}} for consignment {{order_reference}}, we have completed the review of your claim under our Carriage Terms & Conditions.\n\nWe are pleased to inform you that a refund of {{refund_amount_description}} has been approved. The settlement will be credited via {{payment_channel}} within {{processing_timeline}}.\n\nPlease retain transaction reference {{disbursement_reference}} for your records.\n\nSincerely,\nClaims & Settlements Department\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-03
+    scenario: Refund Denied (with reason)
+    tone: Formal
+    text: "Dear {{customer_name}},\n\nWe are writing in reference to complaint ticket {{complaint_id}} regarding consignment {{order_reference}} and your request for refund/compensation.\n\nFollowing a detailed audit by our Operations and Claims Review Committee, we regret to inform you that your request cannot be approved for the following reason:\n\n{{denial_reason_details}}\n\nThis determination has been made in accordance with {{policy_document_reference}}, Section {{policy_section}}. Should you have supplementary documentation or verification evidence to present, you may submit it within {{appeal_window}} for re-evaluation.\n\nYours faithfully,\nClaims Adjudication Office\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-04
+    scenario: Replacement Approved
+    tone: Professional
+    text: "Dear {{customer_name}},\n\nThank you for contacting RaftarXpress Logistics regarding ticket {{complaint_id}}. We have reviewed the transit handling report for consignment {{order_reference}}.\n\nWe have approved a replacement dispatch for your consignment. The replacement shipment has been booked under new tracking reference {{new_order_reference}} and is scheduled for dispatch from our {{origin_hub}} facility.\n\nYou can track the progress of your replacement consignment in real-time on our portal. We appreciate your patience and partnership.\n\nBest regards,\nOperations Support Desk\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-05
+    scenario: Escalation Acknowledgement
+    tone: Formal
+    text: "Dear {{customer_name}},\n\nThis notification acknowledges that your complaint {{complaint_id}} regarding {{product_or_service}} booking {{order_reference}} has been escalated to {{escalation_level_title}}.\n\nDue to the nature of the issue reported ({{primary_issue_summary}}), a dedicated senior specialist has taken direct ownership of the case. A comprehensive review is actively underway, and our management desk will contact you with an updated assessment within {{escalation_sla_window}}.\n\nThank you for your patience while we work towards a definitive resolution.\n\nRespectfully,\nExecutive Escalations Desk\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-06
+    scenario: Request for More Information
+    tone: Concise
+    text: "Dear {{customer_name}},\n\nWe are reviewing your complaint {{complaint_id}} concerning consignment {{order_reference}}.\n\nTo help us expedite our investigation, please provide the following information:\n- {{required_detail_1}}\n- {{required_detail_2}}\n- {{required_evidence_or_photo}}\n\nPlease reply directly to this message with the requested details at your earliest convenience so we may proceed with your case.\n\nRegards,\nSupportNova Helpdesk\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-07
+    scenario: Delivery Delay Update
+    tone: Empathetic
+    text: "Dear {{customer_name}},\n\nWe are writing to provide an important transit update regarding your consignment {{order_reference}}.\n\nYour shipment is currently experiencing a delay due to {{delay_reason_description}} at our {{hub_or_route_location}}. We deeply regret the disruption this may cause to your schedule.\n\nOur line-haul logistics team is actively working to expedite movement. The revised estimated delivery window is now {{estimated_delivery_timeframe}}. You will receive an automated SMS update as soon as the parcel is assigned to our local delivery rider.\n\nThank you for your understanding.\n\nSincerely,\nLogistics Coordination Team\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-08
+    scenario: Closure Confirmation
+    tone: Professional
+    text: "Dear {{customer_name}},\n\nWe are writing to confirm that complaint ticket {{complaint_id}} regarding consignment {{order_reference}} has been marked as resolved.\n\nSummary of Action Taken:\n{{resolution_action_summary}}\n\nIf you believe your concern has not been fully addressed, or if you require further assistance on this matter, you may reopen this ticket by replying within {{reopen_window_days}} days.\n\nThank you for choosing RaftarXpress Logistics.\n\nWarm regards,\nCustomer Success Department\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-09
+    scenario: Safety Issue Acknowledgement (urgent tone)
+    tone: Formal
+    text: "URGENT ATTENTION: {{customer_name}}\n\nReference: Safety Incident Ticket {{complaint_id}} | Consignment / Vehicle: {{order_reference}}\n\nWe have received your urgent safety report regarding {{incident_description}}. RaftarXpress Logistics treats all road safety, hazardous handling, and physical security matters with zero tolerance.\n\nImmediate Actions Initiated:\n1. Our Safety & Security Directorate has logged this incident under Critical Priority.\n2. Field supervisors and safety marshals at {{location_hub}} have been dispatched to secure the situation.\n3. An internal inquiry regarding personnel / vehicle {{personnel_or_vehicle_ref}} is actively underway.\n\nA senior safety manager will contact you directly at {{contact_phone}} within {{emergency_callback_timeframe}} to ensure complete resolution and safety oversight.\n\nSafety & Compliance Directorate\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-10
+    scenario: Privacy Complaint Acknowledgement (compliance tone)
+    tone: Formal
+    text: "Dear {{customer_name}},\n\nRe: Data Privacy & Information Security Inquiry | Ticket {{complaint_id}}\n\nWe acknowledge receipt of your communication regarding a data privacy matter associated with {{service_or_account_reference}}.\n\nRaftarXpress Logistics is committed to strict data protection standards and customer confidentiality. Your report has been routed to our Data Protection & Information Security Officer for immediate compliance assessment under our Corporate Privacy Policy {{privacy_policy_ref}}.\n\nAll relevant system access logs and communication records are being audited. We will furnish a formal compliance response detailing findings and remedial safeguards within {{compliance_sla_days}} business days.\n\nSincerely,\nData Privacy & Information Security Office\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-11
+    scenario: Compensation Not Permitted (polite decline)
+    tone: Empathetic
+    text: "Dear {{customer_name}},\n\nThank you for your message regarding complaint {{complaint_id}} and consignment {{order_reference}}.\n\nWe understand your frustration regarding the circumstance described ({{issue_summary}}), and we truly appreciate your feedback. However, following review under our standard service tariff and carriage terms, we are unable to offer monetary compensation or damages for this specific incident because {{ineligibility_rationale}}.\n\nWhile monetary compensation is not permissible under {{policy_terms_ref}}, we have taken operational measures including {{corrective_operational_step}} to prevent recurrence.\n\nWe value your continued relationship with RaftarXpress and remain at your service.\n\nWarm regards,\nCustomer Care Operations\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-12
+    scenario: Repeat Complaint Acknowledgement
+    tone: Empathetic
+    text: "Dear {{customer_name}},\n\nThank you for contacting us again regarding consignment {{order_reference}}. We acknowledge your follow-up referencing previous ticket {{previous_complaint_reference}} (current case: {{complaint_id}}).\n\nWe understand your deep frustration regarding the delay in resolving this ongoing matter. Please accept our sincere apologies for the repeated inconvenience.\n\nYour case has now been consolidated and assigned directly to a Senior Resolution Officer ({{supervisor_name_or_title}}) to eliminate further communication delays. We are actively coordinating with {{responsible_hub_dept}} to finalize resolution without further back-and-forth.\n\nYou will receive a direct progress update by {{next_update_timeframe}}.\n\nRespectfully,\nSenior Customer Experience Desk\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-13
+    scenario: Merchant COD Reconciliation Advisory
+    tone: Professional
+    text: "Dear {{merchant_business_name}},\n\nRe: COD Reconciliation & Remittance Inquiry | Account {{merchant_id}} | Batch {{batch_reference}}\n\nWe have reviewed your inquiry {{complaint_id}} concerning cash-on-delivery remittance settlement.\n\nOur Finance & Settlements team has verified your ledger statement. {{reconciliation_status_summary}}. The net reconciled amount of {{remittance_amount_description}} is scheduled for banking transfer via {{banking_channel}} during the next settlement cycle ({{settlement_cycle_window}}).\n\nPlease find attached the itemized remittance breakdown for your records. For further settlement queries, please contact your dedicated account manager at {{account_manager_contact}}.\n\nBest regards,\nMerchant Accounts & Settlements\nRaftarXpress Logistics (Pvt) Ltd"
+  - id: TMPL-14
+    scenario: Corporate Freight Demurrage & Billing Review
+    tone: Formal
+    text: "Dear {{corporate_client_name}},\n\nSubject: Commercial Freight Statement Review | Contract {{corporate_account_id}} | Invoice {{invoice_number}}\n\nWe have received your formal billing review request {{complaint_id}} regarding freight forwarding charges / demurrage assessed on booking {{freight_order_ref}}.\n\nOur Commercial Accounts Audit team, in coordination with {{terminal_or_hub_location}}, is reviewing terminal gate logs and dispatch records. A formal reconciliation credit memo or itemized statement adjustment will be issued by {{audit_completion_date}}.\n\nYour account manager, {{account_manager_name}}, has been assigned to oversee this review.\n\nYours sincerely,\nCommercial Freight Billing Directorate\nRaftarXpress Logistics (Pvt) Ltd"
 
 # -- priority ladder (rank 0 = most severe) ------------------------------
 # The corpus and the backend already agree on these, name for name, so they

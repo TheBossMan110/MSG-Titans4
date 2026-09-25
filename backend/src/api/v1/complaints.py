@@ -21,16 +21,37 @@ from stored rows rather than recomputed for display.
 
 from __future__ import annotations
 
+import json
+import queue
+import threading
 import uuid
+from dataclasses import dataclass
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, Query, Request, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
+from fastapi.responses import StreamingResponse
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
 from comparison_engine.engine import comparison_rows, latest_decision
 from complaint_processing import customer_actions, dedupe, followup
-from complaint_processing.intake import IntakeRejected, analyse_complaint
+from complaint_processing.intake import (
+    IntakeRejected,
+    analyse_complaint,
+    deferring_escalation_notes,
+    write_deferred_notes,
+)
 from complaint_processing.intake import IntakeResult as _IntakeResult
 from complaint_processing.intake import submit as submit_complaint
 from genai_pipeline import escalation_notes
@@ -73,9 +94,10 @@ from schemas.complaints import (
     ValidationIssueOut,
     VerificationOut,
 )
+from src.core import progress
 from src.core.config import settings
 from src.core.deps import CurrentUser, DbSession, require_role
-from src.core.errors import NotFoundError, ValidationError
+from src.core.errors import AppError, NotFoundError, ValidationError
 from src.core.logging import get_logger
 from src.core.ratelimit import limiter
 from src.db.enums import UserRole
@@ -132,6 +154,8 @@ def _summary(complaint: Complaint) -> ComplaintSummary:
         is_duplicate=complaint.is_duplicate,
         repeat_count=complaint.repeat_count,
         created_at=complaint.created_at,
+        customer_type=complaint.customer_type,
+        dataset_tag=complaint.dataset_tag,
     )
 
 
@@ -280,12 +304,13 @@ def _detail(db: DbSession, complaint: Complaint) -> ComplaintDetail:
     )
 
 
-def _evidence(db: DbSession, complaint: Complaint) -> list[EvidenceOut]:
-    rows = db.execute(
-        select(ComplaintAttachment)
-        .where(ComplaintAttachment.complaint_id == complaint.id)
-        .order_by(ComplaintAttachment.created_at)
-    ).scalars().all()
+def _evidence(db: DbSession, complaint: Complaint, *, rows: list[Any] | None = None) -> list[EvidenceOut]:
+    if rows is None:
+        rows = db.execute(
+            select(ComplaintAttachment)
+            .where(ComplaintAttachment.complaint_id == complaint.id)
+            .order_by(ComplaintAttachment.created_at)
+        ).scalars().all()
     return [
         EvidenceOut(
             id=a.id, file_name=a.file_name, mime_type=a.mime_type,
@@ -328,6 +353,7 @@ def create_complaint(
     payload: ComplaintCreate,
     db: DbSession,
     user: CurrentUser,
+    background: BackgroundTasks,
     analyse: bool = Query(True, description="Run both pipelines immediately."),
 ) -> IntakeResponse:
     """
@@ -337,7 +363,106 @@ def create_complaint(
     unrecognised reference, a suspected injection are all recorded and the
     complaint processed on its merits. Only an empty complaint is refused, and
     even that attempt is written to ``complaint_validation_issues``.
+
+    ``POST /api/complaints/stream`` does the same work and reports each step
+    as it happens.
     """
+    with deferring_escalation_notes() as pending:
+        response = _intake(db, payload, user_id=user.id, role=user.role, analyse=analyse)
+    # The handover note is for the agent, not the customer; it is written once
+    # the response has gone rather than making the customer wait for it.
+    background.add_task(write_deferred_notes, pending)
+    return response
+
+
+@router.post(
+    "/stream",
+    summary="Submit a complaint and follow its analysis live",
+    response_class=StreamingResponse,
+    responses={200: {
+        "content": {"text/event-stream": {}},
+        "description": (
+            "Server-sent events. `step` events report each stage as it starts and "
+            "finishes; exactly one `result` (the IntakeResponse) or `error` "
+            "(the usual error body) ends the stream."
+        ),
+    }},
+)
+def create_complaint_stream(
+    payload: ComplaintCreate,
+    user: CurrentUser,
+    analyse: bool = Query(True, description="Run both pipelines immediately."),
+) -> StreamingResponse:
+    """
+    The same intake as ``POST /api/complaints``, narrated.
+
+    Analysis takes seconds, most of them waiting on a language model. Rather
+    than a spinner, the submitter sees which step is running, which model was
+    asked and whether a busy one was swapped for another -- every message
+    comes from the pipeline at the moment it happens, none are timed.
+    """
+    user_id, role = user.id, user.role  # plain values: the worker has its own session
+    events: queue.Queue[tuple[str, Any] | None] = queue.Queue()
+
+    def work() -> None:
+        from src.db.base import SessionLocal
+
+        db = SessionLocal()
+        pending: list[Any] = []
+        try:
+            with progress.reporting(lambda event: events.put(("step", event))), \
+                    deferring_escalation_notes() as pending:
+                response = _intake(db, payload, user_id=user_id, role=role, analyse=analyse)
+            events.put(("result", response.model_dump(mode="json")))
+        except AppError as exc:
+            db.rollback()
+            events.put(("error", {"error": {
+                "code": exc.code, "message": exc.message, "details": exc.details,
+            }}))
+        except Exception:  # noqa: BLE001 - the stream must end with an answer
+            db.rollback()
+            log.error("complaint_stream_failed", exc_info=True)
+            events.put(("error", {"error": {
+                "code": "INTERNAL_ERROR",
+                "message": "Something went wrong while saving your complaint. Please try again.",
+                "details": {},
+            }}))
+        finally:
+            db.close()
+            events.put(None)
+        write_deferred_notes(pending)
+
+    def stream() -> Any:
+        # A comment line first, so proxies commit to streaming straight away.
+        yield ": analysing\n\n"
+        while True:
+            try:
+                item = events.get(timeout=15)
+            except queue.Empty:
+                yield ": still working\n\n"  # keep idle connections open
+                continue
+            if item is None:
+                return
+            kind, data = item
+            yield f"event: {kind}\ndata: {json.dumps(data, default=str)}\n\n"
+
+    threading.Thread(target=work, name="complaint-intake-stream", daemon=True).start()
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
+    )
+
+
+def _intake(
+    db: Any,
+    payload: ComplaintCreate,
+    *,
+    user_id: uuid.UUID,
+    role: str,
+    analyse: bool,
+) -> IntakeResponse:
+    """Accept, analyse and commit one complaint; shape the answer for ``role``."""
     try:
         result: _IntakeResult = submit_complaint(
             db,
@@ -353,13 +478,13 @@ def create_complaint(
             channel=payload.channel,
             requested_resolution=payload.requested_resolution,
             attachments=payload.attachments,
-            submitted_by_user_id=user.id,
+            submitted_by_user_id=user_id,
             # Only an evaluator seeding the benchmark corpus may tag a
             # complaint into a dataset; a customer must not be able to place
             # their submission in the scored set.
             dataset_tag=(
                 payload.dataset_tag
-                if user.role in (UserRole.EVALUATOR, UserRole.ADMIN)
+                if role in (UserRole.EVALUATOR, UserRole.ADMIN)
                 else None
             ),
             analyse=analyse,
@@ -375,7 +500,7 @@ def create_complaint(
     complaint = result.complaint
     assert complaint is not None  # noqa: S101 - guaranteed when not rejected
 
-    staff = user.role in STAFF
+    staff = role in STAFF
     return IntakeResponse(
         public_ref=complaint.public_ref,
         complaint=_detail(db, complaint) if staff else None,
@@ -424,6 +549,11 @@ def list_complaints(
     verification_outcome: str | None = None,
     requires_review: bool | None = None,
     dataset_tag: str | None = None,
+    customer_type: str | None = Query(None, max_length=64),
+    sentiment: str | None = Query(None, max_length=32),
+    escalation: str | None = Query(None, max_length=32, description="ANY (escalated), NONE, or a level code."),
+    date_from: date | None = Query(None, description="Received on or after this date."),
+    date_to: date | None = Query(None, description="Received on or before this date."),
     search: str | None = Query(None, max_length=200),
 ) -> Page[ComplaintSummary]:
     """List and filter complaints (FR lxxi)."""
@@ -441,6 +571,8 @@ def list_complaints(
         )
     if dataset_tag:
         query = query.where(Complaint.dataset_tag == dataset_tag.strip().upper())
+    if customer_type:
+        query = query.where(Complaint.customer_type == customer_type.strip())
     if category:
         query = query.where(
             Complaint.category_id.in_(
@@ -464,12 +596,33 @@ def list_complaints(
             if requires_review
             else query.where(Complaint.id.not_in(review_ids))
         )
+    if sentiment:
+        query = query.where(Complaint.sentiment == sentiment.strip().upper())
+    if escalation:
+        level = escalation.strip().upper()
+        if level == "ANY":
+            query = query.where(Complaint.escalation_code.is_not(None), Complaint.escalation_code != "NONE")
+        elif level == "NONE":
+            query = query.where(or_(Complaint.escalation_code.is_(None), Complaint.escalation_code == "NONE"))
+        else:
+            query = query.where(Complaint.escalation_code == level)
+    if date_from:
+        query = query.where(Complaint.created_at >= datetime.combine(date_from, time.min, tzinfo=UTC))
+    if date_to:
+        query = query.where(Complaint.created_at < datetime.combine(date_to + timedelta(days=1), time.min, tzinfo=UTC))
     if search:
+        # SRS Step 66: complaint ID, customer reference, and the text itself.
         pattern = f"%{search.strip().lower()}%"
+        customers = select(Customer.id).where(
+            func.lower(Customer.external_ref).like(pattern) | func.lower(Customer.email).like(pattern)
+        )
         query = query.where(
             func.lower(Complaint.title).like(pattern)
             | func.lower(Complaint.description_clean).like(pattern)
             | func.lower(Complaint.public_ref).like(pattern)
+            | func.lower(Complaint.order_ref).like(pattern)
+            | func.lower(Complaint.transaction_ref).like(pattern)
+            | Complaint.customer_id.in_(customers)
         )
 
     total = db.execute(
@@ -511,7 +664,52 @@ def _belongs_to(db: DbSession, complaint: Complaint, user: User) -> bool:
     )
 
 
-def _customer_view(db: DbSession, complaint: Complaint) -> ComplaintStatusOut:
+@dataclass
+class _ViewData:
+    """Everything the customer view reads beyond the complaint row, for many complaints at once."""
+
+    questions: dict[Any, list[Any]]
+    targets: dict[Any, Any]
+    history: dict[Any, list[tuple[str, Any]]]
+    evidence: dict[Any, list[Any]]
+    support_hours: str | None
+
+
+def _prefetch(db: DbSession, ids: list[Any]) -> _ViewData:
+    """
+    Five queries for a whole page instead of six per complaint.
+
+    Against a hosted database each query is a network round trip, and a
+    customer with 19 complaints waited over six seconds for their list.
+    """
+    data = _ViewData(questions={}, targets={}, history={}, evidence={}, support_hours=None)
+    if ids:
+        for q in db.execute(
+            select(ClarificationQuestion).where(ClarificationQuestion.complaint_id.in_(ids)).order_by(ClarificationQuestion.ordinal)
+        ).scalars():
+            data.questions.setdefault(q.complaint_id, []).append(q)
+        for cid, due in db.execute(
+            select(SLAEvent.complaint_id, func.max(SLAEvent.due_at))
+            .where(SLAEvent.complaint_id.in_(ids), SLAEvent.event_type == "RESOLUTION")
+            .group_by(SLAEvent.complaint_id)
+        ).all():
+            data.targets[cid] = due
+        for cid, to_status, at in db.execute(
+            select(ComplaintStatusHistory.complaint_id, ComplaintStatusHistory.to_status, ComplaintStatusHistory.created_at)
+            .where(ComplaintStatusHistory.complaint_id.in_(ids)).order_by(ComplaintStatusHistory.created_at)
+        ).all():
+            data.history.setdefault(cid, []).append((to_status, at))
+        for a in db.execute(
+            select(ComplaintAttachment).where(ComplaintAttachment.complaint_id.in_(ids)).order_by(ComplaintAttachment.created_at)
+        ).scalars():
+            data.evidence.setdefault(a.complaint_id, []).append(a)
+    organisation = db.get(AppConfig, "organisation")
+    if organisation is not None and isinstance(organisation.value, dict):
+        data.support_hours = organisation.value.get("support_hours")
+    return data
+
+
+def _customer_view(db: DbSession, complaint: Complaint, pre: _ViewData | None = None) -> ComplaintStatusOut:
     """
     The customer-safe projection of one complaint (FR lxvi; SRS Step 61).
 
@@ -521,25 +719,15 @@ def _customer_view(db: DbSession, complaint: Complaint) -> ComplaintStatusOut:
     comparison are not fields of this response at all, so no future serialiser
     change can leak them.
     """
-    questions = db.execute(
-        select(ClarificationQuestion)
-        .where(ClarificationQuestion.complaint_id == complaint.id)
-        .order_by(ClarificationQuestion.ordinal)
-    ).scalars().all()
+    pre = pre or _prefetch(db, [complaint.id])
+    questions = pre.questions.get(complaint.id, [])
     open_questions = [q for q in questions if q.answered_at is None]
-
-    target = db.execute(
-        select(SLAEvent.due_at)
-        .where(SLAEvent.complaint_id == complaint.id, SLAEvent.event_type == "RESOLUTION")
-        .order_by(SLAEvent.due_at.desc())
-    ).scalars().first()
+    target = pre.targets.get(complaint.id)
+    history = pre.history.get(complaint.id, [])
 
     # "Last updated" means the last time anything happened to it, which the
     # status history knows and the analysis timestamp does not.
-    last_moved = db.execute(
-        select(func.max(ComplaintStatusHistory.created_at))
-        .where(ComplaintStatusHistory.complaint_id == complaint.id)
-    ).scalar()
+    last_moved = max((at for _, at in history), default=None)
 
     return ComplaintStatusOut(
         public_ref=complaint.public_ref,
@@ -558,7 +746,7 @@ def _customer_view(db: DbSession, complaint: Complaint) -> ComplaintStatusOut:
         awaiting_information=[q.question for q in open_questions],
         last_updated=last_moved or complaint.analyzed_at or complaint.created_at,
         target_resolution_at=target,
-        department=_department_contact(db, complaint),
+        department=_department_contact(db, complaint, hours=pre.support_hours),
         questions=[
             CustomerQuestionOut(
                 id=q.id, ordinal=q.ordinal, question=q.question,
@@ -567,21 +755,17 @@ def _customer_view(db: DbSession, complaint: Complaint) -> ComplaintStatusOut:
             )
             for q in questions
         ],
-        milestones=_milestones(db, complaint),
-        evidence=_evidence(db, complaint),
+        milestones=_milestones(db, complaint, history=history),
+        evidence=_evidence(db, complaint, rows=pre.evidence.get(complaint.id, [])),
         action_needed=bool(open_questions),
     )
 
 
-def _department_contact(db: DbSession, complaint: Complaint) -> DepartmentContactOut | None:
+def _department_contact(db: DbSession, complaint: Complaint, *, hours: str | None = None) -> DepartmentContactOut | None:
     """The owning team as the customer sees it: name, remit, mailbox, hours."""
     dept = complaint.department
     if dept is None:
         return None
-    organisation = db.get(AppConfig, "organisation")
-    hours = None
-    if organisation is not None and isinstance(organisation.value, dict):
-        hours = organisation.value.get("support_hours")
     return DepartmentContactOut(
         name=dept.name, summary=dept.description, email=dept.email, support_hours=hours,
     )
@@ -596,12 +780,13 @@ _DONE_STATES = {"RESOLVED", "CLOSED"}
 _CHECKED_STATES = {"ANALYZED", "VALIDATED"} | _TEAM_STATES | _DONE_STATES
 
 
-def _milestones(db: DbSession, complaint: Complaint) -> list[MilestoneOut]:
-    history = db.execute(
-        select(ComplaintStatusHistory.to_status, ComplaintStatusHistory.created_at)
-        .where(ComplaintStatusHistory.complaint_id == complaint.id)
-        .order_by(ComplaintStatusHistory.created_at)
-    ).all()
+def _milestones(db: DbSession, complaint: Complaint, *, history: list[tuple[str, Any]] | None = None) -> list[MilestoneOut]:
+    if history is None:
+        history = db.execute(
+            select(ComplaintStatusHistory.to_status, ComplaintStatusHistory.created_at)
+            .where(ComplaintStatusHistory.complaint_id == complaint.id)
+            .order_by(ComplaintStatusHistory.created_at)
+        ).all()
     first_at: dict[str, Any] = {}
     for to_status, at in history:
         first_at.setdefault(to_status, at)
@@ -696,9 +881,10 @@ def my_complaints(
         .offset((page - 1) * size)
         .limit(size)
     ).scalars().all()
+    pre = _prefetch(db, [row.id for row in rows])
 
     return Page[ComplaintStatusOut](
-        items=[_customer_view(db, row) for row in rows],
+        items=[_customer_view(db, row, pre) for row in rows],
         total=total,
         page=page,
         size=size,
@@ -1235,3 +1421,55 @@ def change_complaint_status(
         available_actions=lifecycle.available_actions(complaint),
         history=[StatusHistoryRowOut(**row) for row in lifecycle.history(db, complaint.id)],
     )
+
+
+
+# ══════════════════════════════════════════════════════════════
+# suggested response (SRS: agents see a suggested response)
+# ══════════════════════════════════════════════════════════════
+@router.get(
+    "/{ref}/responses",
+    dependencies=[Depends(require_role(*STAFF))],
+    summary="Drafted replies for a complaint, newest last",
+)
+def list_responses(ref: str, db: DbSession) -> list[dict[str, Any]]:
+    from genai_pipeline.response import drafts_for_complaint
+
+    return drafts_for_complaint(db, _load(db, ref).id)
+
+
+@router.post(
+    "/{ref}/responses",
+    dependencies=[Depends(require_role(*STAFF))],
+    summary="Draft a suggested reply from the verified decision",
+)
+@limiter.limit("20/minute")
+def draft_response(ref: str, request: Request, response: Response, db: DbSession, user: CurrentUser) -> dict[str, Any]:
+    """
+    Write a reply from the *reconciled* record -- what the rules confirmed --
+    and run it through the response guard, which blocks any promise the
+    eligibility rules do not authorise. Nothing is sent: an agent reads it.
+    """
+    from genai_pipeline.response import drafts_for_complaint, generate_response
+    from src.db.models import EligibilityDecision
+
+    complaint = _load(db, ref)
+    decision = latest_decision(db, complaint.id)
+    if decision is None or not decision.reconciled:
+        raise ValidationError("This complaint has not been analysed yet, so there is nothing verified to reply from.")
+    eligibility = [
+        {
+            "eligibility_type": row.eligibility_type, "python_outcome": row.final_outcome,
+            "rule_ref": row.rule_ref, "policy_ref": {"doc_ref": row.policy_ref, "section_ref": row.section_ref},
+            "max_amount": float(row.max_amount) if row.max_amount is not None else None,
+            "currency": row.currency, "reason": row.reason,
+            "requires_human_approval": row.requires_human_approval,
+        }
+        for row in db.execute(select(EligibilityDecision).where(EligibilityDecision.complaint_id == complaint.id)).scalars()
+    ]
+    result = generate_response(db, complaint, reconciled=decision.reconciled, eligibility=eligibility)
+    if not result.ok and not getattr(result, "response_id", None):
+        raise ValidationError(f"A reply could not be drafted: {result.failure_detail or result.failure_reason}.")
+    record_audit(db, actor=user, entity_type="complaint", entity_id=str(complaint.id), action="RESPONSE_DRAFTED", request=request)
+    drafts = drafts_for_complaint(db, complaint.id)
+    return drafts[-1] if drafts else {}

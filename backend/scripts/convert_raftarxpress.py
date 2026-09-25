@@ -224,6 +224,23 @@ def stage_taxonomy(mapping: Mapping) -> pathlib.Path:
         w(f"    email: {code.lower().replace('_', '-')}@raftarxpress.com")
         w(f"    escalation_contact: {_yaml_scalar(row.get('escalation_contact_role'))}")
         w(f"    source_id: {row['department_id']}")
+        handles = row.get("handles_categories") or []
+        w("    handles: [" + ", ".join(_yaml_scalar(h) for h in handles) + "]")
+        w(f"    sla_response_hours: {row.get('sla_response_hours')}")
+        w(f"    sla_resolution_hours: {row.get('sla_resolution_hours')}")
+    w("")
+
+    # ── response templates ──
+    # Shown to staff with the rest of the organisation, and the house style a
+    # reply is written in. Carried verbatim: placeholders stay as authored.
+    templates = load(CONFIG / "response_templates.json").get("response_templates", [])
+    w(f"# -- response templates ({len(templates)}) " + "-" * 40)
+    w("response_templates:")
+    for t in templates:
+        w(f"  - id: {t['template_id']}")
+        w(f"    scenario: {_yaml_scalar(t.get('scenario'))}")
+        w(f"    tone: {_yaml_scalar(t.get('tone'))}")
+        w(f"    text: {json.dumps(t.get('template_text', ''))}")
     w("")
 
     # ── priority, carried across unchanged ──

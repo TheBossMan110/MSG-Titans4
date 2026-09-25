@@ -33,9 +33,12 @@ from genai_pipeline.intelligence import IntelligenceResult, analyse_complaint
 from hallucination_checks import citation_validator, policy_conflict
 from knowledge_base import retrieval
 from python_validation.pipeline import ValidationResult, validate_complaint
+from src.core import progress
 from src.core.logging import get_logger
 from src.db.enums import DocStatus
 from src.db.models import AppConfig, Comparison, Complaint, VerificationDecision
+from src.core.refcache import reference_data
+from src.db.fresh import needs_clearing
 
 log = get_logger("comparison_engine")
 
@@ -78,6 +81,7 @@ class ReconciliationResult:
 # ══════════════════════════════════════════════════════════════
 # configuration
 # ══════════════════════════════════════════════════════════════
+@reference_data("comparison_config")
 def load_comparison_config(
     db: Session,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
@@ -190,19 +194,23 @@ def persist(
     after a rule change must replace its comparison, not append a second
     contradictory set that the UI would then have to choose between.
     """
-    db.query(Comparison).filter(Comparison.complaint_id == complaint.id).delete()
+    if needs_clearing(db, complaint.id, "comparisons"):
+        db.query(Comparison).filter(Comparison.complaint_id == complaint.id).delete()
 
-    comparison_ids: list[uuid.UUID] = []
-    for comparison in result.comparisons:
-        row = Comparison(
+    rows = [
+        Comparison(
             complaint_id=complaint.id,
             genai_run_id=genai_run_id,
             validation_run_id=validation_run_id,
             **comparison.as_row(),
         )
-        db.add(row)
-        db.flush()
-        comparison_ids.append(row.id)
+        for comparison in result.comparisons
+    ]
+    # One flush for the lot: the driver batches the inserts into a single
+    # round trip, where a flush per row paid the network latency ten times.
+    db.add_all(rows)
+    db.flush()
+    comparison_ids: list[uuid.UUID] = [row.id for row in rows]
 
     decision = VerificationDecision(
         complaint_id=complaint.id,
@@ -254,12 +262,18 @@ def reconcile(
     """
     # ── Pipeline 2, always, first ──
     if validation is None:
+        progress.emit("rules")
         validation = validate_complaint(db, complaint, persist=persist_rows)
+        progress.emit("rules", "done", _rules_detail(db, validation))
     outcome = validation.outcome
 
     # ── Pipeline 1, best effort ──
     if intelligence is None and run_genai:
         intelligence = analyse_complaint(db, complaint, **genai_kwargs)
+    elif intelligence is None:
+        progress.emit("policy", "skipped", "Not needed without AI analysis")
+        progress.emit("ai", "skipped", "AI analysis is off; the company rules decide alone")
+    progress.emit("verify")
 
     genai_result = intelligence.intelligence if intelligence else None
     genai_available = bool(intelligence and intelligence.ok and genai_result is not None)
@@ -307,6 +321,12 @@ def reconcile(
         extra_review_reasons=extra_reasons,
     )
 
+    progress.emit(
+        "verify", "done",
+        f"{len(comparisons)} points compared against company policy"
+        if genai_available else "Company rules applied on their own",
+    )
+
     decision_id: uuid.UUID | None = None
     comparison_ids: list[uuid.UUID] = []
     if persist_rows:
@@ -339,6 +359,17 @@ def reconcile(
         comparison_ids=comparison_ids,
         citation_report=citation_report,
     )
+
+
+def _rules_detail(db: Session, validation: ValidationResult) -> str:
+    """What the rules concluded, in words a customer may see: the category only."""
+    from src.db.models import Category
+
+    code = getattr(validation.outcome, "category_code", None)
+    if not code:
+        return "No exact rule matched; a person will classify it"
+    name = db.execute(select(Category.name).where(Category.code == code)).scalar()
+    return f"Identified as: {name or code.replace('_', ' ').title()}"
 
 
 # ══════════════════════════════════════════════════════════════

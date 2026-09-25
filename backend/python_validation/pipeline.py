@@ -52,6 +52,7 @@ from python_validation.rule_engine import (
 )
 from python_validation.signals import SignalSet, extract_signals
 from src.core.logging import get_logger
+from src.core.refcache import reference_data
 from src.db.enums import EligibilityOutcome, EligibilityType
 from src.db.models import (
     Category,
@@ -140,6 +141,7 @@ class ValidationResult:
 # ══════════════════════════════════════════════════════════════
 # loading the matrix
 # ══════════════════════════════════════════════════════════════
+@reference_data("active_rules", copy_result=False)
 def load_active_rules(db: Session) -> list[LoadedRule]:
     """Every active rule, flattened for the engine."""
     rows = db.execute(
@@ -150,6 +152,7 @@ def load_active_rules(db: Session) -> list[LoadedRule]:
     return [rule_from_model(row) for row in rows]
 
 
+@reference_data("ladder_ranks")
 def _ladder_ranks(db: Session) -> tuple[dict[str, int], dict[str, int]]:
     escalation = {
         row.code: row.rank for row in db.execute(select(EscalationLevel)).scalars()
@@ -158,6 +161,7 @@ def _ladder_ranks(db: Session) -> tuple[dict[str, int], dict[str, int]]:
     return escalation, priority
 
 
+@reference_data("ruleset_version")
 def _ruleset_version(db: Session) -> str:
     from src.db.seed.rules import current_ruleset_version
 

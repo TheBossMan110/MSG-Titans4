@@ -201,6 +201,10 @@ class ComplaintSummary(APIModel):
     is_duplicate: bool = False
     repeat_count: int = 0
     created_at: datetime | None = None
+    # Who raised it ("Business/Merchant Account") and which dataset it came in
+    # with, if any. Staff views only: the customer-facing status never has them.
+    customer_type: str | None = None
+    dataset_tag: str | None = None
 
 
 class ComplaintDetail(ComplaintSummary):

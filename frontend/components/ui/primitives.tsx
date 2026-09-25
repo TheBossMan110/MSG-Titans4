@@ -27,7 +27,7 @@ const variants: Record<Variant, string> = {
   danger: 'bg-critical text-white hover:bg-[#86291d]',
   pencil: 'pencil hover:border-ai',
   onDark: 'bg-ink-on-dark text-espresso hover:bg-white',
-  ai: 'bg-ai text-white shadow-ai hover:bg-[#4232c4]',
+  ai: 'bg-ai text-white shadow-ai hover:bg-[#154b70]',
 }
 
 const sizes: Record<Size, string> = {
@@ -131,7 +131,10 @@ export function Display({
   return (
     <Tag className={cn('display', displaySize[size], className)}>
       {lines.map((line, i) => (
-        <span key={i} className="block overflow-hidden pb-[0.06em]">
+        // The mask reaches 0.22em below the line so descenders (p, g, y) are not
+        // cut off, and the next line is pulled up by the same amount so the
+        // headline keeps its tight leading.
+        <span key={i} className={cn('block overflow-hidden pb-[0.22em]', i < lines.length - 1 && '-mb-[0.16em]')}>
           <span
             className={cn('block', italicLast && i === lines.length - 1 && 'display-italic opacity-80')}
             data-line
@@ -153,7 +156,10 @@ export function Kbd({ children }: { children: ReactNode }) {
 }
 
 export function Mono({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={cn('font-mono text-[0.92em] tnum', className)}>{children}</span>
+  // Identifiers like comparison_engine.decision.build_reconciled have no
+  // break points; wrapping anywhere only when they do not fit keeps them from
+  // pushing a page wider than the screen.
+  return <span className={cn('font-mono text-[0.92em] tnum [overflow-wrap:anywhere]', className)}>{children}</span>
 }
 
 /* ------------------------------------------------------------------ Badges */
@@ -203,7 +209,7 @@ export function Badge({
   )
 }
 
-/** The model's opinion. Violet, with a sparkle: provisional. */
+/** The model's opinion. Blue, with a sparkle: provisional. */
 export function AiBadge({ children = 'AI', className }: { children?: ReactNode; className?: string }) {
   return (
     <Badge tone="ai" className={className} icon={<Sparkles size={12} strokeWidth={2.2} aria-hidden />}>
@@ -315,7 +321,7 @@ export function Wordmark({ dark = false, className }: { dark?: boolean; classNam
             dark ? 'bg-ink-on-dark' : 'bg-espresso',
           )}
         />
-        <span className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-ai-2 shadow-[0_0_8px_rgba(123,111,240,0.9)]" />
+        <span className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-ai-2 shadow-[0_0_8px_rgba(59,140,196,0.9)]" />
       </span>
       <span className={cn('font-display text-[21px] leading-none tracking-[-0.025em]', dark ? 'text-ink-on-dark' : 'text-espresso')}>
         Support<span className="italic font-light">Nova</span>

@@ -66,8 +66,12 @@ class Settings(BaseSettings):
 
     # ── generative ai (FR xii) ────────────────────────────────
     llm_primary_provider: str = "gemini"
-    llm_fallback_provider: str = "groq"
+    llm_fallback_provider: str = "deepseek"
     llm_timeout_seconds: int = 30
+    # How long a model may "think" before answering. Classification against a
+    # fixed schema gains little from long reasoning and loses seconds to it, so
+    # the default is low. minimal | low | medium | high | default (provider's own).
+    llm_reasoning_effort: str = "low"
     llm_max_retries: int = 2          # SRS Step 47: bounded, never infinite
     llm_cache_enabled: bool = True
     llm_temperature_intelligence: float = 0.1
@@ -82,13 +86,37 @@ class Settings(BaseSettings):
     # A comma-separated chain, tried left to right. Google retires model names
     # and 503s the busiest ones on the free tier, so pinning a single name is
     # how the whole GenAI pipeline goes dark without a line of code changing.
-    gemini_model: str = "gemini-3.6-flash,gemini-2.5-flash-lite,gemini-3.1-flash-lite"
+    gemini_model: str = "gemini-3.5-flash-lite,gemini-2.5-flash-lite,gemini-3.1-flash-lite"
     gemini_embed_model: str = "gemini-embedding-001"
 
     groq_api_key: str = ""
     # Verified against GET /models on 2026-09-25: Groq no longer serves Llama.
-    groq_model: str = "openai/gpt-oss-120b,qwen/qwen3.8-27b,openai/gpt-oss-20b"
+    groq_model: str = "qwen/qwen3.8-27b,openai/gpt-oss-120b"
     groq_base_url: str = "https://api.groq.com/openai/v1"
+
+    # ── email channel ─────────────────────────────────────────
+    # The support mailbox customers write to. Gmail is read over IMAP and
+    # replied from over SMTP, both with a Google "App Password" (needs 2-Step
+    # Verification on the account). Resend is used for sending instead when
+    # RESEND_FROM is an address on a domain verified with Resend -- it cannot
+    # send as, or receive for, a gmail.com address.
+    email_address: str = ""
+    email_app_password: str = ""
+    email_imap_host: str = "imap.gmail.com"
+    email_imap_port: int = 993
+    email_smtp_host: str = "smtp.gmail.com"
+    email_smtp_port: int = 587
+    email_poll_seconds: int = 60
+    email_sender_name: str = "RaftarXpress Support"
+    resend_api_key: str = ""
+    resend_from: str = ""
+    # Where links in emails point: the website customers sign in to.
+    public_app_url: str = "http://localhost:3000"
+
+    # DeepSeek: OpenAI-compatible API, pay-per-use (not a free tier).
+    deepseek_api_key: str = ""
+    deepseek_model: str = "deepseek-chat"
+    deepseek_base_url: str = "https://api.deepseek.com"
 
     openrouter_api_key: str = ""
     openrouter_model: str = "meta-llama/llama-3.3-70b-instruct:free"
@@ -98,6 +126,11 @@ class Settings(BaseSettings):
     embedding_enabled: bool = True
     embedding_dim: int = 768
     retrieval_top_k: int = 8
+    # Seconds reference data (rules, lexicon, taxonomy, config) may be served
+    # from memory. Edits made through this server invalidate at once; this
+    # only bounds edits made by another process (a seeding script). The server
+    # refreshes ahead of expiry, so the length costs nothing. 0 turns it off.
+    reference_cache_seconds: int = 900
     chunk_tokens: int = 800
     chunk_overlap: int = 120
 

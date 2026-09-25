@@ -70,16 +70,23 @@ functional_requirements:
   FR-iii:
     name: Complaint Submission
     status: done
-    tables: [complaints, customers, complaint_validation_issues]
+    tables: [complaints, customers, complaint_validation_issues, email_messages]
     modules:
       - complaint_processing/intake.py
       - src/api/v1/complaints.py
-    tests: [tests/test_complaints_api.py]
+      - src/services/email_channel.py
+      - src/api/v1/email.py
+      - genai_pipeline/assistant.py
+      - src/api/v1/assistant.py
+    tests: [tests/test_complaints_api.py, tests/test_email_channel.py, tests/test_assistant.py, tests/test_live_progress.py]
     notes: >-
       Accepted, recorded and analysed in one call. The complaint is
       persisted before analysis runs, so one that is accepted and then
       fails analysis is still findable and workable by hand rather than
-      lost.
+      lost. Three channels share that one intake: the web form (streamed
+      live, POST /api/complaints/stream), the chat receptionist (drafts only;
+      the customer files it) and the support mailbox (Gmail IMAP in, an AI-written
+      auto-reply out, every message kept in email_messages).
     columns: [complaints.public_ref, complaints.description_raw, complaints.channel]
     api: ["POST /api/complaints"]
     srs_step: 9

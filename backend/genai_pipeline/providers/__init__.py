@@ -42,10 +42,12 @@ from genai_pipeline.providers.base import (
 )
 from genai_pipeline.providers.gemini import GeminiProvider
 from genai_pipeline.providers.openai_compatible import (
+    DeepSeekProvider,
     GroqProvider,
     OpenAICompatibleProvider,
     OpenRouterProvider,
 )
+from src.core import progress
 from src.core.config import settings
 from src.core.logging import get_logger
 
@@ -71,6 +73,7 @@ __all__ = [
 _REGISTRY: dict[str, type[LLMProvider]] = {
     "gemini": GeminiProvider,
     "groq": GroqProvider,
+    "deepseek": DeepSeekProvider,
     "openrouter": OpenRouterProvider,
 }
 
@@ -215,7 +218,8 @@ class ProviderChain:
             raise AllProvidersFailed([])
 
         attempt_number = 0
-        for provider in self.providers:
+        for index, provider in enumerate(self.providers):
+            has_backup = index < len(self.providers) - 1
             for retry in range(self.max_retries + 1):
                 attempt_number += 1
                 started = time.perf_counter()
@@ -238,7 +242,22 @@ class ProviderChain:
                     )
 
                     if not exc.retryable or retry >= self.max_retries:
+                        if has_backup:
+                            progress.emit(
+                                "ai",
+                                detail=f"{provider.name.title()} is unavailable; switching to {self.providers[index + 1].name.title()}",
+                            )
                         break  # terminal, or out of retries -> next provider
+                    if isinstance(exc, RateLimited) and has_backup:
+                        # A free-tier quota does not refill in a few seconds,
+                        # and someone is waiting on this answer. A provider
+                        # with quota left beats sleeping on one without.
+                        progress.emit(
+                            "ai",
+                            detail=f"{provider.name.title()} hit its free limit; switching to {self.providers[index + 1].name.title()}",
+                        )
+                        break
+                    progress.emit("ai", detail=f"{provider.name.title()} did not answer; trying again")
                     self._sleep(_backoff(retry + 1, exc))
                     continue
 

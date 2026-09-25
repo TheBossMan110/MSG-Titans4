@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { prefersReducedMotion } from '@/lib/motion-pref'
 import { cn } from '@/lib/utils'
 import { Button } from './primitives'
 
@@ -129,7 +130,7 @@ export function CountUp({ value, decimals = 0, className }: { value: number; dec
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || value === 0) {
+    if (prefersReducedMotion() || value === 0) {
       setShown(format(value))
       return
     }
