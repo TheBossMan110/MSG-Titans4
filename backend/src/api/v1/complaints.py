@@ -45,7 +45,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
 from comparison_engine.engine import comparison_rows, latest_decision
-from complaint_processing import customer_actions, dedupe, followup
+from complaint_processing import customer_actions, dedupe, file_intake, followup
 from complaint_processing.intake import (
     IntakeRejected,
     analyse_complaint,
@@ -61,6 +61,9 @@ from hallucination_checks import trace as policy_trace
 from python_validation import resolution
 from schemas.common import Page
 from schemas.complaints import (
+    AssigneeOut,
+    AssignIn,
+    AssignOut,
     ChecklistOut,
     ChecklistStepOut,
     ClarificationAnswerIn,
@@ -78,6 +81,7 @@ from schemas.complaints import (
     EscalationOut,
     EvidenceOut,
     ExplainResponse,
+    FileDraftOut,
     FollowUpOut,
     GuidanceOut,
     IntakeResponse,
@@ -97,9 +101,10 @@ from schemas.complaints import (
 from src.core import progress
 from src.core.config import settings
 from src.core.deps import CurrentUser, DbSession, require_role
-from src.core.errors import AppError, NotFoundError, ValidationError
+from src.core.errors import AppError, NotFoundError, PermissionError_, ValidationError
 from src.core.logging import get_logger
 from src.core.ratelimit import limiter
+from src.core.scope import can_see, complaint_in_scope, restrict
 from src.db.enums import UserRole
 from src.db.models import (
     AgentGuidance,
@@ -156,6 +161,7 @@ def _summary(complaint: Complaint) -> ComplaintSummary:
         created_at=complaint.created_at,
         customer_type=complaint.customer_type,
         dataset_tag=complaint.dataset_tag,
+        channel=complaint.channel,
     )
 
 
@@ -226,8 +232,10 @@ def _detail(db: DbSession, complaint: Complaint) -> ComplaintDetail:
         )
     ).scalars().all()
 
+    holder = db.get(User, complaint.assigned_to) if complaint.assigned_to else None
     return ComplaintDetail(
         **_summary(complaint).model_dump(),
+        assigned_to=AssigneeOut(id=holder.id, full_name=holder.full_name, role=holder.role) if holder else None,
         description_raw=complaint.description_raw,
         description_clean=complaint.description_clean,
         subcategory=complaint.subcategory.code if complaint.subcategory else None,
@@ -245,7 +253,6 @@ def _detail(db: DbSession, complaint: Complaint) -> ComplaintDetail:
         transaction_ref=complaint.transaction_ref,
         amount=float(complaint.amount) if complaint.amount is not None else None,
         currency=complaint.currency,
-        channel=complaint.channel,
         customer_ref=complaint.customer.external_ref if complaint.customer else None,
         analyzed_at=complaint.analyzed_at,
         validated_at=complaint.validated_at,
@@ -539,6 +546,7 @@ def _intake(
 )
 def list_complaints(
     db: DbSession,
+    user: CurrentUser,
     page: int = Query(1, ge=1),
     size: int = Query(25, ge=1, le=100),
     status_filter: str | None = Query(None, alias="status"),
@@ -556,8 +564,8 @@ def list_complaints(
     date_to: date | None = Query(None, description="Received on or before this date."),
     search: str | None = Query(None, max_length=200),
 ) -> Page[ComplaintSummary]:
-    """List and filter complaints (FR lxxi)."""
-    query = select(Complaint)
+    """List and filter complaints (FR lxxi). Agents see their team's and their own (FR ii)."""
+    query = restrict(select(Complaint), user)
 
     if status_filter:
         query = query.where(Complaint.status == status_filter.strip().upper())
@@ -894,7 +902,7 @@ def my_complaints(
 @router.get(
     "/{ref}",
     response_model=ComplaintDetail,
-    dependencies=[Depends(require_role(*STAFF))],
+    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
     summary="Read one complaint",
 )
 def get_complaint(ref: str, db: DbSession) -> ComplaintDetail:
@@ -904,7 +912,7 @@ def get_complaint(ref: str, db: DbSession) -> ComplaintDetail:
 @router.get(
     "/{ref}/explain",
     response_model=ExplainResponse,
-    dependencies=[Depends(require_role(*STAFF))],
+    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
     summary="Why this complaint was decided as it was",
 )
 def explain_complaint(ref: str, db: DbSession) -> ExplainResponse:
@@ -1095,6 +1103,8 @@ def _own_or_staff(db: DbSession, ref: str, user: User) -> Complaint:
     complaint = _load(db, ref)
     if user.role not in STAFF and not _belongs_to(db, complaint, user):
         raise NotFoundError(f"No complaint with reference '{ref}'.")
+    if user.role in STAFF and not can_see(complaint, user):
+        raise NotFoundError(f"No complaint with reference '{ref}'.")
     return complaint
 
 
@@ -1197,6 +1207,26 @@ async def attach_evidence(
     )
 
 
+@router.post(
+    "/from-file",
+    response_model=FileDraftOut,
+    summary="Read a complaint letter (PDF, DOCX or text) into a draft to check and file",
+)
+@limiter.limit("20/minute")
+async def complaint_from_file(
+    request: Request, response: Response, user: CurrentUser, file: UploadFile = File(...),
+) -> FileDraftOut:
+    """
+    The "uploaded complaint" channel. Nothing is filed: the draft goes back to
+    the form, the customer checks it, and it is submitted with channel UPLOAD
+    through the same intake and pipelines as any other complaint.
+    """
+    data = await file.read(settings.max_upload_bytes + 1)
+    draft = file_intake.read_complaint_file(data, file.filename or "complaint")
+    log.info("complaint_file_read", format=draft.file_format, chars=len(draft.description), by=user.role)
+    return FileDraftOut(**draft.__dict__)
+
+
 @router.get(
     "/{ref}/evidence/{attachment_id}",
     summary="Download one evidence file",
@@ -1229,7 +1259,7 @@ def download_evidence(
 @router.get(
     "/{ref}/checklist",
     response_model=ChecklistOut,
-    dependencies=[Depends(require_role(*STAFF))],
+    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
     summary="Resolution steps and what is outstanding",
 )
 def complaint_checklist(ref: str, db: DbSession) -> ChecklistOut:
@@ -1254,7 +1284,7 @@ def complaint_checklist(ref: str, db: DbSession) -> ChecklistOut:
 @router.post(
     "/{ref}/checklist/{step_id}/confirm",
     response_model=ChecklistOut,
-    dependencies=[Depends(require_role(*STAFF))],
+    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
     summary="Confirm a required step was carried out",
 )
 def confirm_step(
@@ -1286,7 +1316,7 @@ def confirm_step(
 @router.get(
     "/{ref}/follow-ups",
     response_model=list[FollowUpOut],
-    dependencies=[Depends(require_role(*STAFF))],
+    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
     summary="What the system owes on this complaint",
 )
 def complaint_follow_ups(ref: str, db: DbSession) -> list[FollowUpOut]:
@@ -1297,7 +1327,7 @@ def complaint_follow_ups(ref: str, db: DbSession) -> list[FollowUpOut]:
 @router.post(
     "/{ref}/follow-ups/{follow_up_id}/complete",
     response_model=list[FollowUpOut],
-    dependencies=[Depends(require_role(*STAFF))],
+    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
     summary="Mark a follow-up done",
 )
 def complete_follow_up(
@@ -1318,7 +1348,7 @@ def complete_follow_up(
 @router.get(
     "/{ref}/escalation",
     response_model=EscalationOut,
-    dependencies=[Depends(require_role(*STAFF))],
+    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
     summary="The escalation and its handover note",
 )
 def complaint_escalation(ref: str, db: DbSession) -> EscalationOut:
@@ -1337,10 +1367,53 @@ def complaint_escalation(ref: str, db: DbSession) -> EscalationOut:
     return EscalationOut(**record)
 
 
+@router.post(
+    "/{ref}/assign",
+    response_model=AssignOut,
+    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
+    summary="Assign or reassign who handles a complaint",
+)
+def assign_complaint(ref: str, payload: AssignIn, request: Request, db: DbSession, user: CurrentUser) -> AssignOut:
+    """
+    Managers, reviewers and administrators assign any complaint to any active
+    member of staff. An agent may only take a complaint in their own scope for
+    themselves, or hand back one they hold (FR ii). Evaluators read; they do
+    not assign. Every change is audited with the before and after.
+    """
+    if user.role == UserRole.EVALUATOR:
+        raise PermissionError_("Evaluators have read-only access.")
+    complaint = _load(db, ref)
+    if user.role == UserRole.AGENT:
+        taking = payload.user_id is not None and payload.user_id == user.id
+        releasing = payload.user_id is None and complaint.assigned_to == user.id
+        if not (taking or releasing):
+            raise PermissionError_("An agent can take a complaint for themselves or hand back their own, not assign others.")
+    assignee = None
+    if payload.user_id is not None:
+        assignee = db.get(User, payload.user_id)
+        if assignee is None or not assignee.is_active or assignee.role not in (
+            UserRole.AGENT, UserRole.REVIEWER, UserRole.MANAGER, UserRole.ADMIN,
+        ):
+            raise ValidationError("Assign to an active agent, reviewer, manager or administrator.")
+    before = str(complaint.assigned_to) if complaint.assigned_to else None
+    complaint.assigned_to = assignee.id if assignee else None
+    record_audit(
+        db, entity_type="complaint", entity_id=complaint.id, action="ASSIGN", actor=user,
+        before={"assigned_to": before},
+        after={"assigned_to": str(assignee.id) if assignee else None, "assignee": assignee.full_name if assignee else None},
+        request=request,
+    )
+    db.flush()
+    return AssignOut(
+        public_ref=complaint.public_ref,
+        assigned_to=AssigneeOut(id=assignee.id, full_name=assignee.full_name, role=assignee.role) if assignee else None,
+    )
+
+
 @router.get(
     "/{ref}/lifecycle",
     response_model=LifecycleOut,
-    dependencies=[Depends(require_role(*STAFF))],
+    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
     summary="Status, history and the moves available next",
 )
 def complaint_lifecycle(ref: str, db: DbSession) -> LifecycleOut:
@@ -1363,7 +1436,7 @@ def complaint_lifecycle(ref: str, db: DbSession) -> LifecycleOut:
 @router.post(
     "/{ref}/status",
     response_model=LifecycleOut,
-    dependencies=[Depends(require_role(*STAFF))],
+    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
     summary="Move a complaint to another status",
 )
 def change_complaint_status(
@@ -1429,7 +1502,7 @@ def change_complaint_status(
 # ══════════════════════════════════════════════════════════════
 @router.get(
     "/{ref}/responses",
-    dependencies=[Depends(require_role(*STAFF))],
+    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
     summary="Drafted replies for a complaint, newest last",
 )
 def list_responses(ref: str, db: DbSession) -> list[dict[str, Any]]:
@@ -1440,7 +1513,7 @@ def list_responses(ref: str, db: DbSession) -> list[dict[str, Any]]:
 
 @router.post(
     "/{ref}/responses",
-    dependencies=[Depends(require_role(*STAFF))],
+    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
     summary="Draft a suggested reply from the verified decision",
 )
 @limiter.limit("20/minute")

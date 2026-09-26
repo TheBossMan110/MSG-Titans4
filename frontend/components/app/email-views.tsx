@@ -27,7 +27,7 @@ const INTENT_LABEL: Record<string, string> = {
 export function Mailbox({ staff, refreshKey = 0 }: { staff: boolean; refreshKey?: number }) {
   const [page, setPage] = useState(1)
   const [direction, setDirection] = useState<'' | 'IN' | 'OUT'>(staff ? 'IN' : '')
-  const q = useApi(() => mail.messages({ page, size: 20, direction: direction || undefined }), [page, direction, refreshKey])
+  const q = useApi(() => mail.messages({ page, size: 20, direction: direction || undefined }), [page, direction, refreshKey], true, { live: true })
   const [open, setOpen] = useState<string | null>(null)
   const items = q.data?.items ?? []
   const current = open ?? items[0]?.id ?? null
@@ -57,7 +57,9 @@ export function Mailbox({ staff, refreshKey = 0 }: { staff: boolean; refreshKey?
                       <span className="truncate text-[13.5px] font-medium text-espresso">{m.direction === 'IN' ? (m.from_name || m.from_address) : `To ${m.to_address}`}</span>
                       <span className="shrink-0 text-[11.5px] text-taupe-2">{fmtRelative(m.created_at)}</span>
                     </span>
+                    {m.direction === 'IN' && m.from_name && <span className="block truncate text-[12px] text-taupe-2">{m.from_address}</span>}
                     <span className="block truncate text-[13.5px] text-espresso-2">{m.subject || '(no subject)'}</span>
+                    {m.preview && <span className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug text-taupe-2">{m.preview}</span>}
                     <span className="mt-1 flex flex-wrap gap-1.5">
                       {m.intent && <Badge>{INTENT_LABEL[m.intent] ?? humanise(m.intent)}</Badge>}
                       <Badge tone={STATUS_TONE[m.status] ?? 'neutral'}>{STATUS_LABEL[m.status] ?? humanise(m.status)}</Badge>

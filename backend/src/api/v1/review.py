@@ -37,9 +37,10 @@ from schemas.review import (
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import NotFoundError, ValidationError
 from src.core.logging import get_logger
+from src.core.scope import complaint_in_scope, is_scoped, restrict
 from src.db.enums import ReviewStatus, UserRole
 from src.db.models import Complaint, ReviewQueueItem, SLAEvent
-from src.services import review, sla
+from src.services import review, role_views, sla
 
 log = get_logger("api.review")
 
@@ -47,6 +48,9 @@ router = APIRouter(prefix="/review", tags=["Review & SLA"])
 
 REVIEWERS = (UserRole.REVIEWER, UserRole.MANAGER, UserRole.ADMIN)
 READERS = (*REVIEWERS, UserRole.EVALUATOR, UserRole.AGENT)
+# The queue itself is reviewers' work (FR lxi); agents see a complaint's
+# review history and SLA only for complaints in their own scope.
+QUEUE_READERS = (*REVIEWERS, UserRole.EVALUATOR)
 
 
 def _item_out(db: DbSession, item: ReviewQueueItem, complaint: Complaint) -> ReviewItemOut:
@@ -97,7 +101,7 @@ def _load_complaint(db: DbSession, ref: str) -> Complaint:
 @router.get(
     "/queue",
     response_model=Page[ReviewItemOut],
-    dependencies=[Depends(require_role(*READERS))],
+    dependencies=[Depends(require_role(*QUEUE_READERS))],
     summary="The manual review queue",
 )
 def list_queue(
@@ -154,7 +158,7 @@ def list_queue(
 @router.get(
     "/stats",
     response_model=QueueStatsOut,
-    dependencies=[Depends(require_role(*READERS))],
+    dependencies=[Depends(require_role(*QUEUE_READERS))],
     summary="Queue depth and override rate",
 )
 def queue_stats(db: DbSession) -> QueueStatsOut:
@@ -243,7 +247,7 @@ def record_action(
 @router.get(
     "/{ref}/history",
     response_model=list[ReviewHistoryOut],
-    dependencies=[Depends(require_role(*READERS))],
+    dependencies=[Depends(require_role(*READERS)), Depends(complaint_in_scope)],
     summary="Every reviewer action on a complaint",
 )
 def action_history(ref: str, db: DbSession) -> list[ReviewHistoryOut]:
@@ -263,7 +267,7 @@ def action_history(ref: str, db: DbSession) -> list[ReviewHistoryOut]:
 @router.get(
     "/{ref}/sla",
     response_model=list[SLAStatusOut],
-    dependencies=[Depends(require_role(*READERS))],
+    dependencies=[Depends(require_role(*READERS)), Depends(complaint_in_scope)],
     summary="SLA clocks for a complaint",
 )
 def complaint_sla(ref: str, db: DbSession) -> list[SLAStatusOut]:
@@ -292,13 +296,28 @@ def sweep_sla(db: DbSession, limit: int = Query(500, ge=1, le=5000)) -> SLASweep
 
 
 @router.get(
+    "/overview",
+    dependencies=[Depends(require_role(*QUEUE_READERS))],
+    summary="The reviewer dashboard: the queue grouped by why a person is needed, and your review history",
+)
+def reviewer_overview(db: DbSession, user: CurrentUser) -> dict:
+    """
+    The quality-control desk between the two pipelines and the agent (FR lxi,
+    lxii): what is waiting and why -- AI against the rules, policy conflicts,
+    escalation questions, adversarial complaints, validation failures -- and
+    what this reviewer has already decided.
+    """
+    return role_views.reviewer_overview(db, user)
+
+
+@router.get(
     "/follow-ups/due",
     response_model=list[DueFollowUpOut],
     dependencies=[Depends(require_role(*READERS))],
     summary="Follow-ups that are due or overdue",
 )
 def due_follow_ups(
-    db: DbSession, limit: int = Query(100, ge=1, le=500)
+    db: DbSession, user: CurrentUser, limit: int = Query(100, ge=1, le=500)
 ) -> list[DueFollowUpOut]:
     """
     The work list (FR xxxviii; SRS Step 41).
@@ -307,4 +326,9 @@ def due_follow_ups(
     already costing the customer something. Nothing notices a follow-up coming
     due on its own; this endpoint is what turns a stored date into work.
     """
-    return [DueFollowUpOut(**row) for row in followup.due(db, limit=limit)]
+    rows = followup.due(db, limit=limit)
+    if is_scoped(user):
+        # An agent's work list is their own team's and their own assignments.
+        visible = {ref for (ref,) in db.execute(restrict(select(Complaint.public_ref), user)).all()}
+        rows = [row for row in rows if row.get("public_ref") in visible]
+    return [DueFollowUpOut(**row) for row in rows]

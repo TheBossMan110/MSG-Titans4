@@ -63,6 +63,13 @@ WRITERS = (UserRole.ADMIN,)
 
 ReadAccess = Depends(require_role(*READERS))
 WriteAccess = Depends(require_role(*WRITERS))
+# The reference every member of staff works from -- the rule matrix, the
+# taxonomy and the SLA targets -- is readable by agents and reviewers too;
+# only an administrator changes it (FR ii).
+StaffReadAccess = Depends(require_role(*READERS, UserRole.REVIEWER, UserRole.AGENT))
+# Platform configuration -- runtime settings, prompts, deliberate defects -- is
+# the administrator's; evaluators read it to verify the system is config-driven.
+PlatformAccess = Depends(require_role(UserRole.ADMIN, UserRole.EVALUATOR))
 
 
 def _refuse(exc: ConfigRefused) -> ValidationError:
@@ -81,7 +88,7 @@ def _refuse(exc: ConfigRefused) -> ValidationError:
 @router.get(
     "/config",
     response_model=list[ConfigEntryOut],
-    dependencies=[ReadAccess],
+    dependencies=[PlatformAccess],
     summary="Every runtime configuration value",
 )
 def list_config(db: DbSession) -> list[ConfigEntryOut]:
@@ -138,7 +145,7 @@ def update_config(
 @router.get(
     "/taxonomy",
     response_model=TaxonomyOut,
-    dependencies=[ReadAccess],
+    dependencies=[StaffReadAccess],
     summary="Every vocabulary the rules are written against",
 )
 def get_taxonomy(db: DbSession) -> TaxonomyOut:
@@ -158,7 +165,7 @@ def get_taxonomy(db: DbSession) -> TaxonomyOut:
 @router.get(
     "/rules",
     response_model=list[RuleSummaryOut],
-    dependencies=[ReadAccess],
+    dependencies=[StaffReadAccess],
     summary="The rule matrix",
 )
 def list_rules(
@@ -177,7 +184,7 @@ def list_rules(
 @router.get(
     "/rules/{rule_ref}",
     response_model=RuleDetailOut,
-    dependencies=[ReadAccess],
+    dependencies=[StaffReadAccess],
     summary="One rule, with its conditions",
 )
 def get_rule(rule_ref: str, db: DbSession) -> RuleDetailOut:
@@ -459,7 +466,7 @@ def remove_term(
 @router.get(
     "/sla",
     response_model=list[SLAPolicyOut],
-    dependencies=[ReadAccess],
+    dependencies=[StaffReadAccess],
     summary="SLA targets",
 )
 def list_sla(db: DbSession) -> list[SLAPolicyOut]:
@@ -518,7 +525,7 @@ def update_sla(
 @router.get(
     "/prompts",
     response_model=list[PromptVersionOut],
-    dependencies=[ReadAccess],
+    dependencies=[PlatformAccess],
     summary="Registered prompt templates",
 )
 def list_prompts(db: DbSession) -> list[PromptVersionOut]:
@@ -594,7 +601,7 @@ def activate_prompt(
 @router.get(
     "/defects",
     response_model=list[DefectSpecOut],
-    dependencies=[ReadAccess],
+    dependencies=[PlatformAccess],
     summary="The deliberate defects and what should catch each one",
 )
 def list_defects() -> list[DefectSpecOut]:
@@ -611,7 +618,7 @@ def list_defects() -> list[DefectSpecOut]:
 @router.post(
     "/defects/demonstrate",
     response_model=list[DefectResultOut],
-    dependencies=[ReadAccess],
+    dependencies=[PlatformAccess],
     summary="Run every deliberate defect through its real detector",
 )
 def demonstrate_defects(db: DbSession) -> list[DefectResultOut]:
@@ -633,7 +640,7 @@ def demonstrate_defects(db: DbSession) -> list[DefectResultOut]:
 @router.post(
     "/defects/{code}/demonstrate",
     response_model=DefectResultOut,
-    dependencies=[ReadAccess],
+    dependencies=[PlatformAccess],
     summary="Run one deliberate defect through its real detector",
 )
 def demonstrate_defect(code: str, db: DbSession) -> DefectResultOut:

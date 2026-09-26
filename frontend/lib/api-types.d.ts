@@ -574,7 +574,7 @@ export interface paths {
         };
         /**
          * List complaints
-         * @description List and filter complaints (FR lxxi).
+         * @description List and filter complaints (FR lxxi). Agents see their team's and their own (FR ii).
          */
         get: operations["list_complaints_api_complaints_get"];
         put?: never;
@@ -840,6 +840,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/complaints/from-file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read a complaint letter (PDF, DOCX or text) into a draft to check and file
+         * @description The "uploaded complaint" channel. Nothing is filed: the draft goes back to
+         *     the form, the customer checks it, and it is submitted with channel UPLOAD
+         *     through the same intake and pipelines as any other complaint.
+         */
+        post: operations["complaint_from_file_api_complaints_from_file_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/complaints/{ref}/evidence/{attachment_id}": {
         parameters: {
             query?: never;
@@ -966,6 +988,29 @@ export interface paths {
         get: operations["complaint_escalation_api_complaints__ref__escalation_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/complaints/{ref}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Assign or reassign who handles a complaint
+         * @description Managers, reviewers and administrators assign any complaint to any active
+         *     member of staff. An agent may only take a complaint in their own scope for
+         *     themselves, or hand back one they hold (FR ii). Evaluators read; they do
+         *     not assign. Every change is audited with the before and after.
+         */
+        post: operations["assign_complaint_api_complaints__ref__assign_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1169,6 +1214,29 @@ export interface paths {
          *     as it likes.
          */
         post: operations["sweep_sla_api_review_sla_sweep_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/review/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The reviewer dashboard: the queue grouped by why a person is needed, and your review history
+         * @description The quality-control desk between the two pipelines and the agent (FR lxi,
+         *     lxii): what is waiting and why -- AI against the rules, policy conflicts,
+         *     escalation questions, adversarial complaints, validation failures -- and
+         *     what this reviewer has already decided.
+         */
+        get: operations["reviewer_overview_api_review_overview_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1492,6 +1560,28 @@ export interface paths {
          *     or one, so an administrator can look at exactly what an agent sees.
          */
         get: operations["agent_workspace_api_analytics_agent_workspace_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/analytics/manager": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The manager dashboard: today's load, team performance, agent workload, SLA and critical cases
+         * @description The support manager runs the operation: they watch every team's load and
+         *     SLA, see which agent holds what, and step in on critical cases and
+         *     escalations. They do not configure the platform (FR ii).
+         */
+        get: operations["manager_overview_api_analytics_manager_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2219,6 +2309,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every account, newest first */
+        get: operations["list_people_api_people_get"];
+        put?: never;
+        /**
+         * Create an account with a role
+         * @description Staff accounts are provisioned here; self-registration always creates a customer.
+         */
+        post: operations["create_person_api_people_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/people/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Accounts at a glance: new sign-ups and recent sign-ins */
+        get: operations["people_summary_api_people_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/people/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One account: details, complaints with history, sign-ins, emails */
+        get: operations["person_api_people__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change an account's role, team, name, password or status
+         * @description A change of role or a disabled account signs the person out everywhere at
+         *     once, so the old permissions do not outlive the change. An administrator
+         *     cannot demote or disable themselves: the platform must never be left
+         *     without one.
+         */
+        patch: operations["update_person_api_people__user_id__patch"];
+        trace?: never;
+    };
+    "/api/live/pulse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Counters that move when anything new arrives */
+        get: operations["pulse_api_live_pulse_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Active staff a complaint can be assigned to */
+        get: operations["staff_directory_api_staff_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2280,6 +2466,32 @@ export interface components {
             cited_version?: string | null;
             /** Analyzed At */
             analyzed_at?: string | null;
+        };
+        /**
+         * AssignIn
+         * @description Who should handle the complaint. ``null`` releases it back to the team.
+         */
+        AssignIn: {
+            /** User Id */
+            user_id?: string | null;
+        };
+        /** AssignOut */
+        AssignOut: {
+            /** Public Ref */
+            public_ref: string;
+            assigned_to?: components["schemas"]["AssigneeOut"] | null;
+        };
+        /** AssigneeOut */
+        AssigneeOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            /** Role */
+            role: string;
         };
         /**
          * AuditActionCountOut
@@ -2386,6 +2598,11 @@ export interface components {
         };
         /** Body_attach_evidence_api_complaints__ref__evidence_post */
         Body_attach_evidence_api_complaints__ref__evidence_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_complaint_from_file_api_complaints_from_file_post */
+        Body_complaint_from_file_api_complaints_from_file_post: {
             /** File */
             file: string;
         };
@@ -2693,6 +2910,8 @@ export interface components {
             customer_type?: string | null;
             /** Dataset Tag */
             dataset_tag?: string | null;
+            /** Channel */
+            channel?: string | null;
             /** Description Raw */
             description_raw: string;
             /** Description Clean */
@@ -2723,10 +2942,9 @@ export interface components {
             amount?: number | null;
             /** Currency */
             currency?: string | null;
-            /** Channel */
-            channel?: string | null;
             /** Customer Ref */
             customer_ref?: string | null;
+            assigned_to?: components["schemas"]["AssigneeOut"] | null;
             /** Analyzed At */
             analyzed_at?: string | null;
             /** Validated At */
@@ -2859,6 +3077,8 @@ export interface components {
             customer_type?: string | null;
             /** Dataset Tag */
             dataset_tag?: string | null;
+            /** Channel */
+            channel?: string | null;
         };
         /**
          * ConfigEntryOut
@@ -3490,6 +3710,29 @@ export interface components {
             /** At */
             at?: string | null;
         };
+        /**
+         * FileDraftOut
+         * @description A complaint read out of an uploaded file, for the customer to check before filing.
+         */
+        FileDraftOut: {
+            /** File Name */
+            file_name: string;
+            /** File Format */
+            file_format: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Order Ref */
+            order_ref?: string | null;
+            /** Pages */
+            pages?: number | null;
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+        };
         /** FollowUpOut */
         FollowUpOut: {
             /** Id */
@@ -4038,6 +4281,23 @@ export interface components {
              */
             page_size: number;
         };
+        /** Page[PersonRow] */
+        Page_PersonRow_: {
+            /** Items */
+            items: components["schemas"]["PersonRow"][];
+            /** Total */
+            total: number;
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Page Size
+             * @default 25
+             */
+            page_size: number;
+        };
         /** Page[ReviewItemOut] */
         Page_ReviewItemOut_: {
             /** Items */
@@ -4078,6 +4338,194 @@ export interface components {
             current_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** PeopleSummary */
+        PeopleSummary: {
+            /** Total */
+            total: number;
+            /** By Role */
+            by_role: {
+                [key: string]: number;
+            };
+            /** New 7D */
+            new_7d: number;
+            /** New Today */
+            new_today: number;
+            /** Signed In Today */
+            signed_in_today: number;
+            /** Recent Signups */
+            recent_signups: components["schemas"]["PersonRow"][];
+            /** Recent Signins */
+            recent_signins: components["schemas"]["SignInOut"][];
+        };
+        /** PersonActivity */
+        PersonActivity: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Action */
+            action: string;
+            /** Label */
+            label: string;
+            /** Ok */
+            ok: boolean;
+            /** Ip Address */
+            ip_address?: string | null;
+        };
+        /** PersonComplaint */
+        PersonComplaint: {
+            /** Public Ref */
+            public_ref: string;
+            /** Title */
+            title: string;
+            /** Status */
+            status: string;
+            /** Channel */
+            channel: string;
+            /** Category */
+            category?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Priority */
+            priority?: string | null;
+            /** Urgency */
+            urgency?: string | null;
+            /** Sentiment */
+            sentiment?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Resolved At */
+            resolved_at?: string | null;
+            /** History */
+            history: components["schemas"]["StatusStep"][];
+        };
+        /**
+         * PersonCreate
+         * @description An administrator provisions an account: staff roles are never self-assigned.
+         */
+        PersonCreate: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Full Name */
+            full_name: string;
+            /** Password */
+            password: string;
+            /** Role */
+            role: string;
+            /** Department Code */
+            department_code?: string | null;
+        };
+        /** PersonDetail */
+        PersonDetail: {
+            person: components["schemas"]["PersonRow"];
+            /** Phone */
+            phone?: string | null;
+            /** Tier */
+            tier?: string | null;
+            /** Region */
+            region?: string | null;
+            /** Complaints */
+            complaints: components["schemas"]["PersonComplaint"][];
+            /** Activity */
+            activity: components["schemas"]["PersonActivity"][];
+            /** Emails */
+            emails: components["schemas"]["PersonEmail"][];
+        };
+        /** PersonEmail */
+        PersonEmail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Direction */
+            direction: string;
+            /** Subject */
+            subject: string;
+            /** Status */
+            status: string;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Complaint Ref */
+            complaint_ref?: string | null;
+        };
+        /** PersonRow */
+        PersonRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            /** Email */
+            email: string;
+            /** Role */
+            role: string;
+            /** Department */
+            department?: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Last Login At */
+            last_login_at?: string | null;
+            /**
+             * Mfa On
+             * @default false
+             */
+            mfa_on: boolean;
+            /** Customer Ref */
+            customer_ref?: string | null;
+            /**
+             * Complaints
+             * @default 0
+             */
+            complaints: number;
+            /**
+             * Open Complaints
+             * @default 0
+             */
+            open_complaints: number;
+            /** Last Complaint At */
+            last_complaint_at?: string | null;
+            /**
+             * Assigned
+             * @default 0
+             */
+            assigned: number;
+        };
+        /**
+         * PersonUpdate
+         * @description Only the fields sent are changed. ``department_code: ""`` clears the team.
+         */
+        PersonUpdate: {
+            /** Full Name */
+            full_name?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Department Code */
+            department_code?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Password */
+            password?: string | null;
         };
         /** PipelineOut */
         PipelineOut: {
@@ -4269,6 +4717,37 @@ export interface components {
             checksum?: string | null;
             /** Variables */
             variables?: string[];
+        };
+        /**
+         * Pulse
+         * @description Cheap counters the dashboards poll to know when to refresh.
+         */
+        Pulse: {
+            /** Complaints */
+            complaints: number;
+            /** Latest Complaint Ref */
+            latest_complaint_ref?: string | null;
+            /** Latest Complaint At */
+            latest_complaint_at?: string | null;
+            /** Users */
+            users: number;
+            /** Latest User Name */
+            latest_user_name?: string | null;
+            /** Latest User At */
+            latest_user_at?: string | null;
+            /** Emails In */
+            emails_in: number;
+            /** Latest Email From */
+            latest_email_from?: string | null;
+            /** Latest Email At */
+            latest_email_at?: string | null;
+            /** Status Changes */
+            status_changes: number;
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
         };
         /** QueueStatsOut */
         QueueStatsOut: {
@@ -5130,6 +5609,29 @@ export interface components {
              */
             current: boolean;
         };
+        /** SignInOut */
+        SignInOut: {
+            /** User Id */
+            user_id?: string | null;
+            /** Full Name */
+            full_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Role */
+            role?: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Ip Address */
+            ip_address?: string | null;
+            /**
+             * First Time
+             * @default false
+             */
+            first_time: boolean;
+        };
         /** SimulateIn */
         SimulateIn: {
             /**
@@ -5202,6 +5704,20 @@ export interface components {
             reason?: string | null;
             /** At */
             at?: string | null;
+        };
+        /** StatusStep */
+        StatusStep: {
+            /** From Status */
+            from_status?: string | null;
+            /** To Status */
+            to_status: string;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Reason */
+            reason?: string | null;
         };
         /** SubcategoryBrief */
         SubcategoryBrief: {
@@ -6669,6 +7185,13 @@ export interface operations {
                 requires_review?: boolean | null;
                 dataset_tag?: string | null;
                 customer_type?: string | null;
+                sentiment?: string | null;
+                /** @description ANY (escalated), NONE, or a level code. */
+                escalation?: string | null;
+                /** @description Received on or after this date. */
+                date_from?: string | null;
+                /** @description Received on or before this date. */
+                date_to?: string | null;
                 search?: string | null;
             };
             header?: never;
@@ -7066,6 +7589,39 @@ export interface operations {
             };
         };
     };
+    complaint_from_file_api_complaints_from_file_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_complaint_from_file_api_complaints_from_file_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileDraftOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     download_evidence_api_complaints__ref__evidence__attachment_id__get: {
         parameters: {
             query?: never;
@@ -7240,6 +7796,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["schemas__complaints__EscalationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_complaint_api_complaints__ref__assign_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignOut"];
                 };
             };
             /** @description Validation Error */
@@ -7560,6 +8151,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reviewer_overview_api_review_overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };
@@ -8011,6 +8624,40 @@ export interface operations {
                 /** @description Managers and admins: one team, or all when empty. */
                 department?: string | null;
                 limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    manager_overview_api_analytics_manager_get: {
+        parameters: {
+            query?: {
+                /** @description One team's view, or the whole operation when empty. */
+                department?: string | null;
             };
             header?: never;
             path?: never;
@@ -9107,6 +9754,202 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    list_people_api_people_get: {
+        parameters: {
+            query?: {
+                role?: string | null;
+                /** @description Name, email or customer reference. */
+                search?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_PersonRow_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_person_api_people_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    people_summary_api_people_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeopleSummary"];
+                };
+            };
+        };
+    };
+    person_api_people__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_person_api_people__user_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pulse_api_live_pulse_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pulse"];
+                };
+            };
+        };
+    };
+    staff_directory_api_staff_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
                 };
             };
         };

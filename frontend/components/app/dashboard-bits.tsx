@@ -14,6 +14,7 @@ export const ADMIN_SECTIONS: Array<[string, string]> = [
   ['sla-risks', 'SLA risks'],
   ['mismatches', 'GenAI / Python mismatches'],
   ['manual-review', 'Manual-review cases'],
+  ['people', 'Users & sign-ins'],
 ]
 
 /** The agent dashboard's sections, in the order the SRS lists what agents see. */
@@ -26,6 +27,31 @@ export const AGENT_SECTIONS: Array<[string, string]> = [
   ['validation', 'Validation status'],
   ['suggested-response', 'Suggested response'],
   ['escalation-warnings', 'Escalation warnings'],
+  ['performance', 'My performance'],
+]
+
+/** The reviewer's desk: the queue grouped by why a person is needed, then their own decisions. */
+export const REVIEWER_SECTIONS: Array<[string, string]> = [
+  ['review-overview', 'Review overview'],
+  ['disagreement', 'AI and rules disagree'],
+  ['policy', 'Policy conflicts'],
+  ['escalation', 'Escalation questions'],
+  ['adversarial', 'Adversarial cases'],
+  ['validation', 'Validation failures'],
+  ['ambiguous', 'Ambiguous complaints'],
+  ['my-queue', 'Claimed by me'],
+  ['history', 'My review history'],
+]
+
+/** The manager's view of the operation. */
+export const MANAGER_SECTIONS: Array<[string, string]> = [
+  ['today', 'Today'],
+  ['teams', 'Team performance'],
+  ['agents', 'Agent workload'],
+  ['sla', 'SLA monitoring'],
+  ['critical', 'Critical cases'],
+  ['escalations', 'Escalations'],
+  ['review-status', 'Review status'],
 ]
 
 /** The customer dashboard's sections, in the order the SRS lists what users see. */

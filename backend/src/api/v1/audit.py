@@ -25,11 +25,14 @@ from src.db.models import AuditLog, User
 
 router = APIRouter(prefix="/audit", tags=["Audit"])
 
-# Who may read the whole trail. An agent sees their own complaints' history on
-# the complaint; the organisation-wide log is oversight, and oversight is a
-# manager's, an administrator's and an evaluator's job.
+# Who may read the trail (FR ii, FR lxiv). The organisation-wide log is the
+# administrator's (evaluators read it too); one entity's trail -- a complaint's
+# decisions and overrides -- is open to the reviewers and managers who act on it.
 READERS = (UserRole.MANAGER, UserRole.ADMIN, UserRole.EVALUATOR)
-ReadAccess = Depends(require_role(*READERS))
+GLOBAL_READERS = (UserRole.ADMIN, UserRole.EVALUATOR)
+ENTITY_READERS = (*READERS, UserRole.REVIEWER)
+ReadAccess = Depends(require_role(*GLOBAL_READERS))
+EntityAccess = Depends(require_role(*ENTITY_READERS))
 
 MAX_TRAIL = 500
 
@@ -125,7 +128,7 @@ def audit_actions(db: DbSession) -> list[AuditActionCountOut]:
 @router.get(
     "/{entity_type}/{entity_id}",
     response_model=list[AuditEntryOut],
-    dependencies=[ReadAccess],
+    dependencies=[EntityAccess],
     summary="One entity's full trail, oldest first",
 )
 def entity_trail(entity_type: str, entity_id: str, db: DbSession) -> list[AuditEntryOut]:

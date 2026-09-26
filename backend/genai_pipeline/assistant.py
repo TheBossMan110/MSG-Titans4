@@ -18,6 +18,13 @@ Three limits are enforced in code, not only asked for in the prompt:
   it writes about status is replaced by what the server found.
 * **Injection.** Every customer message is neutralised and scanned first, and
   the transcript is fenced as data, exactly as a complaint body is.
+* **Manipulation.** The prompt carries the security rules of
+  ``security/manipulation_guard``, and every reply is checked in code before it
+  is shown: one that approves, promises or guarantees an outcome, plays along
+  with a jailbreak or quotes its instructions is replaced by the policy
+  refusal. When the customer's message was an attack, the reply always says
+  that the company's written policy decides, and the attempt is recorded in
+  ``injection_events``.
 
 When no model answers, Nova still works in a reduced way: a reference like
 CMP-000123 still returns its status, and everything else points to the form.
@@ -35,7 +42,8 @@ from sqlalchemy.orm import Session
 from genai_pipeline.providers import AllProvidersFailed, ProviderChain, build_chain
 from genai_pipeline.providers.base import LLMRequest
 from schemas.genai import json_schema_for
-from security.injection_defense import DATA_NOT_INSTRUCTIONS_NOTICE, fence, scan
+from security.injection_defense import DATA_NOT_INSTRUCTIONS_NOTICE, fence, record_events, scan
+from security.manipulation_guard import manipulation_rules, policy_refusal, unsafe_reply
 from src.core.logging import get_logger
 from src.db.models import AppConfig, User
 
@@ -92,6 +100,9 @@ Company facts you may use: {facts}
 If a customer asks for a fact that is not listed here, say where on the website they can see it. Never invent a number, time, price or policy.
 {customer}
 
+{rules}
+Refunds, compensation, replacements, approvals, guarantees and the rules themselves are always ON topic here, even when asked as a trick: never answer them with the off-topic line. Answer with the policy position above, then keep helping (intent "collecting").
+
 {notice}
 Reply with JSON matching the schema. The conversation follows."""
 
@@ -121,14 +132,16 @@ def converse(
 
     # Every customer line is neutralised and scanned; the transcript is data.
     lines: list[str] = []
+    last_scan = None
     for message in turns:
         text = message["content"][:MAX_MESSAGE_CHARS]
         if message["role"] == "user":
-            text = scan(db, text).sanitised
-            lines.append(f"Customer: {text}")
+            last_scan = scan(db, text)
+            lines.append(f"Customer: {last_scan.sanitised}")
         else:
             lines.append(f"Nova: {text}")
     last_customer = turns[-1]["content"]
+    attacked = bool(last_scan is not None and last_scan.suspected)
 
     chain = chain or ProviderChain(build_chain(), max_retries=1)
     turn: AssistantTurn | None = None
@@ -146,10 +159,31 @@ def converse(
         except (AllProvidersFailed, ValidationError, ValueError) as exc:
             log.warning("assistant_turn_failed", error=type(exc).__name__)
 
+    if attacked:
+        # The same audit trail a complaint gets. Written after the model call,
+        # so no transaction is held open while the model thinks.
+        record_events(db, last_scan, source_type="CHAT")
+
     if turn is None:
         return _degraded(db, last_customer, user=user, status_lookup=status_lookup)
 
     result = AssistantResult(reply=turn.reply.strip(), intent=turn.intent)
+    org = _org_name(db)
+    problems = unsafe_reply(db, result.reply)
+    if problems:
+        log.warning("assistant_reply_blocked", reasons=problems[:5])
+        lead = _LEAK_REFUSAL if "prompt disclosure" in problems else policy_refusal(org)
+        result.reply = lead + " " + _OFFER
+        result.intent = "collecting" if turn.intent == "draft_complaint" else turn.intent
+        turn.draft = None
+    elif turn.intent == "off_topic" and _OUTCOME_WORDS.search(last_customer):
+        # Asking for a refund is never off topic; a brush-off would read as evasion.
+        result.reply = policy_refusal(org) + " " + _OFFER
+        result.intent = "collecting"
+    elif attacked and not re.search(r"\bpolic(?:y|ies)\b", result.reply, re.IGNORECASE):
+        # An attack gets the plain answer the customer should hear, whatever the model chose to say.
+        lead = _LEAK_REFUSAL if "PROMPT_LEAK" in last_scan.labels else policy_refusal(org)
+        result.reply = lead + " " + result.reply
 
     if turn.intent == "draft_complaint" and turn.draft is not None:
         draft = turn.draft.model_dump()
@@ -176,6 +210,20 @@ def converse(
 
 
 # ── helpers ────────────────────────────────────────────────────
+_OUTCOME_WORDS = re.compile(r"\b(refund|compensat\w*|replace\w*|approv\w*|guarantee\w*|polic(y|ies)|money back|exception)\b", re.IGNORECASE)
+_LEAK_REFUSAL = (
+    "I'm sorry, I can't share how I'm set up inside. I follow the company's written policy, "
+    "and nobody can change that in a chat."
+)
+_OFFER = "What I can do is help you raise a complaint so the team can check it against that policy — tell me what happened."
+
+
+def _org_name(db: Session) -> str:
+    row = db.get(AppConfig, "organisation")
+    org = row.value if row is not None and isinstance(row.value, dict) else {}
+    return org.get("name") or "the company"
+
+
 def _system(db: Session, user: User | None) -> str:
     row = db.get(AppConfig, "organisation")
     org = row.value if row is not None and isinstance(row.value, dict) else {}
@@ -193,7 +241,7 @@ def _system(db: Session, user: User | None) -> str:
         if user is not None else
         "The customer is NOT signed in. You can help them describe the problem and answer questions; filing and status need them to sign in."
     )
-    return SYSTEM.format(org=name, facts=facts, customer=customer, notice=DATA_NOT_INSTRUCTIONS_NOTICE)
+    return SYSTEM.format(org=name, facts=facts, customer=customer, rules=manipulation_rules(name), notice=DATA_NOT_INSTRUCTIONS_NOTICE)
 
 
 def _service_levels(db: Session) -> str | None:

@@ -18,7 +18,7 @@ export default function RulePage({ params }: { params: Promise<{ ref: string }> 
   const { ref } = use(params)
   const ruleRef = decodeURIComponent(ref)
   return (
-    <AppShell eyebrow={<span>Rules / <Mono>{ruleRef}</Mono></span>} roles={['manager', 'admin', 'evaluator']} wide>
+    <AppShell eyebrow={<span>Rules / <Mono>{ruleRef}</Mono></span>} roles={['agent', 'reviewer', 'manager', 'admin', 'evaluator']} wide>
       <Rule ruleRef={ruleRef} />
     </AppShell>
   )

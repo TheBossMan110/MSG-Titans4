@@ -194,16 +194,24 @@ export function Understanding() {
 
 /* ------------------------------------------------------------------ 6. Pipeline */
 
-const STAGES: Array<[string, string, 'ai' | 'rule' | null]> = [
-  ['Intake', 'Validated, normalised, checked for injection and for duplicates of earlier complaints.', null],
-  ['Retrieval', 'Lexical, exact-reference and semantic search over the active policy versions only.', null],
-  ['Pipeline 1 · GenAI', 'Gemini proposes classification, priority, resolution steps and a response draft, citing chunks.', 'ai'],
-  ['Pipeline 2 · Rules', '619 deterministic rules run over the same text. No model call anywhere in this path.', 'rule'],
-  ['Comparison', 'Field by field. Agreement is scored; disagreement is resolved in favour of the rules.', null],
-  ['Hallucination checks', 'Every citation is resolved against the knowledge base; every claim against the cited text.', null],
-  ['Response guard', 'Unsupported promises, ceilings exceeded and lowered escalations are blocked before send.', null],
-  ['Resolution', 'A checklist of required steps, follow-ups with due dates, and an escalation note when needed.', null],
+// The complaint workflow, stage for stage as the project defines it: four
+// ways in, one validation, the knowledge base and the rule matrix, then two
+// pipelines side by side until the comparison engine decides.
+type Stage = { title: string; body: string; kind?: 'ai' | 'rule'; chips?: string[]; fork?: boolean }
+const STAGES: Stage[] = [
+  { title: 'Customer complaint inputs', body: 'Four ways in, one register. Every channel is treated the same from here on.', chips: ['Web form', 'Email', 'Chat', 'Uploaded complaint'] },
+  { title: 'Submission & validation', body: 'Empty, too short, duplicate or invalid-reference complaints are caught; text is normalised and scanned for injection.' },
+  { title: 'Complaint context + knowledge base', body: 'Only active policy versions are searched, and every passage keeps its document, section and version.', chips: ['Policies', 'SOPs', 'Routing rules', 'FAQs', 'Escalation rules'] },
+  { title: 'Complaint resolution rule matrix', body: 'The approved handling logic, written as data: category, department, urgency, priority, policy, escalation, required and prohibited actions.', kind: 'rule' },
+  { title: 'Two pipelines, side by side', body: 'They never share a result until the comparison engine.', fork: true },
+  { title: 'Comparison engine', body: 'Field by field. Agreement is scored; where they differ, the rules win and the reason is kept.' },
+  { title: 'Verification decision', body: 'Agreement verifies. A critical disagreement, a missing policy or an unclear escalation goes to a person.', chips: ['Verified', 'Manual review'] },
+  { title: 'Final complaint resolution', body: 'Only what the rules allow reaches the customer, checked for unsupported promises first.', chips: ['Response', 'Resolution', 'Escalation', 'Follow-up'] },
+  { title: 'Dashboard & reports', body: 'Admin, agent and customer dashboards, trends, and reports exportable as CSV, PDF and Excel.' },
 ]
+
+const PIPELINE_1 = ['Issue classification', 'Sentiment', 'Urgency', 'Department', 'Resolution steps', 'Customer response', 'Escalation notes', 'Follow-up']
+const PIPELINE_2 = ['Category check', 'Department check', 'Priority check', 'Policy check', 'Escalation check', 'Resolution rules', 'Follow-up rules', 'Source validation']
 
 // Node geometry, shared by the markup and the scroll maths.
 const NODE = 32
@@ -273,18 +281,19 @@ export function Pipeline() {
     <Section id="intelligence">
       <div ref={root} className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="lg:sticky lg:top-28 lg:self-start">
-          <Eyebrow index="03" className="mb-6">The pipeline</Eyebrow>
-          <Display lines={['Eight stages.', 'One continuous line.']} size="h1" italicLast />
+          <Eyebrow index="03" className="mb-6">The workflow</Eyebrow>
+          <Display lines={['Nine stages.', 'Two pipelines.']} size="h1" italicLast />
           <p className="mt-6 max-w-[42ch] text-[15.5px] text-espresso-2">
-            The two pipelines never share a result until the comparison stage. If GenAI is
-            unavailable, the rule engine completes the whole line on its own and the
-            decision is marked degraded, not invented.
+            A complaint arrives by form, email, chat or file. Python and GenAI read it; Python
+            alone checks it against the rule matrix. The two never share a result until the
+            comparison engine. If GenAI is unavailable, the rules complete the whole line on
+            their own and the decision is marked degraded, not invented.
           </p>
         </div>
         <ol data-stages className="relative">
           <span aria-hidden data-track className="absolute left-[15px] top-4 bottom-4 w-[2px] rounded-full bg-line" />
           <span aria-hidden data-rail className="absolute left-[15px] top-4 bottom-4 w-[2px] rounded-full bg-espresso" />
-          {STAGES.map(([title, body, kind], i) => (
+          {STAGES.map(({ title, body, kind, chips, fork }, i) => (
             <li key={title} data-stage className="relative grid grid-cols-[32px_1fr] gap-x-5 pb-10 last:pb-0">
               <span
                 data-node
@@ -300,11 +309,39 @@ export function Pipeline() {
                   {kind === 'rule' && <RuleBadge>rules</RuleBadge>}
                 </h3>
                 <p className="mt-2 max-w-[54ch] text-[14.5px] leading-relaxed text-espresso-2">{body}</p>
+                {chips && (
+                  <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={`${title}: parts`}>
+                    {chips.map((c) => <li key={c} className="rounded-full border border-line-soft bg-white/70 px-2.5 py-1 text-[12.5px] text-espresso-2">{c}</li>)}
+                  </ul>
+                )}
+                {fork && (
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <PipelineCard tone="ai" title="Pipeline 1" subtitle="Python + GenAI" items={PIPELINE_1} />
+                    <PipelineCard tone="rule" title="Pipeline 2" subtitle="Python validation" items={PIPELINE_2} />
+                  </div>
+                )}
               </div>
             </li>
           ))}
         </ol>
       </div>
     </Section>
+  )
+}
+
+function PipelineCard({ tone, title, subtitle, items }: { tone: 'ai' | 'rule'; title: string; subtitle: string; items: string[] }) {
+  return (
+    <div className={cn('rounded-2xl border p-4', tone === 'ai' ? 'border-ai-line bg-ai-soft/60' : 'border-rule-line bg-rule-soft/60')}>
+      <p className={cn('font-display text-[19px] leading-tight', tone === 'ai' ? 'text-ai' : 'text-rule')}>{title}</p>
+      <p className={cn('eyebrow mt-0.5 text-[10px]', tone === 'ai' ? 'text-ai' : 'text-rule')}>{subtitle}</p>
+      <ul className="mt-3 space-y-1.5">
+        {items.map((item) => (
+          <li key={item} className="flex items-center gap-2 text-[13.5px] text-espresso-2">
+            <span aria-hidden className={cn('size-1.5 shrink-0 rounded-full', tone === 'ai' ? 'bg-ai' : 'bg-rule')} />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

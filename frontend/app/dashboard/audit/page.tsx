@@ -16,7 +16,7 @@ const ENTITY_TYPES = ['complaint', 'review', 'rule', 'config', 'lexicon', 'sla_p
 
 export default function AuditPage() {
   return (
-    <AppShell eyebrow="Audit trail" roles={['manager', 'admin', 'evaluator']} wide>
+    <AppShell eyebrow="Audit trail" roles={['admin', 'evaluator']} wide>
       <Trail />
     </AppShell>
   )

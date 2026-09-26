@@ -26,11 +26,13 @@ const FIELDS = [
  * reader scrolls, an espresso layer sweeps across from the left and the
  * rules' verdict is written over it in ink. Transform and opacity only.
  *
- * Only the comparison itself is pinned, centred in the viewport, so the whole
- * table is on screen for as long as it is held. Pinning the heading with it
- * made a block taller than the screen, and the table stopped with its
- * bottom rows cut off. The pin is held for 70% of a viewport and the rows
- * overlap, so the sequence resolves well inside it.
+ * The headline and the comparison are pinned together, so the question stays
+ * on screen while it is being answered. Pinned alone, the table stood still
+ * and the headline scrolled away above it. Together they are taller than a
+ * short laptop screen (740px against 585px under the nav at 1366x657), so the
+ * spacing tightens with the viewport height and, if the block still does not
+ * fit, it is zoomed down until it does. Zoom rather than a transform: zoom
+ * changes the layout height, so the pin spacer leaves no gap behind it.
  */
 export function PencilToInk() {
   const root = useRef<HTMLDivElement>(null)
@@ -39,10 +41,25 @@ export function PencilToInk() {
 
   useGsap((ctx, el) => {
     const rows = el.querySelectorAll<HTMLElement>('[data-row]')
+    const pin = el.querySelector<HTMLElement>('[data-pin]')
+    const fit = el.querySelector<HTMLElement>('[data-fit]')
+
+    const refit = () => {
+      if (!fit) return
+      fit.style.zoom = ''
+      if (compact) return
+      const nav = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 72
+      const room = window.innerHeight - nav - 32
+      const height = fit.offsetHeight
+      if (height > room) fit.style.zoom = String(Math.max(0.6, room / height))
+    }
+    refit()
+    ScrollTrigger.addEventListener('refreshInit', refit)
+
     const tl = gsap.timeline({
       scrollTrigger: compact
         ? { trigger: el, start: 'top 70%', once: true }
-        : { trigger: el.querySelector('[data-pin]'), start: 'center center+=36', end: '+=70%', scrub: 0.5, pin: true, anticipatePin: 1 },
+        : { trigger: pin, start: 'center center+=36', end: '+=70%', scrub: 0.5, pin: true, anticipatePin: 1 },
     })
     rows.forEach((row, i) => {
       const ink = row.querySelector('[data-ink]')
@@ -56,62 +73,65 @@ export function PencilToInk() {
         .to(status, { opacity: 1, y: 0, duration: 0.3 }, at + 0.4)
     })
     tl.to(el.querySelector('[data-verdict]'), { opacity: 1, y: 0, duration: 0.5 }, '>-0.1')
+
+    return () => {
+      ScrollTrigger.removeEventListener('refreshInit', refit)
+      if (fit) fit.style.zoom = ''
+    }
   }, root, [compact])
 
   return (
     <Section className="!py-0">
-      <div ref={root}>
-        <div className="pt-[clamp(72px,10vw,140px)]">
-          <div className="mb-10 grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-end">
-            <div>
-              <Eyebrow index="04" className="mb-6">AI versus ground truth</Eyebrow>
-              <Display lines={['The AI writes in pencil.', 'The rules confirm in ink.']} size="h1" italicLast />
+      {/* Padding lives outside the pinned block: centring a block that
+          carried 140px of it pushed the table under the nav on short screens. */}
+      <div ref={root} className="py-[clamp(72px,10vw,140px)]">
+        <div data-pin>
+          <div data-fit>
+            <div className="mb-[clamp(20px,4vh,40px)] grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-end">
+              <div>
+                <Eyebrow index="04" className="mb-[clamp(12px,2.6vh,24px)]">AI versus ground truth</Eyebrow>
+                <Display lines={['The AI writes in pencil.', 'The rules confirm in ink.']} size="h1" italicLast className="lg:[font-size:min(var(--text-h1),8.4vh)]" />
+              </div>
+              <p className="max-w-[52ch] text-[15.5px] text-espresso-2 lg:justify-self-end lg:text-[clamp(14px,2.3vh,15.5px)]">
+                This is one real comparison. Six fields, two opinions. Where the model was
+                wrong the rules corrected it; where the model was generous the policy ceiling
+                refused it; and the escalation floor could not be argued down by either.
+              </p>
             </div>
-            <p className="max-w-[48ch] text-[15.5px] text-espresso-2 lg:justify-self-end">
-              This is one real comparison. Six fields, two opinions. Where the model was
-              wrong the rules corrected it; where the model was generous the policy ceiling
-              refused it; and the escalation floor could not be argued down by either.
+
+            <div className="overflow-hidden rounded-[var(--radius-xl)] border border-line bg-ivory shadow-card">
+              <div className="hidden grid-cols-[1fr_1.3fr_1.3fr_auto] gap-x-4 border-b border-line bg-cream/70 px-5 py-3 text-[11px] eyebrow md:grid">
+                <span>Field</span><span>AI proposed</span><span>Rules decided</span><span className="w-28 text-right">Outcome</span>
+              </div>
+              {/* Four columns is a desktop idea. On a phone each row reads as a
+                  small record: field and outcome on one line, then the proposal,
+                  then the decision written over it. */}
+              {FIELDS.map((f) => (
+                <div
+                  key={f.field}
+                  data-row
+                  className="relative grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2.5 border-b border-line-soft px-4 py-4 last:border-b-0 md:grid-cols-[1fr_1.3fr_1.3fr_auto] md:gap-y-0 md:px-5 md:py-[clamp(8px,1.6vh,16px)]"
+                >
+                  <span className="order-1 text-[13.5px] font-medium text-espresso">{f.field}</span>
+                  <span data-status className="order-2 translate-y-1 justify-self-end opacity-0 md:order-4 md:w-28 md:justify-self-auto md:text-right">
+                    <Badge tone={f.tone}>{f.status}</Badge>
+                  </span>
+                  <span data-pencil-text className="order-3 col-span-2 font-display italic text-[16px] text-ai md:order-2 md:col-span-1">{f.ai}</span>
+                  <span className="order-4 col-span-2 md:order-3 md:col-span-1">
+                    {/* The ink is as wide as the verdict it carries, not the column. */}
+                    <span className="relative inline-flex max-w-full">
+                      <span data-ink className="absolute inset-0 origin-left scale-x-0 rounded-[10px] bg-espresso" aria-hidden />
+                      <span data-ink-text className="relative translate-y-1 px-3 py-1.5 text-[14px] font-medium leading-snug text-ink-on-dark opacity-0">{f.rules}</span>
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <p data-verdict className="mt-[clamp(12px,2.4vh,24px)] translate-y-2 text-[14px] text-taupe-2 opacity-0">
+              Verification outcome: <Badge tone="warning">Corrected by rules</Badge> &nbsp;·&nbsp; agreement 50% &nbsp;·&nbsp; queued for human review with the reasons attached.
             </p>
           </div>
-
-        </div>
-        {/* Padding lives outside the pinned block: centring a block that
-            carried 140px of it pushed the table under the nav on short screens. */}
-        <div className="pb-[clamp(72px,10vw,140px)]">
-        <div data-pin>
-          <div className="overflow-hidden rounded-[var(--radius-xl)] border border-line bg-ivory shadow-card">
-            <div className="hidden grid-cols-[1fr_1.3fr_1.3fr_auto] gap-x-4 border-b border-line bg-cream/70 px-5 py-3 text-[11px] eyebrow md:grid">
-              <span>Field</span><span>AI proposed</span><span>Rules decided</span><span className="w-28 text-right">Outcome</span>
-            </div>
-            {/* Four columns is a desktop idea. On a phone each row reads as a
-                small record: field and outcome on one line, then the proposal,
-                then the decision written over it. */}
-            {FIELDS.map((f) => (
-              <div
-                key={f.field}
-                data-row
-                className="relative grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2.5 border-b border-line-soft px-4 py-4 last:border-b-0 md:grid-cols-[1fr_1.3fr_1.3fr_auto] md:gap-y-0 md:px-5"
-              >
-                <span className="order-1 text-[13.5px] font-medium text-espresso">{f.field}</span>
-                <span data-status className="order-2 translate-y-1 justify-self-end opacity-0 md:order-4 md:w-28 md:justify-self-auto md:text-right">
-                  <Badge tone={f.tone}>{f.status}</Badge>
-                </span>
-                <span data-pencil-text className="order-3 col-span-2 font-display italic text-[16px] text-ai md:order-2 md:col-span-1">{f.ai}</span>
-                <span className="order-4 col-span-2 md:order-3 md:col-span-1">
-                  {/* The ink is as wide as the verdict it carries, not the column. */}
-                  <span className="relative inline-flex max-w-full">
-                    <span data-ink className="absolute inset-0 origin-left scale-x-0 rounded-[10px] bg-espresso" aria-hidden />
-                    <span data-ink-text className="relative translate-y-1 px-3 py-1.5 text-[14px] font-medium leading-snug text-ink-on-dark opacity-0">{f.rules}</span>
-                  </span>
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <p data-verdict className="mt-6 translate-y-2 text-[14px] text-taupe-2 opacity-0">
-            Verification outcome: <Badge tone="warning">Corrected by rules</Badge> &nbsp;·&nbsp; agreement 50% &nbsp;·&nbsp; queued for human review with the reasons attached.
-          </p>
-        </div>
         </div>
       </div>
     </Section>

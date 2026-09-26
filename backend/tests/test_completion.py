@@ -459,7 +459,7 @@ class TestEndpoints:
     def test_the_checklist_is_served(self, client, auth_headers, clean):
         ref = self._file_one(client, auth_headers)
         body = client.get(
-            f"/api/complaints/{ref}/checklist", headers=auth_headers("agent")
+            f"/api/complaints/{ref}/checklist", headers=auth_headers("reviewer")
         ).json()
 
         assert body["summary"]["required"] > 0
@@ -468,7 +468,7 @@ class TestEndpoints:
 
     def test_confirming_a_step_moves_the_coverage(self, client, auth_headers, clean):
         ref = self._file_one(client, auth_headers)
-        headers = auth_headers("agent")
+        headers = auth_headers("reviewer")
         steps = client.get(f"/api/complaints/{ref}/checklist", headers=headers).json()
 
         step_id = steps["steps"][0]["id"]
@@ -481,14 +481,14 @@ class TestEndpoints:
     def test_follow_ups_are_listed(self, client, auth_headers, clean):
         ref = self._file_one(client, auth_headers)
         body = client.get(
-            f"/api/complaints/{ref}/follow-ups", headers=auth_headers("agent")
+            f"/api/complaints/{ref}/follow-ups", headers=auth_headers("reviewer")
         ).json()
         assert body
         assert all(row["open"] for row in body)
 
     def test_completing_a_follow_up(self, client, auth_headers, clean):
         ref = self._file_one(client, auth_headers)
-        headers = auth_headers("agent")
+        headers = auth_headers("reviewer")
         rows = client.get(f"/api/complaints/{ref}/follow-ups", headers=headers).json()
 
         response = client.post(
@@ -501,7 +501,7 @@ class TestEndpoints:
     def test_the_escalation_note_is_served(self, client, auth_headers, clean):
         ref = self._file_one(client, auth_headers)
         body = client.get(
-            f"/api/complaints/{ref}/escalation", headers=auth_headers("agent")
+            f"/api/complaints/{ref}/escalation", headers=auth_headers("reviewer")
         ).json()
 
         assert body["escalation_code"] == "CRITICAL_MGMT"

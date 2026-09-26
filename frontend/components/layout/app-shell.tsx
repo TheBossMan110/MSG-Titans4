@@ -4,77 +4,168 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
-  Activity, BarChart3, BookOpen, Building2, ChevronDown, Download, FileSearch, FileText, FlaskConical, Gauge, Headset, Inbox, Info, LayoutDashboard, ListChecks, LogOut, type LucideIcon, Mail, MessageCircle, MessageSquareReply, Plus, ScrollText, Settings, ShieldAlert, Siren, Sparkles, Target, TrendingUp, UserCheck, UserRound,
+  BarChart3, BookOpen, Briefcase, Building2, ChevronDown, ClipboardCheck, Download, FileSearch, FileText, FlaskConical, Gauge, Headset, Inbox, Info, LayoutDashboard, ListChecks, LogOut, type LucideIcon, Mail, MessageCircle, MessageSquareReply, Plus, ScrollText, Settings, ShieldAlert, Siren, Sparkles, Target, TrendingUp, UserCheck, UserRound, Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import type { Role } from '@/lib/api'
 import { Button, Wordmark } from '@/components/ui/primitives'
-import { ADMIN_SECTIONS, AGENT_SECTIONS, USER_SECTIONS } from '@/components/app/dashboard-bits'
+import { ADMIN_SECTIONS, AGENT_SECTIONS, MANAGER_SECTIONS, REVIEWER_SECTIONS, USER_SECTIONS } from '@/components/app/dashboard-bits'
+import { HOME, SWITCHABLE, VIEW_LABEL, type View, viewForPath, viewOf } from '@/lib/roles'
 import { getLenis } from '@/components/motion/smooth-scroll'
 import { AuthGuard } from './auth-guard'
+import { LiveIndicator } from './live-indicator'
 
-type Item = { href: string; label: string; icon: LucideIcon; roles?: Role[]; exact?: boolean }
+const OVERSIGHT: Role[] = ['manager', 'admin', 'evaluator']
+
+type Item = { href: string; label: string; icon: LucideIcon; exact?: boolean }
 type Group = { title: string; items: Item[] }
 
-const STAFF: Role[] = ['agent', 'reviewer', 'manager', 'admin', 'evaluator']
-const OVERSIGHT: Role[] = ['manager', 'admin', 'evaluator']
-const REVIEWERS: Role[] = ['reviewer', 'manager', 'admin']
+const ACCOUNT: Group = {
+  title: 'Account',
+  items: [
+    { href: '/dashboard/profile', label: 'Profile & security', icon: UserRound },
+    { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  ],
+}
 
-const groups: Group[] = [
-  {
-    title: 'Work',
-    items: [
-      { href: '/dashboard', label: 'Admin dashboard', icon: LayoutDashboard, exact: true, roles: OVERSIGHT },
-      { href: '/dashboard/agent', label: 'Agent dashboard', icon: Headset, roles: [...STAFF] },
-      { href: '/dashboard/my-complaints', label: 'My complaints', icon: Inbox, roles: ['customer'] },
-      { href: '/dashboard/complaints/new', label: 'New complaint', icon: Plus, roles: ['customer'] },
-      { href: '/dashboard/assistant', label: 'Chat with Nova', icon: MessageCircle, roles: ['customer'] },
-      { href: '/dashboard/my-emails', label: 'My emails', icon: Mail, roles: ['customer'] },
-      { href: '/dashboard/complaints', label: 'Complaints', icon: Inbox, roles: STAFF },
-      { href: '/dashboard/follow-ups', label: 'Follow-ups', icon: MessageSquareReply, roles: STAFF },
-      { href: '/dashboard/email', label: 'Email', icon: Mail, roles: STAFF },
-      { href: '/dashboard/review', label: 'Review queue', icon: UserCheck, roles: [...REVIEWERS, 'evaluator', 'agent'] },
-      { href: '/dashboard/escalations', label: 'Escalations', icon: Siren, roles: STAFF },
-    ],
-  },
-  {
-    title: 'Knowledge',
-    items: [
-      { href: '/dashboard/organisation', label: 'Organisation', icon: Building2, roles: STAFF },
-      { href: '/dashboard/knowledge-base', label: 'Policies', icon: BookOpen, roles: STAFF },
-      { href: '/dashboard/knowledge-base/search', label: 'Search & trace', icon: FileSearch, roles: STAFF },
-      { href: '/dashboard/rules', label: 'Rule matrix', icon: ListChecks, roles: OVERSIGHT },
-      { href: '/dashboard/rules/sandbox', label: 'Rule sandbox', icon: FlaskConical, roles: OVERSIGHT },
-      { href: '/dashboard/prompts', label: 'Prompts', icon: Sparkles, roles: OVERSIGHT },
-    ],
-  },
-  {
-    title: 'Insight',
-    items: [
-      { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3, roles: OVERSIGHT },
-      { href: '/dashboard/analytics/trends', label: 'Trends', icon: TrendingUp, roles: OVERSIGHT },
-      { href: '/dashboard/reports', label: 'Reports', icon: FileText, roles: OVERSIGHT },
-      { href: '/dashboard/exports', label: 'Exports', icon: Download, roles: OVERSIGHT },
-      { href: '/dashboard/benchmark', label: 'Benchmark', icon: Target, roles: OVERSIGHT },
-    ],
-  },
-  {
-    title: 'Trust',
-    items: [
-      { href: '/dashboard/security', label: 'Security', icon: ShieldAlert, roles: OVERSIGHT },
-      { href: '/dashboard/audit', label: 'Audit trail', icon: ScrollText, roles: OVERSIGHT },
-      { href: '/dashboard/profile', label: 'Profile & security', icon: UserRound },
-      { href: '/dashboard/settings', label: 'Settings', icon: Settings },
-    ],
-  },
-]
+/** Read-only reference every member of staff works from. Only an administrator changes it. */
+const REFERENCE: Group = {
+  title: 'Knowledge (read only)',
+  items: [
+    { href: '/dashboard/knowledge-base', label: 'Policies', icon: BookOpen },
+    { href: '/dashboard/knowledge-base/search', label: 'Search & trace', icon: FileSearch },
+    { href: '/dashboard/rules', label: 'Rule matrix', icon: ListChecks },
+    { href: '/dashboard/organisation', label: 'Organisation', icon: Building2 },
+  ],
+}
+
+/**
+ * Five role experiences (FR ii). Each role sees its own work, not the others'
+ * menus: the customer their complaints; the agent their team's cases; the
+ * reviewer the review desk; the manager the operation; the administrator the
+ * platform. The API enforces the same boundaries on every request.
+ */
+const NAV: Record<View, Group[]> = {
+  customer: [
+    {
+      title: 'My SupportNova',
+      items: [
+        { href: '/dashboard/my-complaints', label: 'Overview', icon: LayoutDashboard },
+        { href: '/dashboard/complaints/new', label: 'Submit a complaint', icon: Plus },
+        { href: '/dashboard/assistant', label: 'Chat with Nova', icon: MessageCircle },
+        { href: '/dashboard/my-emails', label: 'Messages & updates', icon: Mail },
+      ],
+    },
+    ACCOUNT,
+  ],
+  agent: [
+    {
+      title: 'My work',
+      items: [
+        { href: '/dashboard/agent', label: 'Agent dashboard', icon: Headset },
+        { href: '/dashboard/complaints', label: 'Team complaints', icon: Inbox, exact: true },
+        { href: '/dashboard/follow-ups', label: 'Follow-ups', icon: MessageSquareReply },
+        { href: '/dashboard/escalations', label: 'Escalations', icon: Siren },
+        { href: '/dashboard/email', label: 'Customer email', icon: Mail },
+        { href: '/dashboard/complaints/new', label: 'New complaint', icon: Plus },
+      ],
+    },
+    REFERENCE,
+    ACCOUNT,
+  ],
+  reviewer: [
+    {
+      title: 'Review desk',
+      items: [
+        { href: '/dashboard/reviewer', label: 'Reviewer dashboard', icon: ClipboardCheck },
+        { href: '/dashboard/review', label: 'Review queue', icon: UserCheck },
+        { href: '/dashboard/complaints', label: 'Complaints', icon: Inbox, exact: true },
+        { href: '/dashboard/escalations', label: 'Escalations', icon: Siren },
+      ],
+    },
+    REFERENCE,
+    ACCOUNT,
+  ],
+  manager: [
+    {
+      title: 'Operations',
+      items: [
+        { href: '/dashboard/manager', label: 'Manager dashboard', icon: Briefcase },
+        { href: '/dashboard/complaints', label: 'Complaints', icon: Inbox, exact: true },
+        { href: '/dashboard/review', label: 'Review queue', icon: UserCheck },
+        { href: '/dashboard/escalations', label: 'Escalations', icon: Siren },
+        { href: '/dashboard/follow-ups', label: 'Follow-ups', icon: MessageSquareReply },
+        { href: '/dashboard/email', label: 'Email', icon: Mail },
+        { href: '/dashboard/users', label: 'Team', icon: Users },
+      ],
+    },
+    {
+      title: 'Insight',
+      items: [
+        { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+        { href: '/dashboard/analytics/trends', label: 'Trends', icon: TrendingUp },
+        { href: '/dashboard/reports', label: 'Reports', icon: FileText },
+        { href: '/dashboard/exports', label: 'Exports', icon: Download },
+      ],
+    },
+    { ...REFERENCE, items: [...REFERENCE.items, { href: '/dashboard/rules/sandbox', label: 'Rule sandbox', icon: FlaskConical }] },
+    ACCOUNT,
+  ],
+  admin: [
+    {
+      title: 'Overview',
+      items: [
+        { href: '/dashboard', label: 'Admin dashboard', icon: LayoutDashboard, exact: true },
+        { href: '/dashboard/complaints', label: 'Complaints', icon: Inbox, exact: true },
+        { href: '/dashboard/review', label: 'Review queue', icon: UserCheck },
+        { href: '/dashboard/escalations', label: 'Escalations', icon: Siren },
+        { href: '/dashboard/follow-ups', label: 'Follow-ups', icon: MessageSquareReply },
+        { href: '/dashboard/email', label: 'Email', icon: Mail },
+      ],
+    },
+    {
+      title: 'Platform',
+      items: [
+        { href: '/dashboard/users', label: 'Users & roles', icon: Users },
+        { href: '/dashboard/organisation', label: 'Departments & categories', icon: Building2 },
+        { href: '/dashboard/knowledge-base', label: 'Knowledge base', icon: BookOpen },
+        { href: '/dashboard/knowledge-base/search', label: 'Search & trace', icon: FileSearch },
+        { href: '/dashboard/rules', label: 'Rule matrix', icon: ListChecks },
+        { href: '/dashboard/rules/sandbox', label: 'Rule sandbox', icon: FlaskConical },
+        { href: '/dashboard/prompts', label: 'Prompts', icon: Sparkles },
+      ],
+    },
+    {
+      title: 'Insight',
+      items: [
+        { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+        { href: '/dashboard/analytics/trends', label: 'Trends', icon: TrendingUp },
+        { href: '/dashboard/reports', label: 'Reports', icon: FileText },
+        { href: '/dashboard/exports', label: 'Exports', icon: Download },
+        { href: '/dashboard/benchmark', label: 'Benchmark', icon: Target },
+      ],
+    },
+    {
+      title: 'Trust',
+      items: [
+        { href: '/dashboard/security', label: 'Security', icon: ShieldAlert },
+        { href: '/dashboard/audit', label: 'Audit trail', icon: ScrollText },
+      ],
+    },
+    ACCOUNT,
+  ],
+}
 
 
 /** What each dashboard contains, as the SRS lists it; shown under the active item. */
+const VIEW_KEY = 'sn-view'
+
 const SECTIONS: Record<string, Array<[string, string]>> = {
   '/dashboard': ADMIN_SECTIONS,
   '/dashboard/agent': AGENT_SECTIONS,
+  '/dashboard/reviewer': REVIEWER_SECTIONS,
+  '/dashboard/manager': MANAGER_SECTIONS,
   '/dashboard/my-complaints': USER_SECTIONS,
 }
 
@@ -127,6 +218,10 @@ function SectionLinks({ sections }: { sections: Array<[string, string]> }) {
  * page answers before they have to work it out from the tables.
  */
 const PAGE_HELP: Array<[RegExp, string]> = [
+  [/^\/dashboard\/manager$/, 'The manager view: the whole operation today — each team’s load and SLA, each agent’s workload, critical cases and escalations. Pick one team to focus on it.'],
+  [/^\/dashboard\/reviewer$/, 'The reviewer view: cases the system will not settle alone, grouped by why a person is needed, and your own review decisions.'],
+  [/^\/dashboard\/users$/, 'Every account in the database. Open one to see their details, each complaint they raised with its full history, their sign-ins and emails. New sign-ups appear here on their own.'],
+  [/^\/dashboard\/users\//, 'One account: who they are, when they joined and signed in, and every complaint with each status change and when it happened.'],
   [/^\/dashboard$/, 'The admin view: totals, where complaints go, how urgent they are, SLA risks, AI-versus-rules mismatches and cases waiting on a person.'],
   [/^\/dashboard\/agent/, 'The agent view: your complaints with the AI recommendation, what the rules confirmed, a suggested reply and any escalation warning.'],
   [/^\/dashboard\/complaints$/, 'Every complaint in the register. Filter it, then open one to see what the AI proposed and what the rules decided.'],
@@ -202,9 +297,36 @@ function Frame({ children, title, eyebrow, actions, wide }: { children: ReactNod
 
   useEffect(() => setDrawer(false), [pathname])
 
-  const visible = groups
-    .map((g) => ({ ...g, items: g.items.filter((i) => !i.roles || (user && i.roles.includes(user.role))) }))
-    .filter((g) => g.items.length)
+  // Each role has its own navigation. An administrator (or a manager) who
+  // opens another role's dashboard sees the app as that role does -- its
+  // sidebar, its pages -- until they go back to their own dashboard. Kept for
+  // the tab's session, so moving between that role's pages keeps the view.
+  const own: View = viewOf(user?.role)
+  const switchable = (user && SWITCHABLE[user.role]) || []
+  const oversight = Boolean(user && OVERSIGHT.includes(user.role))
+  const [view, setView] = useState<View>(own)
+  useEffect(() => {
+    if (!switchable.length) { setView(own); return }
+    const target = viewForPath(pathname)
+    let next: View = own
+    try {
+      if (target && target !== own && switchable.includes(target)) { sessionStorage.setItem(VIEW_KEY, target); next = target }
+      else if (target === own) sessionStorage.removeItem(VIEW_KEY)
+      else {
+        const stored = sessionStorage.getItem(VIEW_KEY) as View | null
+        const inStored = stored && switchable.includes(stored) && NAV[stored].some((g) => g.items.some((i) => pathname === i.href || pathname.startsWith(i.href + '/')))
+        if (inStored) next = stored as View
+        else sessionStorage.removeItem(VIEW_KEY)
+      }
+    } catch {
+      if (target && switchable.includes(target)) next = target
+    }
+    setView(next)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, own, switchable.join()])
+  const viewing = view !== own
+
+  const visible = NAV[view]
   const flat = visible.flatMap((g) => g.items)
   const signOut = async () => { await logout(); router.replace('/login') }
   const help = PAGE_HELP.find(([pattern]) => pattern.test(pathname))?.[1]
@@ -274,10 +396,13 @@ function Frame({ children, title, eyebrow, actions, wide }: { children: ReactNod
           </div>
           <div className="flex items-center gap-2">
             {actions}
-            <span className="hidden items-center gap-2 rounded-full border border-line-soft bg-white/70 px-3 py-1 text-[12px] text-taupe-2 md:inline-flex">
-              <Activity size={13} className="text-verified" aria-hidden /> Live data
-            </span>
-            {user && <UserMenu user={user} onLogout={signOut} />}
+            {viewing && (
+              <Link href={HOME[own]} className="hidden items-center gap-1.5 rounded-full border border-ai-line bg-ai-soft px-3 py-1 text-[12px] font-medium text-ai transition-colors hover:bg-white sm:inline-flex" title={`Leave the ${VIEW_LABEL[view].toLowerCase()} view`}>
+                <Headset size={13} aria-hidden /> {VIEW_LABEL[view]} view
+              </Link>
+            )}
+            {user && user.role !== 'customer' && <LiveIndicator oversight={oversight} />}
+            {user && <UserMenu user={user} onLogout={signOut} view={view} own={own} switchable={switchable} />}
           </div>
         </header>
 
@@ -331,7 +456,11 @@ function UserCard({ user, onLogout }: { user: ReturnType<typeof useAuth>['user']
  * their profile, settings and sign-out. A real menu: Escape and a click
  * outside close it, and it is announced as one.
  */
-function UserMenu({ user, onLogout }: { user: NonNullable<ReturnType<typeof useAuth>['user']>; onLogout: () => void }) {
+const DASH_ICON: Record<View, LucideIcon> = {
+  customer: LayoutDashboard, agent: Headset, reviewer: ClipboardCheck, manager: Briefcase, admin: LayoutDashboard,
+}
+
+function UserMenu({ user, onLogout, view, own, switchable }: { user: NonNullable<ReturnType<typeof useAuth>['user']>; onLogout: () => void; view: View; own: View; switchable: View[] }) {
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
@@ -377,6 +506,21 @@ function UserMenu({ user, onLogout }: { user: NonNullable<ReturnType<typeof useA
             </div>
           </div>
           <div className="flex flex-col gap-0.5 pt-2">
+            {switchable.length > 0 && (
+              <>
+                <p className="px-3 pb-1 pt-1 text-[11px] font-medium uppercase tracking-[0.12em] text-taupe">Switch dashboard</p>
+                {[own, ...switchable].map((v) => {
+                  const Icon = DASH_ICON[v]
+                  return (
+                    <Link key={v} role="menuitem" href={HOME[v]} aria-current={v === view ? 'page' : undefined}
+                      className={cn(item, v === view ? 'bg-sand/60 font-medium text-espresso' : 'text-espresso-2')}>
+                      <Icon size={16} className="text-taupe" aria-hidden /> {VIEW_LABEL[v]} dashboard
+                    </Link>
+                  )
+                })}
+                <span className="mx-2 my-1 block border-t border-line-soft" aria-hidden />
+              </>
+            )}
             <Link role="menuitem" href="/dashboard/profile" className={item}><UserRound size={16} className="text-taupe" aria-hidden /> Profile &amp; security</Link>
             <Link role="menuitem" href="/dashboard/settings" className={item}><Settings size={16} className="text-taupe" aria-hidden /> Settings</Link>
             <button role="menuitem" type="button" onClick={onLogout} className={cn(item, 'text-critical hover:text-critical')}><LogOut size={16} aria-hidden /> Sign out</button>

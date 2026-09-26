@@ -557,7 +557,7 @@ class TestEndpoints:
 
     def test_sla_is_exposed_per_complaint(self, client, auth_headers, clean):
         ref = self._file_via_api(client, auth_headers)
-        response = client.get(f"/api/review/{ref}/sla", headers=auth_headers("agent"))
+        response = client.get(f"/api/review/{ref}/sla", headers=auth_headers("reviewer"))
         assert response.status_code == 200
         assert {e["event_type"] for e in response.json()} == {
             "FIRST_RESPONSE", "RESOLUTION"

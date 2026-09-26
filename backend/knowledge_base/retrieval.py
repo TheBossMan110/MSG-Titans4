@@ -33,9 +33,8 @@ Three invariants, all load-bearing:
 
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
-
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -126,7 +125,12 @@ class RetrievedChunk:
             f"[{self.chunk_key}] {self.doc_ref} v{self.doc_version}"
             f" section {self.section_ref or 'n/a'}{location}"
         )
-        return f"{header}\n{self.text}"
+        # The header is ours; the text is the document's, and a document is
+        # untrusted like a complaint (SRS Step 50). Fenced, an instruction
+        # planted in a policy file reads as quoted policy, not as an order.
+        from security.injection_defense import fence_document
+
+        return f"{header}\n{fence_document(self.text)}"
 
 
 @dataclass(slots=True)

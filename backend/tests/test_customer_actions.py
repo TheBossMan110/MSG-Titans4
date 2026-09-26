@@ -213,7 +213,7 @@ class TestAnswering:
 
         response = client.post(f"/api/complaints/{ref}/clarifications/{q.id}/answer",
                                json={"answer": "Customer said yes on the phone"},
-                               headers=auth_headers("agent"))
+                               headers=auth_headers("reviewer"))
 
         assert response.status_code == 200
 
@@ -223,7 +223,7 @@ class TestAnswering:
         client.post(f"/api/complaints/{ref}/clarifications/{q.id}/answer",
                     json={"answer": "The reply"}, headers=auth_headers("customer"))
 
-        detail = client.get(f"/api/complaints/{ref}", headers=auth_headers("agent")).json()
+        detail = client.get(f"/api/complaints/{ref}", headers=auth_headers("reviewer")).json()
 
         row = next(c for c in detail["clarifications"] if c["id"] == str(q.id))
         assert row["answer"] == "The reply"
@@ -332,7 +332,7 @@ class TestEvidence:
         ref = _file_as(client, auth_headers)
         self._upload(client, auth_headers("customer"), ref, "proof.png", PNG)
 
-        detail = client.get(f"/api/complaints/{ref}", headers=auth_headers("agent")).json()
+        detail = client.get(f"/api/complaints/{ref}", headers=auth_headers("reviewer")).json()
 
         assert [e["file_name"] for e in detail["evidence"]] == ["proof.png"]
 

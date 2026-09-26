@@ -469,9 +469,9 @@ class TestEndpoints:
 
     def test_filters_narrow_the_list(self, client, auth_headers, clean_complaints):
         client.post(
-            "/api/complaints", json=self._payload(), headers=auth_headers("agent")
+            "/api/complaints", json=self._payload(), headers=auth_headers("reviewer")
         )
-        headers = auth_headers("agent")
+        headers = auth_headers("reviewer")
 
         matched = client.get(
             "/api/complaints", params={"category": "SAFETY"}, headers=headers
@@ -487,11 +487,11 @@ class TestEndpoints:
         self, client, auth_headers, clean_complaints
     ):
         created = client.post(
-            "/api/complaints", json=self._payload(), headers=auth_headers("agent")
+            "/api/complaints", json=self._payload(), headers=auth_headers("reviewer")
         ).json()
         ref = created["complaint"]["public_ref"]
 
-        response = client.get(f"/api/complaints/{ref}", headers=auth_headers("agent"))
+        response = client.get(f"/api/complaints/{ref}", headers=auth_headers("reviewer"))
         assert response.status_code == 200
         body = response.json()
         assert body["public_ref"] == ref

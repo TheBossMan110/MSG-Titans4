@@ -276,7 +276,7 @@ class TestEndpoints:
     def test_the_lifecycle_is_served(self, client, auth_headers, clean):
         ref = self._file_one(client, auth_headers)
         body = client.get(
-            f"/api/complaints/{ref}/lifecycle", headers=auth_headers("agent")
+            f"/api/complaints/{ref}/lifecycle", headers=auth_headers("reviewer")
         ).json()
 
         assert body["status"]
@@ -295,7 +295,7 @@ class TestEndpoints:
         wherever the first left it.
         """
         ref = self._file_one(client, auth_headers)
-        headers = auth_headers("agent")
+        headers = auth_headers("reviewer")
         body = client.get(f"/api/complaints/{ref}/lifecycle", headers=headers).json()
         offered = body["available_actions"]
         assert offered
@@ -319,7 +319,7 @@ class TestEndpoints:
         response = client.post(
             f"/api/complaints/{ref}/status",
             json={"to_status": "RESOLVED", "reason": "Tidying up."},
-            headers=auth_headers("agent"),
+            headers=auth_headers("reviewer"),
         )
 
         assert response.status_code == 422, response.text
@@ -334,7 +334,7 @@ class TestEndpoints:
         response = client.post(
             f"/api/complaints/{ref}/status",
             json={"to_status": "ANALYZED"},
-            headers=auth_headers("agent"),
+            headers=auth_headers("reviewer"),
         )
         assert response.status_code == 422
         assert "pipeline" in response.text
@@ -357,7 +357,7 @@ class TestEndpoints:
         client.post(
             f"/api/complaints/{ref}/status",
             json={"to_status": "ASSIGNED", "reason": "Picking it up."},
-            headers=auth_headers("agent"),
+            headers=auth_headers("reviewer"),
         )
 
         entry = db.execute(

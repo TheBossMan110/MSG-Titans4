@@ -19,7 +19,7 @@ const OVERSIGHT = ['manager', 'admin', 'evaluator'] as const
 
 export default function RulesPage() {
   return (
-    <AppShell eyebrow="Rules" roles={[...OVERSIGHT]} wide>
+    <AppShell eyebrow="Rules" roles={['agent', 'reviewer', 'manager', 'admin', 'evaluator']} wide>
       <Matrix />
     </AppShell>
   )

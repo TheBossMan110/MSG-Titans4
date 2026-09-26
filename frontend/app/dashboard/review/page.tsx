@@ -14,7 +14,7 @@ import { StatusBadge, OutcomeBadge, EscalationBadge } from '@/components/app/com
 
 export default function ReviewPage() {
   return (
-    <AppShell eyebrow="Review queue" roles={['agent', 'reviewer', 'manager', 'admin', 'evaluator']} wide>
+    <AppShell eyebrow="Review queue" roles={['reviewer', 'manager', 'admin', 'evaluator']} wide>
       <Queue />
     </AppShell>
   )
@@ -27,8 +27,8 @@ function Queue() {
   const [status, setStatus] = useState('')
   const [mine, setMine] = useState(false)
   const [breached, setBreached] = useState(false)
-  const q = useApi(() => review.queue({ page, size: 25, status: status || undefined, assigned_to_me: mine || undefined, breached_only: breached || undefined }), [page, status, mine, breached])
-  const stats = useApi(() => review.stats())
+  const q = useApi(() => review.queue({ page, size: 25, status: status || undefined, assigned_to_me: mine || undefined, breached_only: breached || undefined }), [page, status, mine, breached], true, { live: true })
+  const stats = useApi(() => review.stats(), [], true, { live: true })
   const sweep = useAction(() => review.sweep())
   const isReviewer = user && ['reviewer', 'manager', 'admin'].includes(user.role)
   const canSweep = user && ['manager', 'admin'].includes(user.role)

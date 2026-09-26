@@ -30,8 +30,8 @@ from src.core.deps import CurrentUser, DbSession
 from src.core.errors import AuthError, NotFoundError
 from src.core.ratelimit import LOGIN_LIMIT, limiter
 from src.core.security import hash_password, verify_password
-from src.services import auth as auth_service
 from src.db.models import AuditLog
+from src.services import auth as auth_service
 from src.services.audit import record_audit
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -298,7 +298,8 @@ def activity(db: DbSession, user: CurrentUser, limit: int = 30) -> list[Activity
     rows = db.execute(
         select(AuditLog)
         .where(
-            AuditLog.entity_type == "auth",
+            # Registration is logged as a "user" event; everything else here is "auth".
+            AuditLog.entity_type.in_(("auth", "user")),
             or_(AuditLog.entity_id == str(user.id), AuditLog.entity_id == user.email.lower()),
             AuditLog.action.in_(list(_ACTIVITY)),
         )

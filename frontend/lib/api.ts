@@ -436,6 +436,36 @@ export interface AgentWorkspace {
   scope: 'mine' | 'all'; team: string | null
   counts: { total: number; assigned_to_me: number; with_warnings: number; needs_review: number; without_reply: number }
   complaints: AgentItem[]
+  performance: AgentPerformance | null
+}
+export interface AgentPerformance {
+  assigned_open: number; resolved_total: number; resolved_this_week: number
+  avg_resolution_hours: number | null; escalated_open: number
+}
+
+/** A complaint as a dashboard lists it. */
+export interface Brief {
+  public_ref: string; title: string; priority: string | null; status: string; team: string | null
+  created_at: string | null; escalation?: string | null; reasons?: string[]; queue_status?: string
+  claimed_by_me?: boolean; waiting_since?: string | null
+}
+export interface ManagerOverview {
+  department: string | null; department_name: string | null
+  departments: Array<{ code: string; name: string }>
+  today: { total: number; new_today: number; open: number; in_progress: number; escalated: number; sla_at_risk: number; critical: number; manual_review: number; resolved: number }
+  teams: Array<{ code: string; name: string; total: number; open: number; resolved: number; resolved_pct: number; escalated: number; sla_at_risk: number; in_review: number; avg_resolution_hours: number | null }>
+  agents: Array<{ id: string; name: string; team: string | null; open: number; resolved: number; sla_at_risk: number; avg_resolution_hours: number | null; last_login_at: string | null }>
+  critical: Brief[]; escalations: Brief[]
+  sla_risks: Array<{ public_ref: string; title: string; priority: string | null; team: string | null; due_at: string | null; breached: boolean }>
+  unassigned_open: number; generated_at: string
+}
+export interface ReviewerOverview {
+  open: number; claimed_by_me: number; unclaimed: number
+  reasons: Record<string, number>
+  groups: Array<{ key: string; label: string; reasons: string[]; count: number; items: Brief[] }>
+  my_queue: Brief[]
+  history: Array<{ public_ref: string; title: string; action: string; is_override: boolean; at: string | null; note: string | null }>
+  totals: { actions: number; overrides: number; today: number }
 }
 
 export const complaints = {
@@ -470,6 +500,15 @@ export const complaints = {
   /** Nothing is stored and no model is called; safe to run on every pause in typing. */
   preview: (title: string, description: string) =>
     apiFetch<S['PreviewOut']>('/api/complaints/preview', { method: 'POST', body: { title, description } }),
+  /** The "uploaded complaint" channel: a letter in a file, read into a draft. Nothing is filed. */
+  fromFile: (file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return apiFetch<S['FileDraftOut']>('/api/complaints/from-file', { method: 'POST', body: form })
+  },
+  /** Assign or reassign; ``null`` hands it back to the team. */
+  assign: (ref: string, userId: string | null) =>
+    apiFetch<S['AssignOut']>(`/api/complaints/${enc(ref)}/assign`, { method: 'POST', body: { user_id: userId } }),
   uploadEvidence: (ref: string, file: File, onProgress?: (fraction: number) => void) =>
     uploadWithProgress<S['EvidenceOut']>(`/api/complaints/${enc(ref)}/evidence`, file, onProgress),
   /** Fetched with the bearer header and saved as a blob; the token never goes in a URL. */
@@ -490,6 +529,8 @@ export const review = {
   queue: (f?: { page?: number; size?: number; status?: string; assigned_to_me?: boolean; breached_only?: boolean }) =>
     apiFetch<Page<S['ReviewItemOut']>>(`/api/review/queue${qs(f)}`),
   stats: () => apiFetch<S['QueueStatsOut']>('/api/review/stats'),
+  /** The reviewer dashboard: the queue grouped by why, and this reviewer's history. */
+  overview: () => apiFetch<ReviewerOverview>('/api/review/overview'),
   claim: (ref: string) => apiFetch<S['ReviewItemOut']>(`/api/review/queue/${enc(ref)}/claim`, { method: 'POST' }),
   act: (ref: string, body: S['ReviewActionRequest']) =>
     apiFetch<S['ReviewActionOut']>(`/api/review/${enc(ref)}/actions`, { method: 'POST', body }),
@@ -536,6 +577,8 @@ export const analytics = {
   myQueue: () => apiFetch<MyQueue>('/api/analytics/my-queue'),
   /** The agent dashboard: assigned/team complaints with recommendation, validation, reply and warnings. */
   agentWorkspace: (department?: string) => apiFetch<AgentWorkspace>(`/api/analytics/agent-workspace${qs({ department })}`),
+  /** The manager dashboard: the operation, one team or all. */
+  manager: (department?: string) => apiFetch<ManagerOverview>(`/api/analytics/manager${qs({ department })}`),
 }
 
 /* ------------------------------------------------------------------ knowledge base */
@@ -620,6 +663,25 @@ export const mail = {
   poll: () => apiFetch<Record<string, unknown>>('/api/email/poll', { method: 'POST' }),
   simulate: (body: S['SimulateIn']) => apiFetch<S['EmailDetail']>('/api/email/simulate', { method: 'POST', body }),
   preview: () => apiFetch<{ html: string }>('/api/email/preview'),
+}
+
+/** Every account and what it has done: the administrator's people register. */
+export const people = {
+  list: (f?: { role?: string; search?: string; page?: number; page_size?: number }) =>
+    apiFetch<Page<S['PersonRow']>>(`/api/people${qs(f)}`),
+  summary: () => apiFetch<S['PeopleSummary']>('/api/people/summary'),
+  get: (id: string) => apiFetch<S['PersonDetail']>(`/api/people/${enc(id)}`),
+  /** Active staff a complaint can be assigned to (names, roles and teams only). */
+  staff: () => apiFetch<Array<{ id: string; full_name: string; role: string; team: string | null }>>('/api/staff'),
+  /** Administrators only: provision an account with a role. */
+  create: (body: S['PersonCreate']) => apiFetch<S['PersonRow']>('/api/people', { method: 'POST', body }),
+  /** Administrators only: role, team, name, password or active status. */
+  update: (id: string, body: S['PersonUpdate']) => apiFetch<S['PersonRow']>(`/api/people/${enc(id)}`, { method: 'PATCH', body }),
+}
+
+/** Counters that move when anything new arrives; open pages refresh when they do. */
+export const live = {
+  pulse: () => apiFetch<S['Pulse']>('/api/live/pulse'),
 }
 
 /** Nova, the chat receptionist. It only talks; filing goes through complaints.stream. */

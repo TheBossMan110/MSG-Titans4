@@ -18,7 +18,16 @@ export interface Query<T> {
  * the backend's live truth and the judge will change it under us during the
  * demo; a stale cache would show the wrong thing with confidence.
  */
-export function useApi<T>(fetcher: () => Promise<T>, deps: DependencyList = [], enabled = true): Query<T> {
+/** Fired by the live indicator when something new reached the database. */
+export const LIVE_EVENT = 'sn-live'
+export interface LiveChange { complaints: number; users: number; emails: number; statuses: boolean }
+
+export function useApi<T>(
+  fetcher: () => Promise<T>,
+  deps: DependencyList = [],
+  enabled = true,
+  opts?: { live?: boolean },
+): Query<T> {
   const [data, setData] = useState<T | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(enabled)
@@ -51,6 +60,28 @@ export function useApi<T>(fetcher: () => Promise<T>, deps: DependencyList = [], 
     void run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, run, ...deps])
+
+  // Live pages re-read quietly when the pulse moves: no skeleton, no error
+  // banner for a blip -- the data already on screen stays until the new
+  // answer arrives.
+  const live = Boolean(opts?.live)
+  useEffect(() => {
+    if (!live || !enabled) return
+    const onLive = async () => {
+      const id = ++seq.current
+      try {
+        const result = await fn.current()
+        if (id === seq.current) { setData(result); setError(null) }
+      } catch {
+        /* keep what is on screen */
+      } finally {
+        // This call superseded any load in flight, so it owns the spinner now.
+        if (id === seq.current) setLoading(false)
+      }
+    }
+    window.addEventListener(LIVE_EVENT, onLive)
+    return () => window.removeEventListener(LIVE_EVENT, onLive)
+  }, [live, enabled])
 
   const set = useCallback((u: T | ((prev: T | null) => T | null)) => {
     setData((prev) => (typeof u === 'function' ? (u as (p: T | null) => T | null)(prev) : u))

@@ -21,6 +21,7 @@ from src.api.v1 import (
     documents,
     email,
     organisation,
+    people,
     review,
     system,
 )
@@ -39,3 +40,6 @@ api_router.include_router(audit.router)
 api_router.include_router(organisation.router)
 api_router.include_router(assistant.router)
 api_router.include_router(email.router)
+api_router.include_router(people.router)
+api_router.include_router(people.live_router)
+api_router.include_router(people.staff_router)

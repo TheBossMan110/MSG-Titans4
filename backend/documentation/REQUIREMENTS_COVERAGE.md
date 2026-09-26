@@ -3,7 +3,7 @@
 **SupportNova** · ResponseX Intelligence · Generative AI PowerPlay
 
 > Generated from `config/requirements.yaml` by `scripts/generate_coverage_report.py`. Do not edit by hand.
-> Last generated: 2026-09-25 06:05 UTC
+> Last generated: 2026-09-26 09:01 UTC
 
 `tests/test_requirements_coverage.py` fails the build if any requirement is
 missing from the registry, if anything marked **Done** names a table, column,
@@ -24,8 +24,8 @@ not state its remaining gap.
 | # | Requirement | Status | Tables | Modules | Notes / Gap |
 |---|---|---|---|---|---|
 | i | User Authentication | ✅ Done | `users` `refresh_tokens` | `src/core/security.py` `src/services/auth.py` +1 more | Self-service registration is open and rate-limited per IP like login, but it can only ever produce a CUSTOMER: the request body has no role field a… |
-| ii | Role-Based Access Control | ✅ Done | `users` | `src/core/deps.py` | Six roles: customer, agent, reviewer, manager, admin, evaluator. Refusals are written to audit_log as ACCESS_DENIED on an independent committed ses… |
-| iii | Complaint Submission | ✅ Done | `complaints` `customers` `complaint_validation_issues` | `complaint_processing/intake.py` `src/api/v1/complaints.py` | Accepted, recorded and analysed in one call. The complaint is persisted before analysis runs, so one that is accepted and then fails analysis is st… |
+| ii | Role-Based Access Control | ✅ Done | `users` | `src/core/deps.py` `src/core/scope.py` +2 more | Five role experiences, each with its own dashboard and navigation, enforced by the API (tests/test_rbac.py): customers see their own complaints; ag… |
+| iii | Complaint Submission | ✅ Done | `complaints` `customers` `complaint_validation_issues` +1 more | `complaint_processing/intake.py` `src/api/v1/complaints.py` +5 more | Accepted, recorded and analysed in one call. The complaint is persisted before analysis runs, so one that is accepted and then fails analysis is st… |
 | iv | Complaint Validation | ✅ Done | `complaint_validation_issues` | `complaint_processing/validation.py` | Empty, too short, too long, duplicate, invalid reference, missing field, unsupported attachment and suspected injection are all detected and persis… |
 | v | Complaint Pre-processing | ✅ Done | `complaints` | `complaint_processing/preprocess.py` | NFKC normalisation, invisible and control character stripping, whitespace collapse and a length cap. Both texts are kept: description_raw is the ev… |
 | vi | Knowledge-Base Upload | ✅ Done | `documents` `document_versions` | `knowledge_base/ingest.py` `src/api/v1/documents.py` +1 more | PDF and DOCX both ingest end to end. Files are content-addressed in object storage, and a per-file result is returned so one bad file in a batch do… |
@@ -77,7 +77,7 @@ not state its remaining gap.
 | lii | Prompt Template Management | ✅ Done | `prompt_versions` | `genai_pipeline/prompts.py` | Templates live only in prompt_templates/<name>/v<major>.<minor>.j2 and are reached only through this module. Each is checksummed, so an edit withou… |
 | liii | Prompt Version Tracking | ✅ Done | `genai_runs` `prompt_versions` `validation_runs` | `src/db/models/pipelines.py` | Prompt version, provider, model, timestamp and policy version are all stored per analysis. |
 | liv | Prompt Injection Protection | ✅ Done | `injection_patterns` `injection_events` | `security/injection_defense.py` `genai_pipeline/intelligence.py` | Four layers: structural fencing with forged-delimiter stripping, 28 configurable detection patterns, Unicode neutralisation, and the structural imm… |
-| lv | Adversarial Complaint Detection | ✅ Done | `injection_events` `complaints` | `security/injection_defense.py` `genai_pipeline/intelligence.py` | Four layers of defence, and a flagged complaint is never refused: it is recorded, analysed on its merits, and routed to a reviewer with reason SENS… |
+| lv | Adversarial Complaint Detection | ✅ Done | `injection_events` `complaints` | `security/injection_defense.py` `security/manipulation_guard.py` +5 more | Four layers of defence, and a flagged complaint is never refused: it is recorded, analysed on its merits, and routed to a reviewer with reason SENS… |
 | lvi | Duplicate Complaint Detection | ✅ Done | `complaint_links` `complaints` | `complaint_processing/dedupe.py` | Exact and near duplicates are linked, never refused: a customer who submits twice because the first attempt appeared to fail still needs an answer.… |
 | lvii | Complaint History | ✅ Done | `complaints` `customers` `complaint_status_history` | `src/db/models/complaints.py` | — |
 | lviii | Repeat Complaint Detection | ✅ Done | `complaint_links` `complaints` | `complaint_processing/dedupe.py` | Counted from stored records of prior UNRESOLVED contacts, never from the complaint claiming to be a repeat. 'I have called five times' is a sentime… |
@@ -90,7 +90,7 @@ not state its remaining gap.
 | lxv | Complaint Status Tracking | ✅ Done | `complaint_status_history` `audit_log` | `src/services/lifecycle.py` | Permitted transitions are declared as a graph, and a move outside it is refused with 422 naming what is permitted instead. Without that, a complain… |
 | lxvi | Customer Dashboard | ✅ Done | `complaints` `clarification_questions` `complaint_attachments` +1 more | `src/api/v1/complaints.py` `complaint_processing/customer_actions.py` | A list of the customer's own complaints and a tracking view of one, both built from a single customer-safe projection so they cannot drift. That pr… |
 | lxvii | Agent Dashboard | ✅ Done | `complaints` | `src/api/v1/analytics.py` | An agent's own workload, scoped to the caller rather than taking a user id, so one agent cannot read another's queue by guessing an identifier. |
-| lxviii | Administrator Dashboard | ✅ Done | `complaints` `review_queue` `injection_events` +1 more | `src/services/analytics.py` `src/api/v1/analytics.py` | Ten panels assembled server-side in one query pass. Panels fetched at different instants can show figures that do not add up, and 'why does the tot… |
+| lxviii | Administrator Dashboard | ✅ Done | `complaints` `review_queue` `injection_events` +1 more | `src/services/analytics.py` `src/api/v1/analytics.py` +1 more | The nine SRS items plus users and sign-ins, refreshed live: the page polls GET /api/live/pulse and re-reads when a complaint, account, email or sta… |
 | lxix | Complaint Analytics | ✅ Done | `complaints` `escalations` `sla_events` | `src/services/analytics.py` | Volume, category distribution, department load with open backlog, escalation rate by level and trigger, and SLA compliance. Every figure is an aggr… |
 | lxx | Trend Detection | ✅ Done | `trend_snapshots` | `src/services/trends.py` `src/api/v1/analytics.py` | A trend is a change between two periods, stored with its own previous value so it can be compared against history rather than recomputed per page l… |
 | lxxi | Search and Filtering | ✅ Done | `complaints` | `src/api/v1/complaints.py` | Filter by status, category, department, urgency, priority, verification outcome, dataset tag and review state, with text search across title, body … |

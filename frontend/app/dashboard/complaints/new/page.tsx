@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle, ArrowRight, Calendar, CheckCircle2, CreditCard, Hash, Lightbulb, Mail,
-  Package, Phone, Receipt, ScanSearch, ShieldCheck, Sparkles, Wand2,
+  FileUp, Package, Phone, Receipt, ScanSearch, ShieldCheck, Sparkles, Wand2, X,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
@@ -19,7 +19,8 @@ import { MilestoneTimeline, TeamCard } from '@/components/app/customer'
 import { LiveAnalysis, applyStep, type StepMap } from '@/components/app/live-analysis'
 import { cn } from '@/lib/utils'
 
-const CHANNELS = ['WEB', 'EMAIL', 'PHONE', 'CHAT', 'SOCIAL', 'IN_PERSON']
+const CHANNELS = ['WEB', 'EMAIL', 'PHONE', 'CHAT', 'UPLOAD']
+const CHANNEL_LABEL: Record<string, string> = { WEB: 'Web form', EMAIL: 'Email', PHONE: 'Phone', CHAT: 'Chat', UPLOAD: 'Uploaded file' }
 const RESOLUTIONS = ['Refund', 'Replacement', 'Redelivery', 'Repair', 'An explanation', 'Compensation']
 const MAX_DESC = 10_000
 const BLANK: S['ComplaintCreate'] = { title: '', description: '', channel: 'WEB', currency: 'PKR' }
@@ -43,6 +44,26 @@ function Intake() {
   const [steps, setSteps] = useState<StepMap>({})
   const [finished, setFinished] = useState(false)
   const set = <K extends keyof S['ComplaintCreate']>(k: K, v: S['ComplaintCreate'][K]) => setForm((f) => ({ ...f, [k]: v }))
+  // A complaint that arrives as a file: read into the form, filed as UPLOAD,
+  // and the file itself kept as evidence once the complaint exists.
+  const [letter, setLetter] = useState<{ file: File; draft: S['FileDraftOut'] } | null>(null)
+  const [reading, setReading] = useState(false)
+  const [readError, setReadError] = useState<string | null>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
+  const readLetter = async (file: File) => {
+    setReadError(null)
+    setReading(true)
+    try {
+      const draft = await complaints.fromFile(file)
+      setLetter({ file, draft })
+      setForm((f) => ({ ...f, title: draft.title, description: draft.description, order_ref: draft.order_ref ?? f.order_ref, channel: 'UPLOAD' }))
+    } catch (err) {
+      setReadError(errorMessage(err))
+    } finally {
+      setReading(false)
+      if (fileInput.current) fileInput.current.value = ''
+    }
+  }
   const preview = usePreview(form.title, form.description)
 
   const words = form.description.trim() ? form.description.trim().split(/\s+/).length : 0
@@ -59,6 +80,11 @@ function Intake() {
     for (const k of Object.keys(body) as Array<keyof S['ComplaintCreate']>) if (body[k] === '' || body[k] === undefined) delete body[k]
     try {
       const r = await submitWithProgress(body, staff ? analyse : true, (e) => setSteps((m) => applyStep(m, e)))
+      if (letter && r.public_ref) {
+        // The original letter stays with the complaint as evidence. A failure
+        // here does not undo the complaint; it can be attached again later.
+        try { await complaints.uploadEvidence(r.public_ref, letter.file) } catch { /* shown as missing evidence, not an error */ }
+      }
       // Let the finished list register before it gives way to the result.
       setFinished(true)
       await new Promise((resolve) => setTimeout(resolve, 900))
@@ -71,7 +97,7 @@ function Intake() {
   }
 
   if (phase === 'running') return <LiveAnalysis steps={steps} finished={finished} />
-  if (phase === 'done' && result) return <Result result={result} staff={staff} onAnother={() => { setForm(BLANK); setResult(null); setPhase('form') }} />
+  if (phase === 'done' && result) return <Result result={result} staff={staff} onAnother={() => { setForm(BLANK); setLetter(null); setResult(null); setPhase('form') }} />
 
   const suggestedRef = !form.order_ref ? preview.data?.entities?.find((e) => e.type === 'ORDER_ID' || e.type === 'TRACKING_ID')?.value : undefined
 
@@ -88,6 +114,30 @@ function Intake() {
         </header>
 
         <Card tone="glass" padding="lg" radius="xl" className="flex flex-col gap-5">
+          <input ref={fileInput} type="file" accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" className="sr-only" tabIndex={-1}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) void readLetter(f) }} />
+          {letter ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-rule-line bg-rule-soft/70 px-4 py-3">
+              <FileUp size={17} className="mt-0.5 shrink-0 text-rule" aria-hidden />
+              <div className="min-w-0 flex-1 text-[14px] text-espresso-2">
+                <p><span className="font-medium text-espresso">Filled in from {letter.draft.file_name}</span>{letter.draft.pages ? ` · ${letter.draft.pages} page${letter.draft.pages === 1 ? '' : 's'}` : ''}. Check it, change anything that is wrong, then submit. The file is kept with your complaint.</p>
+                {letter.draft.notes.map((n) => <p key={n} className="mt-1 text-[13px] text-taupe-2">{n}</p>)}
+              </div>
+              <button type="button" onClick={() => { setLetter(null); set('channel', 'WEB') }} className="rounded-full p-1 text-taupe hover:bg-white hover:text-espresso" aria-label="Stop using the uploaded file">
+                <X size={15} aria-hidden />
+              </button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => fileInput.current?.click()} disabled={reading}
+              className="flex items-center gap-3 rounded-2xl border border-dashed border-line bg-white/50 px-4 py-3 text-left transition-colors hover:border-taupe hover:bg-white/80 disabled:opacity-60">
+              <FileUp size={17} className="shrink-0 text-taupe" aria-hidden />
+              <span className="flex-1 text-[14px] text-espresso-2">
+                {reading ? 'Reading your file…' : <><span className="font-medium text-espresso">Already wrote it down?</span> Upload the letter (PDF, Word or text) and we will fill this in for you.</>}
+              </span>
+              <span className="text-[13px] font-medium text-espresso">{reading ? '' : 'Upload a file'}</span>
+            </button>
+          )}
+          {readError && <p className="-mt-2 text-[13px] text-critical" role="alert">{readError}</p>}
           <FloatInput label="Title — one line, in your words" value={form.title} onChange={(e) => set('title', e.target.value)} required maxLength={200} autoFocus />
           <FloatTextarea
             label="What happened"
@@ -168,7 +218,7 @@ function Intake() {
                     form.channel === c ? 'border-ai bg-ai-soft text-ai' : 'border-line-soft bg-white/60 text-taupe hover:text-espresso',
                   )}
                 >
-                  {humanise(c)}
+                  {CHANNEL_LABEL[c] ?? humanise(c)}
                 </button>
               ))}
             </div>
@@ -267,7 +317,8 @@ function LivePreview({ description, state }: { description: string; state: Previ
               <p className="eyebrow mb-2">Recognised</p>
               {data?.entities?.length ? (
                 <div className="flex flex-wrap gap-1.5">
-                  {(data.entities ?? []).map((e, i) => {
+                  {/* A reference written three times is still one reference. */}
+                  {(data.entities ?? []).filter((e, i, all) => all.findIndex((o) => o.type === e.type && o.value.toUpperCase() === e.value.toUpperCase()) === i).map((e, i) => {
                     const Icon = ENTITY_ICON[e.type] ?? Hash
                     return (
                       <span key={`${e.type}-${e.value}-${i}`} className="inline-flex animate-rise items-center gap-1.5 rounded-full border border-ai-line bg-white px-2.5 py-1 text-[12.5px] shadow-[0_1px_2px_rgba(27,94,140,0.08)]">
@@ -349,6 +400,8 @@ function highlight(text: string, entities: S['PreviewEntityOut'][]) {
 /* ------------------------------------------------------------------ result */
 
 function Result({ result, staff, onAnother }: { result: S['IntakeResponse']; staff: boolean; onAnother: () => void }) {
+  // The review desk is reviewers', managers' and administrators' (FR ii); agents handle the case.
+  const reviewDesk = ['reviewer', 'manager', 'admin', 'evaluator'].includes(useAuth().user?.role ?? '')
   const ref = result.public_ref
   const issues = result.validation_issues ?? []
 
@@ -469,7 +522,7 @@ function Result({ result, staff, onAnother }: { result: S['IntakeResponse']; sta
 
       <div className="flex flex-wrap gap-2">
         <Button href={`/dashboard/complaints/${ref}`} size="lg" arrow>Open the full record</Button>
-        <Button href={`/dashboard/review/${ref}`} variant="secondary" size="lg">Review desk</Button>
+        {reviewDesk && <Button href={`/dashboard/review/${ref}`} variant="secondary" size="lg">Review desk</Button>}
         <Button variant="ghost" size="lg" onClick={onAnother}>Submit another</Button>
         {c.priority_code && <Badge tone={priorityTone(c.priority_code)} pulse={c.priority_code === 'P0'} className="self-center">{c.priority_code}</Badge>}
       </div>

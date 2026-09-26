@@ -35,7 +35,7 @@ from src.core.errors import NotFoundError, ValidationError
 from src.core.logging import get_logger
 from src.db.enums import UserRole
 from src.db.models import Complaint
-from src.services import analytics, reports, trends
+from src.services import analytics, reports, role_views, trends
 
 log = get_logger("api.analytics")
 
@@ -478,4 +478,26 @@ def agent_workspace(
             "without_reply": sum(1 for i in items if not i["suggested_response"]),
         },
         "complaints": items,
+        # An agent's own record: what they hold, what they closed, how fast.
+        "performance": role_views.agent_performance(db, user) if user.role == UserRole.AGENT else None,
     }
+
+
+# ══════════════════════════════════════════════════════════════
+# the manager dashboard
+# ══════════════════════════════════════════════════════════════
+@router.get(
+    "/manager",
+    dependencies=[Depends(require_role(*VIEWERS))],
+    summary="The manager dashboard: today's load, team performance, agent workload, SLA and critical cases",
+)
+def manager_overview(
+    db: DbSession,
+    department: str | None = Query(None, max_length=64, description="One team's view, or the whole operation when empty."),
+) -> dict[str, Any]:
+    """
+    The support manager runs the operation: they watch every team's load and
+    SLA, see which agent holds what, and step in on critical cases and
+    escalations. They do not configure the platform (FR ii).
+    """
+    return role_views.manager_overview(db, department_code=department)

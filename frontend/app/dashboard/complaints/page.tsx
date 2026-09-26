@@ -61,7 +61,7 @@ function Register() {
     customer_type: f.get('customer_type'), sentiment: f.get('sentiment'), escalation: f.get('escalation'),
     date_from: f.get('date_from'), date_to: f.get('date_to'), search: f.get('search'),
   }), [f]) // eslint-disable-line react-hooks/exhaustive-deps
-  const q = useApi(() => complaints.list(filters), [JSON.stringify(filters)])
+  const q = useApi(() => complaints.list(filters), [JSON.stringify(filters)], true, { live: true })
 
   return (
     <div className="flex flex-col gap-6">

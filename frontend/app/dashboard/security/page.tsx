@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 
 export default function SecurityPage() {
   return (
-    <AppShell eyebrow="Security" roles={['manager', 'admin', 'evaluator']} wide>
+    <AppShell eyebrow="Security" roles={['admin', 'evaluator']} wide>
       <Security />
     </AppShell>
   )

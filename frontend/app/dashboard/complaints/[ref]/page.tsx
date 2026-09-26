@@ -16,6 +16,7 @@ import {
   SlaPanel, ReviewHistoryPanel, EscalationPanel, AuditTrail, ReviewActionForm, Clarifications,
 } from '@/components/app/complaint-bits'
 import { EvidencePanel } from '@/components/app/customer'
+import { AssignControl } from '@/components/app/assign-control'
 
 const STAFF = ['agent', 'reviewer', 'manager', 'admin', 'evaluator'] as const
 type Tab = 'overview' | 'why' | 'resolution' | 'followups' | 'lifecycle' | 'review' | 'audit'
@@ -62,6 +63,7 @@ function Detail({ refId }: { refId: string }) {
           <div className="mb-2 flex flex-wrap items-center gap-2"><Mono className="text-[13px] text-taupe-2">{c.public_ref}</Mono><StatusBadge status={c.status} /><OutcomeBadge outcome={c.verification_outcome} />{c.injection_suspected && <Badge tone="critical">injection suspected</Badge>}{c.is_duplicate && <Badge tone="warning">duplicate</Badge>}{(c.repeat_count ?? 0) > 1 && <Badge>repeat ×{c.repeat_count}</Badge>}</div>
           <h1 className="display text-h2">{c.title}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-2">{c.category && <Badge tone="ink">{humanise(c.category)}</Badge>}{c.subcategory && <Badge>{humanise(c.subcategory)}</Badge>}{c.department && <Badge tone="info">{humanise(c.department)}</Badge>}<UrgencyBadge u={c.urgency} /><PriorityBadge code={c.priority_code} /><EscalationBadge code={c.escalation_code} />{c.sentiment && <Badge>{humanise(c.sentiment)}</Badge>}</div>
+          <div className="mt-3"><AssignControl complaint={c} onChanged={q.refresh} /></div>
         </div>
         {canReanalyse && (
           <div className="flex gap-2">
@@ -165,7 +167,7 @@ function Detail({ refId }: { refId: string }) {
         </div>
       )}
 
-      {tab === 'audit' && <section><PanelHeader title="Audit trail" eyebrow="This complaint" />{oversight ? <AuditTrail entityType="complaint" entityId={c.id} /> : <p className="text-[13.5px] text-taupe-2">The audit trail is visible to managers, administrators and evaluators.</p>}</section>}
+      {tab === 'audit' && <section><PanelHeader title="Audit trail" eyebrow="This complaint" />{oversight || user?.role === 'reviewer' ? <AuditTrail entityType="complaint" entityId={c.id} /> : <p className="text-[13.5px] text-taupe-2">A complaint's audit trail is visible to reviewers, managers and administrators.</p>}</section>}
     </div>
   )
 }

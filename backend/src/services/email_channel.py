@@ -65,6 +65,11 @@ _dry_run: ContextVar[bool] = ContextVar("email_dry_run", default=False)
 # ══════════════════════════════════════════════════════════════
 # configuration
 # ══════════════════════════════════════════════════════════════
+def _app_password() -> str:
+    """Google shows an App Password as four groups ("abcd efgh ijkl mnop"); the spaces are not part of it."""
+    return (settings.email_app_password or "").replace(" ", "").strip()
+
+
 def receiving_configured() -> bool:
     return bool(settings.email_address and settings.email_app_password)
 
@@ -162,7 +167,7 @@ def fetch_unseen() -> list[bytes]:
     """New messages from the inbox. Fetching marks them read, so each is handled once."""
     box = imaplib.IMAP4_SSL(settings.email_imap_host, settings.email_imap_port, timeout=30)
     try:
-        box.login(settings.email_address, settings.email_app_password)
+        box.login(settings.email_address, _app_password())
         box.select("INBOX")
         _, data = box.search(None, "UNSEEN")
         ids = (data[0] or b"").split()[:MAX_PER_POLL]
@@ -482,7 +487,7 @@ def _send_smtp(to: str, name: str | None, subject: str, html_body: str, text_bod
     msg.add_alternative(html_body, subtype="html")
     with smtplib.SMTP(settings.email_smtp_host, settings.email_smtp_port, timeout=30) as smtp:
         smtp.starttls()
-        smtp.login(settings.email_address, settings.email_app_password)
+        smtp.login(settings.email_address, _app_password())
         smtp.send_message(msg)
 
 

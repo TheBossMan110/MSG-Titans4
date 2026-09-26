@@ -18,7 +18,7 @@ export default function ReviewItemPage({ params }: { params: Promise<{ ref: stri
   const { ref } = use(params)
   const refId = decodeURIComponent(ref)
   return (
-    <AppShell eyebrow={<span>Review / <Mono>{refId}</Mono></span>} roles={['agent', 'reviewer', 'manager', 'admin', 'evaluator']} wide>
+    <AppShell eyebrow={<span>Review / <Mono>{refId}</Mono></span>} roles={['reviewer', 'manager', 'admin', 'evaluator']} wide>
       <ReviewItem refId={refId} />
     </AppShell>
   )

@@ -40,10 +40,10 @@ def test_customers_have_no_agent_dashboard(client, auth_headers):
 
 def test_a_reply_cannot_be_drafted_before_analysis(client, auth_headers):
     body = {"title": "Late parcel", "description": "My parcel has not arrived and the tracking page has not updated for days."}
-    ref = client.post("/api/complaints?analyse=false", json=body, headers=auth_headers("agent")).json()["public_ref"]
-    r = client.post(f"/api/complaints/{ref}/responses", headers=auth_headers("agent"))
+    ref = client.post("/api/complaints?analyse=false", json=body, headers=auth_headers("reviewer")).json()["public_ref"]
+    r = client.post(f"/api/complaints/{ref}/responses", headers=auth_headers("reviewer"))
     assert r.status_code == 422
-    assert client.get(f"/api/complaints/{ref}/responses", headers=auth_headers("agent")).json() == []
+    assert client.get(f"/api/complaints/{ref}/responses", headers=auth_headers("reviewer")).json() == []
 
 
 def test_an_empty_prepaid_balance_is_not_retried():

@@ -60,12 +60,19 @@ functional_requirements:
     status: done
     tables: [users]
     columns: [users.role, users.department_id]
-    modules: [src/core/deps.py]
+    modules: [src/core/deps.py, src/core/scope.py, src/api/v1/people.py, src/services/role_views.py]
     notes: >-
+      Five role experiences, each with its own dashboard and navigation, enforced
+      by the API (tests/test_rbac.py): customers see their own complaints; agents
+      their team's and their assigned ones (another team's answers 404); reviewers
+      the review desk; managers the operation (/api/analytics/manager, assignment,
+      reports); administrators the platform (users and roles, policies, rules,
+      prompts, configuration, the global audit log). Staff roles are provisioned
+      by an administrator only.
       Six roles: customer, agent, reviewer, manager, admin, evaluator.
       Refusals are written to audit_log as ACCESS_DENIED on an independent
       committed session so the evidence survives the request rollback.
-    tests: [tests/test_auth.py]
+    tests: [tests/test_auth.py, tests/test_rbac.py]
 
   FR-iii:
     name: Complaint Submission
@@ -78,15 +85,19 @@ functional_requirements:
       - src/api/v1/email.py
       - genai_pipeline/assistant.py
       - src/api/v1/assistant.py
-    tests: [tests/test_complaints_api.py, tests/test_email_channel.py, tests/test_assistant.py, tests/test_live_progress.py]
+      - complaint_processing/file_intake.py
+    tests: [tests/test_complaints_api.py, tests/test_email_channel.py, tests/test_assistant.py, tests/test_live_progress.py, tests/test_file_intake.py]
     notes: >-
       Accepted, recorded and analysed in one call. The complaint is
       persisted before analysis runs, so one that is accepted and then
       fails analysis is still findable and workable by hand rather than
-      lost. Three channels share that one intake: the web form (streamed
+      lost. Four channels share that one intake: the web form (streamed
       live, POST /api/complaints/stream), the chat receptionist (drafts only;
-      the customer files it) and the support mailbox (Gmail IMAP in, an AI-written
-      auto-reply out, every message kept in email_messages).
+      the customer files it), the support mailbox (Gmail IMAP in, an AI-written
+      auto-reply out, every message kept in email_messages) and an uploaded
+      complaint letter (PDF, DOCX or text read into a draft by
+      POST /api/complaints/from-file, filed with channel UPLOAD, the file kept
+      as evidence).
     columns: [complaints.public_ref, complaints.description_raw, complaints.channel]
     api: ["POST /api/complaints"]
     srs_step: 9
@@ -867,11 +878,21 @@ functional_requirements:
     status: done
     tables: [injection_events, complaints]
     columns: [complaints.injection_suspected, injection_events.severity]
-    modules: [security/injection_defense.py, genai_pipeline/intelligence.py]
+    modules: [security/injection_defense.py, security/manipulation_guard.py, genai_pipeline/intelligence.py, genai_pipeline/assistant.py, genai_pipeline/email_reply.py, knowledge_base/ingest.py, knowledge_base/retrieval.py]
+    tests: [tests/test_jailbreak_guard.py, tests/test_document_injection.py]
     notes: >-
       Four layers of defence, and a flagged complaint is never refused: it is
       recorded, analysed on its merits, and routed to a reviewer with reason
-      SENSITIVE_COMPLAINT.
+      SENSITIVE_COMPLAINT. Text a customer reads straight from a model (Nova's
+      chat reply, the email auto-reply) carries the manipulation rules in its
+      prompt and is checked in code before it is shown: a reply that approves,
+      promises or guarantees an outcome, plays along with a jailbreak or
+      quotes its instructions is replaced by the policy refusal. Chat attacks
+      are recorded in injection_events with source CHAT. Uploaded documents are
+      scanned at ingestion (source DOCUMENT) and policy text reaches a model
+      only inside the untrusted-document fence. Title and body are scanned,
+      base64 is decoded and scanned; the dataset's 51 attack complaints are all
+      detected with no false alarm on the 449 others (reports/SECURITY_TESTING_REPORT.md).
     srs_step: 51
 
   FR-lvi:
@@ -1084,8 +1105,13 @@ functional_requirements:
     modules:
       - src/services/analytics.py
       - src/api/v1/analytics.py
-    tests: [tests/test_analytics_reports.py]
+      - src/api/v1/people.py
+    tests: [tests/test_analytics_reports.py, tests/test_dashboards.py, tests/test_people.py]
     notes: >-
+      The nine SRS items plus users and sign-ins, refreshed live: the page
+      polls GET /api/live/pulse and re-reads when a complaint, account, email
+      or status change arrives. GET /api/people lists every account with its
+      complaints, their status history, sign-ins and emails.
       Ten panels assembled server-side in one query pass. Panels fetched
       at different instants can show figures that do not add up, and 'why
       does the total not match' is an expensive question during a demo.

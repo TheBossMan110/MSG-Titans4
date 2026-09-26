@@ -3,10 +3,10 @@
 import Link from 'next/link'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ArrowRight, Headset, Scale, ShieldCheck, Siren, UserCheck } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Headset, Scale, ShieldCheck, Siren, UserCheck, UserPlus, Users } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
-import { analytics } from '@/lib/api'
+import { analytics, complaints, people } from '@/lib/api'
 import { useApi, fmtRelative } from '@/lib/use-api'
 import { Badge, Button, humanise, priorityTone } from '@/components/ui/primitives'
 import { Card } from '@/components/ui/surfaces'
@@ -14,8 +14,9 @@ import { Stat, Ratio } from '@/components/ui/data'
 import { Empty, ErrorState, SkeletonRows } from '@/components/ui/feedback'
 import { Bars, Stacked } from '@/components/app/charts'
 import { DashSection } from '@/components/app/dashboard-bits'
+import { homeFor } from '@/lib/roles'
 
-const OVERSIGHT = ['manager', 'admin', 'evaluator']
+const ADMINS = ['admin', 'evaluator']
 const WINDOWS: Array<[number, string]> = [[7, '7 days'], [30, '30 days'], [90, '90 days'], [365, '12 months']]
 
 export default function AdminDashboardPage() {
@@ -30,15 +31,17 @@ function AdminDashboard() {
   const { user } = useAuth()
   const router = useRouter()
   const [days, setDays] = useState<number>(365)
-  const q = useApi(() => analytics.dashboard(days), [days])
+  // Live: when a complaint arrives through the form, the chat or email, or an
+  // account is created, the pulse moves and these re-read the database.
+  const q = useApi(() => analytics.dashboard(days), [days], true, { live: true })
+  const newest = useApi(() => complaints.list({ size: 6 }), [], true, { live: true })
+  const who = useApi(() => people.summary(), [], true, { live: true })
 
-  // Customers have their own dashboard, agents and reviewers the agent one.
+  // Five roles, five dashboards: anyone who is not an administrator is sent to their own.
   useEffect(() => {
-    if (!user) return
-    if (user.role === 'customer') router.replace('/dashboard/my-complaints')
-    else if (!OVERSIGHT.includes(user.role)) router.replace('/dashboard/agent')
+    if (user && !ADMINS.includes(user.role)) router.replace(homeFor(user.role))
   }, [user, router])
-  if (!user || !OVERSIGHT.includes(user.role)) return null
+  if (!user || !ADMINS.includes(user.role)) return null
 
   const d = q.data
   return (
@@ -74,6 +77,15 @@ function AdminDashboard() {
               <Stat label="Open" value={d?.volume.open} />
               <Stat label="Resolved" value={d?.volume.resolved} tone="verified" />
               <Stat label="Failed analysis" value={d?.volume.failed} tone={d && d.volume.failed ? 'warning' : 'neutral'} />
+            </div>
+            <div className="mt-6 border-t border-line-soft pt-5">
+              <p className="eyebrow mb-2 text-[10.5px]">Just in</p>
+              <ComplaintList
+                rows={newest.data?.items as Array<Record<string, unknown>> | undefined}
+                empty="No complaints yet."
+                render={(r) => <span>{CHANNEL[String(r.channel)] ?? humanise(String(r.channel ?? 'WEB'))} · {fmtRelative(String(r.created_at))}</span>}
+                priorityKey="priority_code"
+              />
             </div>
           </DashSection>
 
@@ -139,13 +151,66 @@ function AdminDashboard() {
             <ComplaintList rows={d?.manual_review} empty="Nothing is waiting for a person." render={(r) => <span>{r.team ? `${String(r.team)} · ` : ''}waiting {fmtRelative(String(r.created_at))}</span>} />
             <Button href="/dashboard/review" variant="secondary" size="sm" className="mt-4" arrow>Open the review queue</Button>
           </DashSection>
+
+          <DashSection id="people" title="Users & sign-ins" icon={<Users size={15} aria-hidden />} aside={who.data ? <Badge tone="neutral">{who.data.total} accounts</Badge> : null}>
+            {!who.data ? <SkeletonRows rows={4} /> : (
+              <div className="flex flex-col gap-6">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
+                  <Stat label="Customers" value={who.data.by_role.customer ?? 0} />
+                  <Stat label="Staff" value={who.data.total - (who.data.by_role.customer ?? 0)} />
+                  <Stat label="New this week" value={who.data.new_7d} tone={who.data.new_7d ? 'verified' : 'neutral'} />
+                  <Stat label="Signed in today" value={who.data.signed_in_today} />
+                </div>
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div>
+                    <p className="eyebrow mb-2 text-[10.5px]">Newest accounts</p>
+                    <ul className="divide-y divide-line-soft">
+                      {who.data.recent_signups.map((u) => (
+                        <li key={u.id}>
+                          <Link href={`/dashboard/users/${u.id}`} className="flex items-center gap-3 py-2.5 hover:bg-white/50">
+                            <UserPlus size={15} className="shrink-0 text-taupe" aria-hidden />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[14px] font-medium text-espresso">{u.full_name}</span>
+                              <span className="block truncate text-[12.5px] text-taupe-2">{u.email} · <span className="capitalize">{u.role}</span> · joined {fmtRelative(u.created_at)}</span>
+                            </span>
+                            <ArrowRight size={15} className="shrink-0 text-taupe" aria-hidden />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="eyebrow mb-2 text-[10.5px]">Recent sign-ins</p>
+                    {!who.data.recent_signins.length ? <Empty title="No sign-ins yet" body="Sign-ins appear here as they happen." /> : (
+                      <ul className="divide-y divide-line-soft">
+                        {who.data.recent_signins.map((si, i) => (
+                          <li key={`${si.user_id ?? 'x'}-${si.at}-${i}`} className="flex items-center gap-3 py-2.5">
+                            <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-espresso text-[11px] font-semibold text-ink-on-dark" aria-hidden>
+                              {(si.full_name || si.email || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[14px] text-espresso">{si.full_name ?? si.email ?? 'Unknown account'}{si.first_time ? <Badge tone="verified" className="ml-2">New account</Badge> : null}</span>
+                              <span className="block text-[12.5px] text-taupe-2"><span className="capitalize">{si.role ?? ''}</span> · {fmtRelative(si.at)}</span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+                <Button href="/dashboard/users" variant="secondary" size="sm" className="self-start" arrow>See every user</Button>
+              </div>
+            )}
+          </DashSection>
         </>
       )}
     </div>
   )
 }
 
-function ComplaintList({ rows, empty, render }: { rows?: Array<Record<string, unknown>>; empty: string; render: (r: Record<string, unknown>) => ReactNode }) {
+const CHANNEL: Record<string, string> = { WEB: 'Web form', CHAT: 'Chat with Nova', EMAIL: 'Email', UPLOAD: 'Uploaded file', PHONE: 'Phone', IMPORT: 'Dataset' }
+
+function ComplaintList({ rows, empty, render, priorityKey = 'priority' }: { rows?: Array<Record<string, unknown>>; empty: string; render: (r: Record<string, unknown>) => ReactNode; priorityKey?: string }) {
   if (!rows) return <SkeletonRows rows={4} />
   if (!rows.length) return <Empty title="All clear" body={empty} />
   return (
@@ -153,7 +218,7 @@ function ComplaintList({ rows, empty, render }: { rows?: Array<Record<string, un
       {rows.map((r) => (
         <li key={String(r.public_ref)}>
           <Link href={`/dashboard/complaints/${encodeURIComponent(String(r.public_ref))}`} className="flex items-center gap-3 py-2.5 hover:bg-white/50">
-            {r.priority ? <Badge tone={priorityTone(String(r.priority))}>{String(r.priority)}</Badge> : null}
+            {r[priorityKey] ? <Badge tone={priorityTone(String(r[priorityKey]))}>{String(r[priorityKey])}</Badge> : null}
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[14px] font-medium text-espresso">{String(r.title)}</span>
               <span className="block text-[12.5px] text-taupe-2"><span className="font-mono">{String(r.public_ref)}</span> · {render(r)}</span>

@@ -48,7 +48,7 @@ from complaint_processing import dedupe, followup, validation
 from complaint_processing.entities import extract_entities, load_entity_patterns
 from complaint_processing.preprocess import preprocess
 from python_validation import resolution
-from security.injection_defense import record_events, scan
+from security.injection_defense import record_events, scan_complaint
 from src.core import progress
 from src.core.logging import get_logger
 from src.db.enums import (
@@ -62,6 +62,7 @@ from src.db.enums import (
     ResolutionStepStatus,
     VerificationOutcome,
 )
+from src.db.fresh import forget_fresh, mark_fresh, needs_clearing
 from src.db.models import (
     AgentGuidance,
     Category,
@@ -76,7 +77,6 @@ from src.db.models import (
     Subcategory,
 )
 from src.services import lifecycle, review, sla
-from src.db.fresh import forget_fresh, mark_fresh, needs_clearing
 
 log = get_logger("complaint_processing.intake")
 
@@ -234,7 +234,7 @@ def submit(
 
     # ── 2. injection scan ──
     progress.emit("safety")
-    scan_result = scan(db, prepared.clean)
+    scan_result = scan_complaint(db, title, prepared.clean)
     result.injection = scan_result.summary()
     progress.emit(
         "safety", "done",

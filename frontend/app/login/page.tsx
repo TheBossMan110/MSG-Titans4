@@ -8,6 +8,7 @@ import { errorMessage, type User } from '@/lib/api'
 import { ShieldCheck } from 'lucide-react'
 import { Button, Wordmark, Eyebrow } from '@/components/ui/primitives'
 import { Field, Input, PasswordInput } from '@/components/ui/forms'
+import { homeFor as roleHome } from '@/lib/roles'
 
 export default function LoginPage() {
   return (
@@ -17,7 +18,8 @@ export default function LoginPage() {
   )
 }
 
-const homeFor = (u: User) => (u.role === 'customer' ? '/dashboard/my-complaints' : ['agent', 'reviewer'].includes(u.role) ? '/dashboard/agent' : '/dashboard')
+// Each of the five roles lands on its own dashboard (lib/roles.ts).
+const homeFor = (u: User) => roleHome(u.role)
 
 function Login() {
   const { user, login, completeMfa, loading } = useAuth()

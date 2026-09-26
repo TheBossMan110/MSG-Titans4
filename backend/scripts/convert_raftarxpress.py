@@ -1788,7 +1788,13 @@ CSV_COLUMNS = [
 CHANNELS = {
     "web form": "WEB", "web": "WEB", "email": "EMAIL", "phone": "PHONE",
     "call": "PHONE", "chat": "CHAT", "mobile app": "WEB", "app": "WEB",
-    "social media": "SOCIAL", "whatsapp": "CHAT", "portal": "WEB",
+    "whatsapp": "CHAT", "portal": "WEB",
+    # A complaint sent as a file (a letter, a PDF). The dataset calls it
+    # "Complaint Upload"; without this line all 52 were filed as web forms.
+    "complaint upload": "UPLOAD", "upload": "UPLOAD", "file upload": "UPLOAD",
+    # There is no social-media channel in the schema (its CHECK constraint
+    # would reject one), so a post someone copied in counts as a web form.
+    "social media": "WEB",
 }
 
 

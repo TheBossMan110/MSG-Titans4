@@ -28,15 +28,17 @@ function Settings() {
   const { user } = useAuth()
   const [tab, setTab] = useState<Tab>('account')
   const oversight = user && ['manager', 'admin', 'evaluator'].includes(user.role)
+  const platform = user && ['admin', 'evaluator'].includes(user.role)
   const tabs: Array<{ id: Tab; label: string }> = [{ id: 'account', label: 'Account' }, { id: 'system', label: 'System' }]
-  if (oversight) tabs.push({ id: 'config', label: 'Configuration' }, { id: 'lexicon', label: 'Lexicon' }, { id: 'sla', label: 'SLA policies' })
+  if (platform) tabs.push({ id: 'config', label: 'Configuration' })
+  if (oversight) tabs.push({ id: 'lexicon', label: 'Lexicon' }, { id: 'sla', label: 'SLA policies' })
   return (
     <div className="flex flex-col gap-6">
       <div><p className="eyebrow mb-1">Settings</p><h1 className="display text-h2">Account and configuration</h1></div>
       <Tabs value={tab} onChange={setTab} tabs={tabs} />
       {tab === 'account' && <Account />}
       {tab === 'system' && <SystemInfo />}
-      {tab === 'config' && oversight && <Config />}
+      {tab === 'config' && platform && <Config />}
       {tab === 'lexicon' && oversight && <Lexicon />}
       {tab === 'sla' && oversight && <Sla />}
     </div>

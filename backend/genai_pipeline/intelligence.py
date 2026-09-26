@@ -58,7 +58,7 @@ from genai_pipeline.validator import (
 )
 from knowledge_base import retrieval, versioning
 from schemas.genai import INTELLIGENCE_SCHEMA, ComplaintIntelligence
-from security.injection_defense import ScanResult, record_events, scan
+from security.injection_defense import ScanResult, record_events, scan_complaint
 from src.core import progress
 from src.core.config import settings
 from src.core.logging import get_logger
@@ -295,10 +295,15 @@ def analyse_complaint(
     result = IntelligenceResult(ok=False, complaint_id=complaint_id)
 
     # ── 1. injection scan ──────────────────────────────────────
-    scan_result: ScanResult = scan(db, text)
+    scan_result: ScanResult = scan_complaint(db, getattr(complaint, "title", None), text)
     result.injection = scan_result.summary()
     if scan_result.suspected and complaint_id is not None:
         record_events(db, scan_result, source_type="COMPLAINT", complaint_id=complaint_id)
+        # The analysis is where imported and emailed complaints are first
+        # scanned, so it records the finding on the complaint, not only in
+        # the event log -- otherwise the register shows an attack as clean.
+        if hasattr(complaint, "injection_suspected"):
+            complaint.injection_suspected = True
 
     # ── 2. retrieval ───────────────────────────────────────────
     progress.emit("policy")

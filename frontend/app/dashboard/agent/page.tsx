@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { AlertTriangle, ArrowRight, Gauge, LayoutDashboard, MessageSquareText, ShieldCheck, Sparkles, Tag, Smile, Inbox } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Gauge, LayoutDashboard, MessageSquareText, ShieldCheck, Sparkles, Tag, Smile, Inbox, Trophy } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
 import { analytics, complaints, organisation, type AgentItem } from '@/lib/api'
@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/forms'
 import { Stat } from '@/components/ui/data'
 import { Empty, ErrorState, SkeletonRows, useToast } from '@/components/ui/feedback'
 import { DashSection } from '@/components/app/dashboard-bits'
+import { HOME, VIEW_LABEL, viewOf } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 
 const OVERSIGHT = ['manager', 'admin', 'evaluator']
@@ -31,7 +32,7 @@ function AgentDashboard() {
   const { user } = useAuth()
   const oversight = Boolean(user && OVERSIGHT.includes(user.role))
   const [team, setTeam] = useState('')
-  const q = useApi(() => analytics.agentWorkspace(team || undefined), [team])
+  const q = useApi(() => analytics.agentWorkspace(team || undefined), [team], true, { live: true })
   const org = useApi(() => organisation.get(), [], oversight)
   const [selected, setSelected] = useState<string | null>(null)
   const items = q.data?.complaints ?? []
@@ -50,7 +51,7 @@ function AgentDashboard() {
               {oversight ? 'Exactly what an agent sees: their complaints, what the AI recommends, what the rules decided, and a reply ready to check.' : 'Your complaints and your team’s unassigned ones, most urgent first — with what the AI recommends and a reply ready to check.'}
             </p>
           </div>
-          {oversight && <Button href="/dashboard" variant="onDark" icon={<LayoutDashboard size={15} aria-hidden />}>Admin dashboard</Button>}
+          {oversight && <Button href={HOME[viewOf(user.role)]} variant="onDark" icon={<LayoutDashboard size={15} aria-hidden />}>{VIEW_LABEL[viewOf(user.role)]} dashboard</Button>}
         </div>
       </section>
 
@@ -100,6 +101,18 @@ function AgentDashboard() {
           </DashSection>
 
           {current && <Focus item={current} onDrafted={q.refresh} />}
+
+          {q.data?.performance && (
+            <DashSection id="performance" title="My performance" icon={<Trophy size={15} aria-hidden />}>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-5">
+                <Stat label="Open cases I hold" value={q.data.performance.assigned_open} />
+                <Stat label="Resolved this week" value={q.data.performance.resolved_this_week} tone="verified" />
+                <Stat label="Resolved in total" value={q.data.performance.resolved_total} />
+                <Stat label="Average time to resolve" value={q.data.performance.avg_resolution_hours != null ? `${q.data.performance.avg_resolution_hours} h` : null} />
+                <Stat label="Escalated, still open" value={q.data.performance.escalated_open} tone={q.data.performance.escalated_open ? 'warning' : 'neutral'} />
+              </div>
+            </DashSection>
+          )}
         </>
       )}
     </div>

@@ -53,7 +53,7 @@ class InjectionEvent(UUIDPrimaryKey, TimestampMixin, Base):
         enum_check("severity", Severity),
     )
 
-    source_type: Mapped[str] = mapped_column(String(16), nullable=False)  # COMPLAINT | DOCUMENT
+    source_type: Mapped[str] = mapped_column(String(16), nullable=False)  # COMPLAINT | DOCUMENT | CHAT
     complaint_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("complaints.id", ondelete="CASCADE")
     )

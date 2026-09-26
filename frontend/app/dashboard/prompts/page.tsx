@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 
 export default function PromptsPage() {
   return (
-    <AppShell eyebrow="Prompts" roles={['manager', 'admin', 'evaluator']}>
+    <AppShell eyebrow="Prompts" roles={['admin', 'evaluator']}>
       <Prompts />
     </AppShell>
   )

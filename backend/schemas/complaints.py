@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from schemas.common import APIModel
 from src.core.config import settings
+from src.db.enums import Channel
 
 
 # ══════════════════════════════════════════════════════════════
@@ -62,7 +63,13 @@ class ComplaintCreate(APIModel):
     @field_validator("channel")
     @classmethod
     def _upper(cls, value: str) -> str:
-        return value.strip().upper()
+        # The table's CHECK constraint accepts only these; anything else must be
+        # a clear 422 here, not a database error after the pipelines have run.
+        value = value.strip().upper()
+        allowed = {c.value for c in Channel}
+        if value not in allowed:
+            raise ValueError(f"channel must be one of {', '.join(sorted(allowed))}")
+        return value
 
 
 # ══════════════════════════════════════════════════════════════
@@ -184,6 +191,35 @@ class ComparisonOut(APIModel):
 # ══════════════════════════════════════════════════════════════
 # complaint views
 # ══════════════════════════════════════════════════════════════
+class AssignIn(BaseModel):
+    """Who should handle the complaint. ``null`` releases it back to the team."""
+
+    user_id: uuid.UUID | None = None
+
+
+class AssigneeOut(APIModel):
+    id: uuid.UUID
+    full_name: str
+    role: str
+
+
+class AssignOut(APIModel):
+    public_ref: str
+    assigned_to: AssigneeOut | None = None
+
+
+class FileDraftOut(APIModel):
+    """A complaint read out of an uploaded file, for the customer to check before filing."""
+
+    file_name: str
+    file_format: str
+    title: str
+    description: str
+    order_ref: str | None = None
+    pages: int | None = None
+    notes: list[str] = []
+
+
 class ComplaintSummary(APIModel):
     """One row in a queue or list."""
 
@@ -205,6 +241,8 @@ class ComplaintSummary(APIModel):
     # with, if any. Staff views only: the customer-facing status never has them.
     customer_type: str | None = None
     dataset_tag: str | None = None
+    # WEB, CHAT, EMAIL, UPLOAD...: how it reached us, so a new one is recognisable.
+    channel: str | None = None
 
 
 class ComplaintDetail(ComplaintSummary):
@@ -229,8 +267,9 @@ class ComplaintDetail(ComplaintSummary):
     transaction_ref: str | None = None
     amount: float | None = None
     currency: str | None = None
-    channel: str | None = None
     customer_ref: str | None = None
+    # Who is handling it; null while it waits for someone to take it.
+    assigned_to: AssigneeOut | None = None
 
     analyzed_at: datetime | None = None
     validated_at: datetime | None = None

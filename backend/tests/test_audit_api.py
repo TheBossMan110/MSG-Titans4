@@ -70,7 +70,7 @@ class TestTrail:
 
     def test_filtering_by_actor(self, client, auth_headers):
         rows = client.get(
-            "/api/audit?actor=admin@raftarxpress.com", headers=auth_headers("manager")
+            "/api/audit?actor=admin@raftarxpress.com", headers=auth_headers("admin")
         ).json()["items"]
         assert all(row["actor"] == "admin@raftarxpress.com" for row in rows)
 
@@ -82,18 +82,21 @@ class TestTrail:
 
 
 class TestAccess:
-    @pytest.mark.parametrize("role", ["agent", "reviewer", "customer"])
-    def test_the_organisation_trail_is_oversight_only(self, client, auth_headers, role):
+    @pytest.mark.parametrize("role", ["agent", "reviewer", "manager", "customer"])
+    def test_the_organisation_trail_is_the_administrators(self, client, auth_headers, role):
         """
-        An agent sees a complaint's history on the complaint. The whole
-        organisation's log is a manager's, an administrator's and an
-        evaluator's job.
+        The whole platform's log is the administrator's (evaluators read it
+        too). Managers and reviewers read a complaint's own trail instead.
         """
         assert client.get("/api/audit", headers=auth_headers(role)).status_code == 403
 
-    @pytest.mark.parametrize("role", ["manager", "admin", "evaluator"])
-    def test_oversight_roles_can_read(self, client, auth_headers, role):
+    @pytest.mark.parametrize("role", ["admin", "evaluator"])
+    def test_administrators_can_read_the_whole_trail(self, client, auth_headers, role):
         assert client.get("/api/audit", headers=auth_headers(role)).status_code == 200
+
+    @pytest.mark.parametrize("role,code", [("manager", 200), ("reviewer", 200), ("agent", 403), ("customer", 403)])
+    def test_a_complaints_own_trail_is_open_to_those_who_act_on_it(self, client, auth_headers, role, code):
+        assert client.get("/api/audit/complaint/any-id", headers=auth_headers(role)).status_code == code
 
     def test_the_trail_cannot_be_written_through_this_router(self, client, auth_headers):
         """Append-only. This router adds no way to change that."""

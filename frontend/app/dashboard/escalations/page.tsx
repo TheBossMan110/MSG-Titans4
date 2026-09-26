@@ -33,7 +33,7 @@ function Board() {
   const oversight = user && ['manager', 'admin', 'evaluator'].includes(user.role)
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<string | null>(null)
-  const q = useApi(() => complaints.list({ status: 'ESCALATED', page, size: 25 }), [page])
+  const q = useApi(() => complaints.list({ status: 'ESCALATED', page, size: 25 }), [page], true, { live: true })
   const dash = useApi(() => analytics.dashboard(30), [], Boolean(oversight))
   const taxonomy = useApi(() => admin.taxonomy(), [], Boolean(oversight))
   const byLevel = dash.data?.escalation.by_level ?? {}

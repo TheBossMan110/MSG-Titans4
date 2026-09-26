@@ -66,7 +66,7 @@ class Settings(BaseSettings):
 
     # ── generative ai (FR xii) ────────────────────────────────
     llm_primary_provider: str = "gemini"
-    llm_fallback_provider: str = "deepseek"
+    llm_fallback_provider: str = "groq"
     llm_timeout_seconds: int = 30
     # How long a model may "think" before answering. Classification against a
     # fixed schema gains little from long reasoning and loses seconds to it, so
@@ -91,7 +91,7 @@ class Settings(BaseSettings):
 
     groq_api_key: str = ""
     # Verified against GET /models on 2026-09-25: Groq no longer serves Llama.
-    groq_model: str = "qwen/qwen3.8-27b,openai/gpt-oss-120b"
+    groq_model: str = "openai/gpt-oss-120b,qwen/qwen3.8-27b"
     groq_base_url: str = "https://api.groq.com/openai/v1"
 
     # ── email channel ─────────────────────────────────────────
@@ -119,7 +119,7 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com"
 
     openrouter_api_key: str = ""
-    openrouter_model: str = "meta-llama/llama-3.3-70b-instruct:free"
+    openrouter_model: str = "z-ai/glm-5.2:free,nvidia/nemotron-3-super-120b-a12b:free,dots-studio/dots-3-note-preview:free"
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
 
     # ── retrieval (SRS Steps 6, 25) ───────────────────────────

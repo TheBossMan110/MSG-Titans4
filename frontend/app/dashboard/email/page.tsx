@@ -27,7 +27,7 @@ function EmailInbox() {
   const { user } = useAuth()
   const toast = useToast()
   const operator = Boolean(user && OPERATORS.includes(user.role))
-  const status = useApi(() => mail.status())
+  const status = useApi(() => mail.status(), [], true, { live: true })
   const [refresh, setRefresh] = useState(0)
   const [simOpen, setSimOpen] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
