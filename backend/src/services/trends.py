@@ -53,6 +53,7 @@ ANOMALY_MIN_BASELINE = 10
 METRIC_VOLUME = "COMPLAINT_VOLUME"
 METRIC_ESCALATIONS = "ESCALATIONS"
 METRIC_SLA_BREACHES = "SLA_BREACHES"
+METRIC_REPEAT_FAILURES = "REPEAT_FAILURES"
 
 
 @dataclass(slots=True)
@@ -171,6 +172,69 @@ def _grouped_between(
     return {code or "UNCLASSIFIED": count for code, count in rows}
 
 
+def _grouped_by_product(
+    db: Session, start: datetime, end: datetime
+) -> dict[str, int]:
+    rows = db.execute(
+        select(Complaint.product, func.count(Complaint.id))
+        .where(
+            Complaint.created_at >= start,
+            Complaint.created_at < end,
+            Complaint.product.isnot(None),
+            Complaint.product != "",
+        )
+        .group_by(Complaint.product)
+    ).all()
+    return {prod: count for prod, count in rows if prod}
+
+
+def _count_repeat_between(
+    db: Session,
+    start: datetime,
+    end: datetime,
+) -> int:
+    query = select(func.count()).select_from(Complaint).where(
+        Complaint.created_at >= start,
+        Complaint.created_at < end,
+        Complaint.repeat_count > 0,
+    )
+    return db.execute(query).scalar_one()
+
+
+def _grouped_repeat_by_category(
+    db: Session, start: datetime, end: datetime
+) -> dict[str, int]:
+    rows = db.execute(
+        select(Category.code, func.count(Complaint.id))
+        .select_from(Complaint)
+        .outerjoin(Category, Complaint.category_id == Category.id)
+        .where(
+            Complaint.created_at >= start,
+            Complaint.created_at < end,
+            Complaint.repeat_count > 0,
+        )
+        .group_by(Category.code)
+    ).all()
+    return {code or "UNCLASSIFIED": count for code, count in rows}
+
+
+def _grouped_repeat_by_product(
+    db: Session, start: datetime, end: datetime
+) -> dict[str, int]:
+    rows = db.execute(
+        select(Complaint.product, func.count(Complaint.id))
+        .where(
+            Complaint.created_at >= start,
+            Complaint.created_at < end,
+            Complaint.repeat_count > 0,
+            Complaint.product.isnot(None),
+            Complaint.product != "",
+        )
+        .group_by(Complaint.product)
+    ).all()
+    return {prod: count for prod, count in rows if prod}
+
+
 def period_bounds(
     period_type: str, now: datetime | None = None
 ) -> tuple[datetime, datetime, datetime]:
@@ -257,6 +321,37 @@ def compute(
                 METRIC_VOLUME, dimension, key,
                 current.get(key, 0), previous.get(key, 0),
             )
+
+    # ── volume by product (recurring product issues) ──
+    current_prod = _grouped_by_product(db, current_start, moment)
+    previous_prod = _grouped_by_product(db, previous_start, current_start)
+    for key in sorted(set(current_prod) | set(previous_prod)):
+        add(
+            METRIC_VOLUME, "PRODUCT", key,
+            current_prod.get(key, 0), previous_prod.get(key, 0),
+        )
+
+    # ── repeat failures ──
+    rep_curr = _count_repeat_between(db, current_start, moment)
+    rep_prev = _count_repeat_between(db, previous_start, current_start)
+    add(METRIC_REPEAT_FAILURES, "ALL", "ALL", rep_curr, rep_prev)
+    add(METRIC_VOLUME, "REPEAT_FAILURES", "ALL", rep_curr, rep_prev)
+
+    curr_rep_cat = _grouped_repeat_by_category(db, current_start, moment)
+    prev_rep_cat = _grouped_repeat_by_category(db, previous_start, current_start)
+    for key in sorted(set(curr_rep_cat) | set(prev_rep_cat)):
+        add(
+            METRIC_REPEAT_FAILURES, "CATEGORY", key,
+            curr_rep_cat.get(key, 0), prev_rep_cat.get(key, 0),
+        )
+
+    curr_rep_prod = _grouped_repeat_by_product(db, current_start, moment)
+    prev_rep_prod = _grouped_repeat_by_product(db, previous_start, current_start)
+    for key in sorted(set(curr_rep_prod) | set(prev_rep_prod)):
+        add(
+            METRIC_REPEAT_FAILURES, "PRODUCT", key,
+            curr_rep_prod.get(key, 0), prev_rep_prod.get(key, 0),
+        )
 
     return trends
 

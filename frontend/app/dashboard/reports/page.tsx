@@ -23,7 +23,7 @@ export default function ReportsPage() {
 
 /**
  * Report types come from the server; this page never invents one. Reading is
- * for every oversight role; downloading (CSV or JSON) is for managers and
+ * for every oversight role; downloading (CSV, Excel or PDF) is for managers and
  * admins, and each download is itself recorded under /dashboard/exports.
  */
 function Reports() {
@@ -33,7 +33,7 @@ function Reports() {
   const [type, setType] = useState<string | null>(null)
   const [f, setF] = useState<ReportFilters>({ limit: 200 })
   const report = useApi(() => analytics.report(type!, f), [type, JSON.stringify(f)], Boolean(type))
-  const exp = useAction((fmt: 'csv' | 'json') => analytics.exportReport(type!, fmt, f))
+  const exp = useAction((fmt: 'csv' | 'xlsx' | 'pdf' | 'json') => analytics.exportReport(type!, fmt, f))
   const canExport = user && ['manager', 'admin'].includes(user.role)
   const set = <K extends keyof ReportFilters>(k: K, v: ReportFilters[K]) => setF((s) => ({ ...s, [k]: v }))
 
@@ -41,7 +41,14 @@ function Reports() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div><p className="eyebrow mb-1">Insight</p><h1 className="display text-h2">Reports</h1></div>
-        {canExport && type && <div className="flex gap-2"><Button variant="secondary" size="sm" loading={exp.pending} onClick={async () => { const n = await exp.run('csv'); if (n) toast('ok', `Downloaded ${n}`); else if (exp.error) toast('err', exp.error) }}>Download CSV</Button><Button variant="secondary" size="sm" loading={exp.pending} onClick={async () => { const n = await exp.run('json'); if (n) toast('ok', `Downloaded ${n}`); else if (exp.error) toast('err', exp.error) }}>Download JSON</Button></div>}
+        {canExport && type && (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" loading={exp.pending} onClick={async () => { const n = await exp.run('csv'); if (n) toast('ok', `Downloaded ${n}`); else if (exp.error) toast('err', exp.error) }}>Download CSV</Button>
+            <Button variant="secondary" size="sm" loading={exp.pending} onClick={async () => { const n = await exp.run('xlsx'); if (n) toast('ok', `Downloaded ${n}`); else if (exp.error) toast('err', exp.error) }}>Download Excel</Button>
+            <Button variant="secondary" size="sm" loading={exp.pending} onClick={async () => { const n = await exp.run('pdf'); if (n) toast('ok', `Downloaded ${n}`); else if (exp.error) toast('err', exp.error) }}>Download PDF</Button>
+            <Button variant="secondary" size="sm" loading={exp.pending} onClick={async () => { const n = await exp.run('json'); if (n) toast('ok', `Downloaded ${n}`); else if (exp.error) toast('err', exp.error) }}>Download JSON</Button>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">

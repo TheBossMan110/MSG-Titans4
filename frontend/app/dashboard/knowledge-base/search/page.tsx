@@ -54,6 +54,59 @@ function SearchAndTrace() {
     <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr]">
       <section className="flex flex-col gap-5">
         <div><p className="eyebrow mb-1">Retrieval</p><h1 className="display text-h2">Search the policies</h1></div>
+
+        <div className="rounded-[var(--radius-lg)] border border-primary/25 bg-primary/5 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-1 mb-2">
+            <span className="text-[12px] font-semibold text-primary uppercase tracking-wider">
+              Evaluator Demo: Semantic Paraphrase Test (RAG Proof)
+            </span>
+            <span className="text-[11.5px] text-taupe-2">
+              Natural wording → exact policy section retrieved
+            </span>
+          </div>
+          <p className="text-[12.5px] text-espresso-2 mb-3">
+            Click any natural paraphrase below that contains <b>no formal policy keywords</b> to visually prove how SupportNova RAG retrieves the canonical policy section via vector embeddings:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              {
+                label: '💧 "package smells wet"',
+                query: 'package smells wet and soaked through cardboard',
+                target: 'Water Damage & Transit Spoilage'
+              },
+              {
+                label: '🛵 "rider asked for extra cash at door"',
+                query: 'delivery person demanded additional cash money before handing parcel',
+                target: 'COD Overcharging & Extortion Policy'
+              },
+              {
+                label: '⚡ "charger made a loud pop and burning smell"',
+                query: 'power adapter sparked loud sound and burnt smell from device',
+                target: 'Electrical & Hardware Safety Hazard'
+              },
+              {
+                label: '📦 "delivered to someone else in my building"',
+                query: 'parcel left with unknown neighbor without otp verification',
+                target: 'Misdelivery & Missing Proof of Delivery'
+              },
+            ].map((demo, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  setQuery(demo.query)
+                  setSemantic(true)
+                  void search.run({ query: demo.query, top_k: 10, semantic: true, include_superseded: superseded }).then((r) => r && setRes(r))
+                }}
+                className="inline-flex flex-col items-start px-2.5 py-1.5 rounded-[var(--radius-md)] border border-line bg-white text-left text-[12px] hover:border-primary hover:bg-cream transition-colors shadow-xs"
+              >
+                <span className="font-semibold text-espresso">{demo.label}</span>
+                <span className="text-[11px] text-taupe-2">Retrieves: {demo.target}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <form className="flex flex-col gap-3" onSubmit={(e) => { e.preventDefault(); if (query.trim()) void runSearch() }}>
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g. compensation ceiling for lost COD parcel" aria-label="Search query" autoFocus />
           <div className="flex flex-wrap items-center gap-4"><Checkbox label="Semantic" checked={semantic} onChange={(e) => setSemantic(e.target.checked)} /><Checkbox label="Include superseded versions" checked={superseded} onChange={(e) => setSuperseded(e.target.checked)} /><Button type="submit" size="sm" loading={search.pending} disabled={!query.trim()}>Search</Button></div>

@@ -11,7 +11,7 @@ import { Card, PanelHeader, PencilInk } from '@/components/ui/surfaces'
 import { ErrorState, Loading, useToast } from '@/components/ui/feedback'
 import {
   StatusBadge, OutcomeBadge, PriorityBadge, UrgencyBadge, EscalationBadge, VerificationCard, ComparisonTable, RuleHits,
-  ReviewHistoryPanel, SlaPanel, ReviewActionForm,
+  ReviewHistoryPanel, SlaPanel, ReviewActionForm, SuggestedResponsePanel,
 } from '@/components/app/complaint-bits'
 
 export default function ReviewItemPage({ params }: { params: Promise<{ ref: string }> }) {
@@ -34,8 +34,8 @@ function ReviewItem({ refId }: { refId: string }) {
   const toast = useToast()
   const c = useApi(() => complaints.get(refId), [refId])
   const explain = useApi(() => complaints.explain(refId), [refId])
-  const oversight = user && ['manager', 'admin', 'evaluator'].includes(user.role)
-  const isReviewer = user && ['reviewer', 'manager', 'admin'].includes(user.role)
+  const oversight = Boolean(user && ['manager', 'admin', 'evaluator'].includes(user.role))
+  const isReviewer = Boolean(user && ['reviewer', 'manager', 'admin'].includes(user.role))
   const taxonomy = useApi(() => admin.taxonomy(), [], Boolean(oversight))
   const claim = useAction(() => review.claim(refId))
 
@@ -78,6 +78,7 @@ function ReviewItem({ refId }: { refId: string }) {
         <div className="flex flex-col gap-6">
           <VerificationCard v={v} />
           <Card><PanelHeader title="Decide" eyebrow={isReviewer ? 'Recorded with before/after' : 'Read only for your role'} /><ReviewActionForm refId={refId} taxonomy={taxonomy.data} onDone={(r) => { toast('ok', `${humanise(r.action)} recorded${r.queue_closed ? '; queue item closed' : ''}${r.escalation_raised ? '; escalation raised' : ''}.`); c.refresh(); explain.refresh() }} /></Card>
+          <SuggestedResponsePanel refId={refId} canAct={isReviewer} />
           <section><PanelHeader title="SLA" /><SlaPanel refId={refId} /></section>
           <section><PanelHeader title="History" /><ReviewHistoryPanel refId={refId} /></section>
           <p className="text-[12.5px] text-taupe-2"><Link href="/dashboard/review" className="underline decoration-line underline-offset-4">Back to the queue</Link></p>

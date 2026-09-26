@@ -14,13 +14,13 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import { ManageAccount } from '@/components/app/user-admin'
 
-const OVERSIGHT = ['manager', 'admin', 'evaluator'] as const
+const STAFF_ROLES = ['agent', 'reviewer', 'manager', 'admin', 'evaluator'] as const
 const CHANNEL: Record<string, string> = { WEB: 'Web form', CHAT: 'Chat with Nova', EMAIL: 'Email', UPLOAD: 'Uploaded file', PHONE: 'Phone', IMPORT: 'Dataset' }
 
 export default function UserPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   return (
-    <AppShell eyebrow="Users" roles={[...OVERSIGHT]} wide>
+    <AppShell eyebrow="Users" roles={[...STAFF_ROLES]} wide>
       <Person id={id} />
     </AppShell>
   )
@@ -36,9 +36,15 @@ function Person({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/dashboard/users" className="inline-flex items-center gap-1.5 self-start text-[13.5px] text-taupe-2 hover:text-espresso">
-        <ArrowLeft size={14} aria-hidden /> {user?.role === 'admin' ? 'Users & roles' : 'Team'}
-      </Link>
+      {['manager', 'admin', 'evaluator'].includes(user?.role ?? '') ? (
+        <Link href="/dashboard/users" className="inline-flex items-center gap-1.5 self-start text-[13.5px] text-taupe-2 hover:text-espresso">
+          <ArrowLeft size={14} aria-hidden /> {user?.role === 'admin' ? 'Users & roles' : 'Team'}
+        </Link>
+      ) : (
+        <Link href="/dashboard/agent" className="inline-flex items-center gap-1.5 self-start text-[13.5px] text-taupe-2 hover:text-espresso">
+          <ArrowLeft size={14} aria-hidden /> Agent dashboard
+        </Link>
+      )}
 
       <section className="mesh-banner grain relative overflow-hidden rounded-[var(--radius-xl)] px-6 py-7 text-ink-on-dark md:px-10 md:py-9">
         <div className="relative z-[1] flex flex-wrap items-center gap-5">

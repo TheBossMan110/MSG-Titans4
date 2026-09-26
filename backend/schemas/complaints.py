@@ -228,6 +228,7 @@ class ComplaintSummary(APIModel):
     title: str
     status: str
     category: str | None = None
+    subcategory: str | None = None
     department: str | None = None
     urgency: str | None = None
     priority_code: str | None = None
@@ -243,6 +244,7 @@ class ComplaintSummary(APIModel):
     dataset_tag: str | None = None
     # WEB, CHAT, EMAIL, UPLOAD...: how it reached us, so a new one is recognisable.
     channel: str | None = None
+    agreement_score: float | None = None
 
 
 class ComplaintDetail(ComplaintSummary):
@@ -250,7 +252,6 @@ class ComplaintDetail(ComplaintSummary):
 
     description_raw: str
     description_clean: str
-    subcategory: str | None = None
     support_department: str | None = None
     sentiment: str | None = None
     primary_issue: str | None = None
@@ -341,6 +342,8 @@ class GenAIRunOut(APIModel):
     schema_errors: Any = None
     error: str | None = None
     created_at: str | None = None
+    raw_json: Any = None
+    response_raw: str | None = None
 
 
 class TraceRowOut(APIModel):
@@ -448,6 +451,15 @@ class DepartmentContactOut(APIModel):
     support_hours: str | None = None
 
 
+class FollowUpOut(APIModel):
+    id: str
+    type: str
+    message: str | None = None
+    due_at: str | None = None
+    completed_at: str | None = None
+    open: bool = True
+
+
 class ComplaintStatusOut(APIModel):
     """
     What a customer may see about their own complaint (FR lxvi).
@@ -491,6 +503,7 @@ class ComplaintStatusOut(APIModel):
     evidence: list[EvidenceOut] = Field(default_factory=list)
     # True when the next move is the customer's: an open question to answer.
     action_needed: bool = False
+    follow_ups: list[FollowUpOut] = Field(default_factory=list)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -532,15 +545,6 @@ class ResolutionSummaryOut(APIModel):
 class ChecklistOut(APIModel):
     summary: ResolutionSummaryOut
     steps: list[ChecklistStepOut] = Field(default_factory=list)
-
-
-class FollowUpOut(APIModel):
-    id: str
-    type: str
-    message: str | None = None
-    due_at: str | None = None
-    completed_at: str | None = None
-    open: bool = True
 
 
 class DueFollowUpOut(APIModel):

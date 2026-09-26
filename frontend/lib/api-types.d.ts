@@ -3027,6 +3027,8 @@ export interface components {
              * @default false
              */
             action_needed: boolean;
+            /** Follow Ups */
+            follow_ups?: components["schemas"]["FollowUpOut"][];
         };
         /**
          * ComplaintSummary
@@ -3046,6 +3048,8 @@ export interface components {
             status: string;
             /** Category */
             category?: string | null;
+            /** Subcategory */
+            subcategory?: string | null;
             /** Department */
             department?: string | null;
             /** Urgency */
@@ -3182,6 +3186,28 @@ export interface components {
             /** Priorities */
             priorities?: {
                 [key: string]: number;
+            };
+            /** Products */
+            products?: {
+                product: string;
+                count: number;
+                pct?: number | null;
+            }[];
+            /** Urgency */
+            urgency?: {
+                [key: string]: number;
+            };
+            /** Sentiment */
+            sentiment?: {
+                [key: string]: number;
+            };
+            /** Resolution Time */
+            resolution_time?: {
+                [key: string]: any;
+            };
+            /** Repeat Complaints */
+            repeat_complaints?: {
+                [key: string]: any;
             };
             /** Sla Risks */
             sla_risks?: {
@@ -3792,6 +3818,10 @@ export interface components {
             error?: string | null;
             /** Created At */
             created_at?: string | null;
+            /** Raw Json */
+            raw_json?: unknown;
+            /** Response Raw */
+            response_raw?: string | null;
         };
         /** GuardOut */
         GuardOut: {
@@ -4717,6 +4747,8 @@ export interface components {
             checksum?: string | null;
             /** Variables */
             variables?: string[];
+            /** Template Text */
+            template_text?: string | null;
         };
         /**
          * Pulse

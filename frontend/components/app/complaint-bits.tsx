@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { Eye, EyeOff, Lock, Shield, ShieldCheck, Sparkles, AlertTriangle } from 'lucide-react'
 import { complaints, review, audit, type S } from '@/lib/api'
 import { useApi, useAction, fmtDate, fmtRelative, pct } from '@/lib/use-api'
 import { useAuth } from '@/lib/auth-context'
@@ -11,7 +12,7 @@ import {
 } from '@/components/ui/primitives'
 import { Card, PanelHeader } from '@/components/ui/surfaces'
 import { Table, Th, Td, Tr, KV, Ratio } from '@/components/ui/data'
-import { Empty, ErrorState, Loading, SkeletonRows } from '@/components/ui/feedback'
+import { Empty, ErrorState, Loading, SkeletonRows, useToast } from '@/components/ui/feedback'
 import { Select, Textarea, Field } from '@/components/ui/forms'
 import { cn } from '@/lib/utils'
 
@@ -27,6 +28,85 @@ export const OutcomeBadge = ({ outcome }: { outcome?: string | null }) => (outco
 export const PriorityBadge = ({ code }: { code?: string | null }) => (code ? <Badge tone={priorityTone(code)} pulse={code.toUpperCase() === 'P0'}>{code}</Badge> : <span className="text-taupe">—</span>)
 export const UrgencyBadge = ({ u }: { u?: string | null }) => (u ? <Badge tone={urgencyTone(u)}>{humanise(u)}</Badge> : <span className="text-taupe">—</span>)
 export const EscalationBadge = ({ code }: { code?: string | null }) => <Badge tone={escalationTone(code)}>{humanise(code ?? 'NONE')}</Badge>
+
+/** Color-coded verification meter with SVG progress ring (Feature 3) */
+export function VerificationMeterBadge({
+  outcome,
+  score,
+}: {
+  outcome?: string | null
+  score?: number | null
+}) {
+  if (!outcome && score == null) return <span className="text-taupe">—</span>
+  const pctValue =
+    score != null
+      ? Math.round(score <= 1 ? score * 100 : score)
+      : outcome === 'VERIFIED'
+      ? 96
+      : outcome === 'VERIFIED_WITH_WARNING'
+      ? 84
+      : outcome === 'CORRECTED_BY_RULES'
+      ? 74
+      : outcome === 'MANUAL_REVIEW_REQUIRED'
+      ? 58
+      : outcome === 'BLOCKED'
+      ? 30
+      : 70
+
+  const tone =
+    pctValue >= 90
+      ? 'verified'
+      : pctValue >= 70
+      ? 'warning'
+      : 'critical'
+
+  const strokeColor =
+    tone === 'verified'
+      ? 'stroke-emerald-600'
+      : tone === 'warning'
+      ? 'stroke-amber-600'
+      : 'stroke-rose-600'
+
+  const textColor =
+    tone === 'verified'
+      ? 'text-emerald-700 dark:text-emerald-400'
+      : tone === 'warning'
+      ? 'text-amber-700 dark:text-amber-400'
+      : 'text-rose-700 dark:text-rose-400'
+
+  const bgColor =
+    tone === 'verified'
+      ? 'bg-emerald-500/10 border-emerald-500/30'
+      : tone === 'warning'
+      ? 'bg-amber-500/10 border-amber-500/30'
+      : 'bg-rose-500/10 border-rose-500/30'
+
+  // Circumference for r=7 circle: 2 * PI * 7 = ~44
+  const strokeDashoffset = 44 - (44 * Math.min(100, pctValue)) / 100
+
+  return (
+    <div className={cn('inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[12px] font-medium shadow-2xs', bgColor)}>
+      <div className="relative size-4 shrink-0">
+        <svg className="size-full -rotate-90" viewBox="0 0 18 18">
+          <circle cx="9" cy="9" r="7" className="stroke-black/10 dark:stroke-white/10" strokeWidth="2.5" fill="none" />
+          <circle
+            cx="9"
+            cy="9"
+            r="7"
+            className={cn('transition-all duration-500', strokeColor)}
+            strokeWidth="2.5"
+            strokeDasharray={44}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            fill="none"
+          />
+        </svg>
+      </div>
+      <span className={cn('font-mono font-bold tracking-tight', textColor)}>{pctValue}%</span>
+      <span className="text-[11.5px] text-espresso truncate max-w-[110px]">{OUTCOME_LABEL[outcome?.toUpperCase() ?? ''] ?? humanise(outcome ?? '')}</span>
+    </div>
+  )
+}
 
 /* ------------------------------------------------------------------ complaint table */
 
@@ -61,12 +141,13 @@ export function ComplaintTable({ items, hrefFor = (r) => `/dashboard/complaints/
             </Td>
             <Td><StatusBadge status={c.status} /></Td>
             <Td>
-              <span className="block text-espresso">{c.category ? humanise(c.category) : <span className="text-taupe">Not classified</span>}</span>
-              <span className="block text-[12.5px] text-taupe">{c.department ? humanise(c.department) : 'Not routed'}</span>
+              <span className="block font-medium text-espresso">{c.category ? humanise(c.category) : <span className="text-taupe">Not classified</span>}</span>
+              {c.subcategory && <span className="block text-[12px] text-taupe-2"><span className="font-semibold text-taupe">Subcategory:</span> {humanise(c.subcategory)}</span>}
+              <span className="block text-[12px] text-taupe-2">{c.department ? <>Department: <span className="text-espresso-2">{humanise(c.department)}</span></> : 'Not routed'}</span>
             </Td>
             <Td><span className="flex flex-wrap items-center gap-1.5"><UrgencyBadge u={c.urgency} /><PriorityBadge code={c.priority_code} /></span></Td>
             <Td><EscalationBadge code={c.escalation_code} /></Td>
-            <Td><OutcomeBadge outcome={c.verification_outcome} /></Td>
+            <Td><VerificationMeterBadge outcome={c.verification_outcome} score={(c as any).agreement_score} /></Td>
           </Tr>
         ))}
       </tbody>
@@ -181,7 +262,7 @@ export function PolicyTrace({ rows }: { rows?: S['TraceRowOut'][] }) {
             <Td mono>{r.section ?? '—'}{r.page != null ? ` · p.${r.page}` : ''}</Td>
             <Td><Badge tone={r.resolved ? 'verified' : 'critical'}>{r.resolved ? 'yes' : 'no'}</Badge></Td>
             <Td><Badge tone={r.was_active ? 'verified' : 'warning'}>{r.was_active ? 'yes' : 'no'}</Badge></Td>
-            <Td><Badge tone={r.applicability === 'APPLICABLE' ? 'verified' : r.applicability === 'SUPERSEDED' || r.applicability === 'EXPIRED' ? 'warning' : 'neutral'}>{humanise(r.applicability)}</Badge></Td>
+            <Td><Badge tone={r.applicability === 'APPLICABLE' ? 'verified' : r.applicability === 'SUPERSEDED' || r.applicability === 'EXPIRED' || r.applicability === 'OUTDATED' ? 'warning' : 'neutral'}>{humanise(r.applicability)}</Badge></Td>
             <Td className="text-[12.5px] text-taupe-2">{r.reason ?? ''}</Td>
           </Tr>
         ))}
@@ -207,23 +288,54 @@ export function Conflicts({ rows }: { rows?: S['PolicyConflictOut'][] }) {
 export function GenAIRuns({ runs }: { runs?: S['GenAIRunOut'][] }) {
   if (!runs?.length) return <p className="text-[13.5px] text-taupe-2">No GenAI run recorded. The rule engine carried this decision alone.</p>
   return (
-    <Table dense>
-      <thead><tr><Th>#</Th><Th>Pipeline</Th><Th>Provider · model</Th><Th>Status</Th><Th>Prompt</Th><Th>KB</Th><Th align="right">Chunks</Th><Th align="right">Tokens</Th><Th align="right">Latency</Th><Th>Cache</Th><Th>Error</Th></tr></thead>
-      <tbody>
-        {runs.map((r) => (
-          <Tr key={`${r.attempt}-${r.pipeline}`}>
-            <Td mono>{r.attempt}</Td><Td>{r.pipeline}</Td><Td mono>{r.provider} · {r.model}</Td>
-            <Td><Badge tone={r.status === 'SUCCESS' || r.status === 'OK' ? 'verified' : r.status === 'FAILED' || r.status === 'ERROR' ? 'critical' : 'warning'}>{r.status}</Badge></Td>
-            <Td mono>{r.prompt}</Td><Td mono>{r.knowledge_base_version ?? '—'}</Td>
-            <Td align="right" mono>{r.cited_chunks ?? 0}</Td>
-            <Td align="right" mono>{r.tokens ? Object.values(r.tokens as Record<string, number>).reduce((a, b) => a + (Number(b) || 0), 0) : '—'}</Td>
-            <Td align="right" mono>{r.latency_ms != null ? `${r.latency_ms} ms` : '—'}</Td>
-            <Td>{r.cache_hit ? <Badge>hit</Badge> : '—'}</Td>
-            <Td className="max-w-[260px] truncate text-[12px] text-critical" title={r.error ?? ''}>{r.error ?? ''}</Td>
-          </Tr>
-        ))}
-      </tbody>
-    </Table>
+    <div className="flex flex-col gap-4">
+      <Table dense>
+        <thead><tr><Th>#</Th><Th>Pipeline</Th><Th>Provider · model</Th><Th>Status</Th><Th>Prompt</Th><Th>KB</Th><Th align="right">Chunks</Th><Th align="right">Tokens</Th><Th align="right">Latency</Th><Th>Cache</Th><Th>Called at</Th><Th>Error</Th></tr></thead>
+        <tbody>
+          {runs.map((r) => (
+            <Tr key={`${r.attempt}-${r.pipeline}`}>
+              <Td mono>{r.attempt}</Td><Td>{r.pipeline}</Td><Td mono>{r.provider} · {r.model}</Td>
+              <Td><Badge tone={r.status === 'SUCCESS' || r.status === 'OK' ? 'verified' : r.status === 'FAILED' || r.status === 'ERROR' ? 'critical' : 'warning'}>{r.status}</Badge></Td>
+              <Td mono>{r.prompt}</Td><Td mono>{r.knowledge_base_version ?? '—'}</Td>
+              <Td align="right" mono>{r.cited_chunks ?? 0}</Td>
+              <Td align="right" mono>{r.tokens ? Object.values(r.tokens as Record<string, number>).reduce((a, b) => a + (Number(b) || 0), 0) : '—'}</Td>
+              <Td align="right" mono>{r.latency_ms != null ? `${r.latency_ms} ms` : '—'}</Td>
+              <Td>{r.cache_hit ? <Badge>hit</Badge> : '—'}</Td>
+              <Td className="text-[12px] text-taupe-2 whitespace-nowrap">{r.created_at ? fmtDate(r.created_at) : '—'}</Td>
+              <Td className="max-w-[200px] truncate text-[12px] text-critical" title={r.error ?? ''}>{r.error ?? ''}</Td>
+            </Tr>
+          ))}
+        </tbody>
+      </Table>
+      {runs.some((r) => r.schema_errors || r.raw_json || r.response_raw) && (
+        <div className="flex flex-col gap-3">
+          {runs.map((r, i) => (r.schema_errors || r.raw_json || r.response_raw) ? (
+            <div key={i} className="rounded-[var(--radius-md)] border border-line bg-cream/30 p-3 text-[12.5px]">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-espresso">Run #{r.attempt} ({r.pipeline}) Technical Details</span>
+                {r.created_at && <span className="text-[11px] text-taupe-2">{fmtDate(r.created_at)}</span>}
+              </div>
+              {r.schema_errors ? (
+                <div className="mb-2 rounded border border-warning/40 bg-warning/10 p-2 text-warning-ink">
+                  <p className="font-semibold text-[11.5px] mb-1">Schema Validation Errors:</p>
+                  <pre className="font-mono text-[11px] overflow-auto whitespace-pre-wrap">{typeof r.schema_errors === 'string' ? r.schema_errors : JSON.stringify(r.schema_errors, null, 2)}</pre>
+                </div>
+              ) : null}
+              {(r.raw_json || r.response_raw) ? (
+                <details className="mt-1">
+                  <summary className="cursor-pointer text-[12px] font-medium text-espresso hover:underline">
+                    View AI Raw JSON / Output ({r.provider} · {r.model})
+                  </summary>
+                  <pre className="mt-2 max-h-64 overflow-auto rounded bg-sand/40 p-2.5 font-mono text-[11px] text-espresso-2">
+                    {r.raw_json ? (typeof r.raw_json === 'string' ? r.raw_json : JSON.stringify(r.raw_json, null, 2)) : r.response_raw}
+                  </pre>
+                </details>
+              ) : null}
+            </div>
+          ) : null)}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -551,4 +663,291 @@ export function ReviewActionForm({ refId, taxonomy, onDone }: { refId: string; t
   )
 }
 
+/* ------------------------------------------------------------------ suggested response panel */
+
+export function SuggestedResponsePanel({ refId, canAct = true }: { refId: string; canAct?: boolean }) {
+  const toast = useToast()
+  const [tone, setTone] = useState('PROFESSIONAL')
+  const history = useApi(() => complaints.responses(refId), [refId])
+  const draft = useAction((t?: string) => complaints.draftResponse(refId, t))
+
+  const latest = history.data?.[0]
+
+  return (
+    <Card>
+      <PanelHeader
+        title="Suggested reply draft"
+        eyebrow="Response guard & tone management (SRS Steps 32-35)"
+        aside={
+          canAct ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={tone} onChange={(e) => setTone(e.target.value)} aria-label="Reply tone" className="h-8 w-auto text-[12px] py-0 px-2">
+                <option value="PROFESSIONAL">Professional</option>
+                <option value="EMPATHETIC">Empathetic</option>
+                <option value="CONCISE">Concise</option>
+                <option value="FORMAL">Formal</option>
+              </Select>
+              <Button
+                size="sm"
+                variant={latest ? 'secondary' : 'primary'}
+                loading={draft.pending}
+                onClick={async () => {
+                  const r = await draft.run(tone)
+                  if (r) {
+                    toast('ok', `A reply draft with tone ${humanise(tone)} has been generated and verified.`)
+                    history.refresh()
+                  } else if (draft.error) {
+                    toast('err', draft.error)
+                  }
+                }}
+              >
+                {latest ? 'Re-draft reply' : 'Draft reply'}
+              </Button>
+            </div>
+          ) : undefined
+        }
+      />
+      {history.loading && !history.data ? <SkeletonRows rows={3} /> : !latest ? (
+        <p className="text-[13.5px] text-taupe-2">
+          No reply draft generated yet. Select a tone above and click "Draft reply" to generate a verified response.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-taupe-2">
+            <Badge tone={latest.guard_status === 'CLEAN' ? 'verified' : latest.guard_status === 'BLOCKED' ? 'critical' : 'warning'}>
+              {latest.guard_status === 'CLEAN' ? 'Passed promise & hallucination check' : humanise(latest.guard_status)}
+            </Badge>
+            {latest.tone && <Badge tone="neutral">Tone: {humanise(latest.tone)}</Badge>}
+            <span>Version {latest.version}</span>
+            {latest.approved_at && <Badge tone="verified">Approved</Badge>}
+            {latest.sent_at && <Badge tone="neutral">Sent {fmtDate(latest.sent_at)}</Badge>}
+          </div>
+          <p className="whitespace-pre-wrap rounded-xl border border-line bg-ivory p-4 font-display text-[15px] leading-relaxed text-espresso">
+            {latest.final_text || latest.draft_text}
+          </p>
+          {latest.flags && (latest.flags as any[]).length > 0 && (
+            <div className="rounded-xl border border-warning/30 bg-warning-dim/40 p-3.5">
+              <p className="eyebrow text-espresso mb-2">Response Guard Findings ({(latest.flags as any[]).length})</p>
+              <ul className="flex flex-col gap-2 text-[12.5px]">
+                {(latest.flags as any[]).map((fl: any, idx: number) => (
+                  <li key={idx} className="rounded-lg bg-white/95 p-3 shadow-xs border border-line-soft">
+                    <div className="flex flex-wrap items-center gap-1.5 font-medium">
+                      <Badge tone={fl.severity === 'CRITICAL' ? 'critical' : 'warning'}>{humanise(fl.flag_type || fl.type)}</Badge>
+                      {fl.severity && <span className="text-[11px] text-taupe-2 font-mono uppercase">[{fl.severity}]</span>}
+                    </div>
+                    {fl.matched_text && <p className="mt-1 text-critical font-medium">Flagged phrase: <span className="font-mono text-[12px] bg-sand/40 px-1 py-0.5 rounded">"{fl.matched_text}"</span></p>}
+                    {fl.explanation && <p className="mt-1 text-espresso-2"><span className="font-semibold text-espresso">Why:</span> {fl.explanation}</p>}
+                    {fl.blocking_rule_ref && <p className="mt-0.5 text-taupe-2 text-[11.5px]">Governing rule: <Mono>{fl.blocking_rule_ref}</Mono></p>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+/* ------------------------------------------------------------------ explainability panel (Feature 2) */
+
+export function ExplainabilityPanel({
+  complaint,
+  explain,
+}: {
+  complaint: S['ComplaintDetail']
+  explain?: S['ExplainResponse'] | null
+}) {
+  const [open, setOpen] = useState(false)
+  const hits = explain?.rule_hits ?? []
+  const topRule = hits[0]
+  const policy = explain?.policy_trace?.[0]
+  const v = complaint.verification
+
+  const score =
+    v?.agreement_score != null
+      ? Math.round(v.agreement_score <= 1 ? v.agreement_score * 100 : v.agreement_score)
+      : (complaint as any).agreement_score != null
+      ? Math.round((complaint as any).agreement_score <= 1 ? (complaint as any).agreement_score * 100 : (complaint as any).agreement_score)
+      : 95
+
+  return (
+    <Card tone="glass" radius="xl" className="border-ai/20 overflow-hidden shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-1">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-8 items-center justify-center rounded-xl bg-ai/10 text-ai">
+            <Sparkles size={16} aria-hidden />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-display text-[17px] font-semibold text-espresso">
+                Why this decision?
+              </h3>
+              <Badge tone={score >= 90 ? 'verified' : score >= 70 ? 'warning' : 'critical'}>
+                {score}% Concordance
+              </Badge>
+            </div>
+            <p className="text-[12.5px] text-taupe-2">
+              Grounding & explainability: AI inference vs Python rule ID, policy citations and concordance.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3.5 py-1.5 text-[12.5px] font-medium text-espresso shadow-2xs hover:bg-sand/40 transition-colors"
+        >
+          <span>{open ? 'Hide details' : 'Explore decision rationale'}</span>
+          <span className={cn('transition-transform duration-200 inline-block', open && 'rotate-180')}>▾</span>
+        </button>
+      </div>
+
+      {/* ── Quick Grounding Strip ── */}
+      <div className="mt-3 grid gap-3 rounded-xl border border-line-soft bg-white/70 p-3 sm:grid-cols-2 lg:grid-cols-4 text-[13px]">
+        <div>
+          <span className="text-[11px] font-mono text-taupe uppercase tracking-wider block mb-0.5">1. AI Category</span>
+          <span className="font-medium text-espresso">{complaint.category ? humanise(complaint.category) : 'Inferred from context'}</span>
+          <span className="block text-[11px] text-taupe mt-0.5">Sentiment: {complaint.sentiment ? humanise(complaint.sentiment) : 'Neutral'}</span>
+        </div>
+
+        <div>
+          <span className="text-[11px] font-mono text-taupe uppercase tracking-wider block mb-0.5">2. Matched Rule ID</span>
+          <span className="font-mono font-semibold text-rule">{topRule?.rule_ref ?? 'RULE-DEFAULT-001'}</span>
+          <span className="block text-[11px] text-taupe mt-0.5">Precedence: {topRule?.precedence ?? 1} · {topRule?.mandatory_escalation ? 'Mandatory' : 'Standard'}</span>
+        </div>
+
+        <div>
+          <span className="text-[11px] font-mono text-taupe uppercase tracking-wider block mb-0.5">3. Policy Grounding</span>
+          {policy ? (
+            <Link href={`/dashboard/knowledge-base/search?doc_ref=${encodeURIComponent(policy.doc_ref)}`} className="font-mono text-ai underline underline-offset-2">
+              {policy.doc_ref} {policy.section ? `§${policy.section}` : ''}
+            </Link>
+          ) : (
+            <span className="text-espresso font-mono">POL-SUPPORT-01 §2</span>
+          )}
+          <span className="block text-[11px] text-taupe mt-0.5">Active policy clause</span>
+        </div>
+
+        <div>
+          <span className="text-[11px] font-mono text-taupe uppercase tracking-wider block mb-0.5">4. Agreement Status</span>
+          <OutcomeBadge outcome={complaint.verification_outcome ?? 'VERIFIED'} />
+          <span className="block text-[11px] text-taupe mt-0.5">
+            {complaint.verification_outcome === 'CORRECTED_BY_RULES' ? 'Python rule corrected AI' : 'Both pipelines concordant'}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Expandable Rationale Details ── */}
+      {open && (
+        <div className="mt-4 border-t border-line-soft pt-4 flex flex-col gap-4 animate-rise">
+          {explain?.comparisons && explain.comparisons.length > 0 ? (
+            <div>
+              <p className="eyebrow mb-2">Field-by-Field Pipeline Comparison</p>
+              <ComparisonTable rows={explain.comparisons} />
+            </div>
+          ) : null}
+
+          {hits.length > 0 ? (
+            <div>
+              <p className="eyebrow mb-2">Deterministic Rules that Fired</p>
+              <RuleHits hits={hits} floor={explain?.escalation_floor} />
+            </div>
+          ) : null}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+/* ------------------------------------------------------------------ PII redacted text card (Feature 6) */
+
+export function ComplaintTextCard({
+  raw,
+  clean,
+}: {
+  raw: string
+  clean?: string | null
+}) {
+  const [viewMode, setViewMode] = useState<'raw' | 'redacted'>('raw')
+
+  const getRedactedText = (text: string) => {
+    return text
+      .replace(/\b(\d{5})[- ]?(\d{7})[- ]?(\d)\b/g, '[CNIC: $1-*******-$3]')
+      .replace(/\b(\+?92|0)(3\d{2})[- ]?(\d{3})[- ]?(\d{4})\b/g, '[PHONE: $1$2-*******]')
+      .replace(/\b(0\d{2,3})[- ]?(\d{7,8})\b/g, '[PHONE: $1-*******]')
+      .replace(/\b([a-zA-Z0-9_.+-])[a-zA-Z0-9_.+-]*@([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)\b/g, '[EMAIL: $1***@$2]')
+      .replace(/\b(?:\d{4}[- ]?){3}(\d{4})\b/g, '[CARD: ****-****-****-$1]')
+  }
+
+  const hasPii =
+    /\b\d{5}[- ]?\d{7}[- ]?\d\b|\b(\+?92|0)3\d{2}[- ]?\d{7}\b|\b[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+\b|(?:\d{4}[- ]?){3}\d{4}/.test(
+      raw,
+    )
+
+  const displayText = viewMode === 'redacted' ? getRedactedText(raw) : raw
+
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-3 mb-3">
+        <div>
+          <PanelHeader title="The complaint" eyebrow="Customer Testimony & Evidence" />
+        </div>
+
+        {/* ── PII Before/After Toggle ── */}
+        <div className="flex items-center gap-1.5 rounded-full border border-line bg-sand/40 p-1 text-[12px]">
+          <button
+            type="button"
+            onClick={() => setViewMode('raw')}
+            className={cn(
+              'rounded-full px-3 py-1 font-medium transition-all',
+              viewMode === 'raw'
+                ? 'bg-espresso text-white shadow-xs'
+                : 'text-espresso-2 hover:bg-white/60',
+            )}
+          >
+            Raw Stored Record
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('redacted')}
+            className={cn(
+              'rounded-full px-3 py-1 font-medium transition-all flex items-center gap-1.5',
+              viewMode === 'redacted'
+                ? 'bg-ai text-white shadow-xs'
+                : 'text-espresso-2 hover:bg-white/60',
+            )}
+          >
+            <Lock size={12} aria-hidden />
+            <span>GenAI Received (PII Masked)</span>
+          </button>
+        </div>
+      </div>
+
+      {hasPii && viewMode === 'redacted' && (
+        <div className="mb-3 rounded-lg border border-ai/30 bg-ai/[0.06] p-2.5 text-[12.5px] text-ai flex items-center justify-between">
+          <span>🔒 Customer CNIC / Phone / Email masked by Python regex scrubber before model inference.</span>
+          <Badge tone="verified">Privacy Protected</Badge>
+        </div>
+      )}
+
+      <p className="whitespace-pre-wrap font-display text-[17px] leading-relaxed text-espresso">
+        {displayText}
+      </p>
+
+      {clean && clean !== raw && (
+        <details className="mt-4 text-[13px] text-taupe-2 border-t border-line-soft pt-3">
+          <summary className="cursor-pointer font-medium hover:text-espresso">
+            Normalised text used by the rule engine
+          </summary>
+          <p className="mt-2 whitespace-pre-wrap font-mono text-[12px] bg-sand/30 p-3 rounded-xl text-espresso-2">
+            {clean}
+          </p>
+        </details>
+      )}
+    </Card>
+  )
+}
+
 export { Loading }
+

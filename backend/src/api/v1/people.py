@@ -47,10 +47,11 @@ OVERSIGHT = (UserRole.ADMIN, UserRole.MANAGER, UserRole.EVALUATOR)
 STAFF = (UserRole.AGENT, UserRole.REVIEWER, UserRole.MANAGER, UserRole.ADMIN, UserRole.EVALUATOR)
 CLOSED_STATUSES = ("RESOLVED", "CLOSED")
 
-router = APIRouter(prefix="/people", tags=["People"], dependencies=[Depends(require_role(*OVERSIGHT))])
+router = APIRouter(prefix="/people", tags=["People"])
 # Managers see the people register to monitor their teams; only an
 # administrator creates accounts, assigns roles or disables them (FR ii).
 AdminOnly = Depends(require_role(UserRole.ADMIN))
+CanCreatePerson = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER))
 ROLES = {role.value for role in UserRole}
 live_router = APIRouter(prefix="/live", tags=["People"], dependencies=[Depends(require_role(*STAFF))])
 # Who a complaint can be assigned to: names, roles and teams only, for every
@@ -139,7 +140,7 @@ def _rows(db: DbSession, users: list[User]) -> list[PersonRow]:
     return out
 
 
-@router.get("", response_model=Page[PersonRow], summary="Every account, newest first")
+@router.get("", response_model=Page[PersonRow], dependencies=[Depends(require_role(*OVERSIGHT))], summary="Every account, newest first")
 def list_people(
     db: DbSession,
     role: str | None = Query(None, max_length=32),
@@ -163,7 +164,7 @@ def list_people(
     return Page[PersonRow](items=_rows(db, list(users)), total=total, page=page, page_size=page_size)
 
 
-@router.get("/summary", response_model=PeopleSummary, summary="Accounts at a glance: new sign-ups and recent sign-ins")
+@router.get("/summary", response_model=PeopleSummary, dependencies=[Depends(require_role(*OVERSIGHT))], summary="Accounts at a glance: new sign-ups and recent sign-ins")
 def people_summary(db: DbSession) -> PeopleSummary:
     now = datetime.now(UTC)
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -205,20 +206,104 @@ def people_summary(db: DbSession) -> PeopleSummary:
     )
 
 
-@router.get("/{user_id}", response_model=PersonDetail, summary="One account: details, complaints with history, sign-ins, emails")
-def person(user_id: uuid.UUID, db: DbSession) -> PersonDetail:
-    user = db.get(User, user_id)
-    if user is None:
-        raise NotFoundError("No such account.")
-    row = _rows(db, [user])[0]
+@router.get("/{identifier}", response_model=PersonDetail, dependencies=[Depends(require_role(*STAFF))], summary="One account: details, complaints with history, sign-ins, emails")
+def person(identifier: str, db: DbSession) -> PersonDetail:
+    # 1. Try finding by Customer.external_ref (e.g. CUST-00184)
     customer = db.execute(
-        select(Customer).where(or_(Customer.user_id == user.id, func.lower(Customer.email) == user.email.lower()))
-        .order_by(Customer.user_id.is_(None))
+        select(Customer).where(func.upper(Customer.external_ref) == identifier.strip().upper())
     ).scalars().first()
 
-    complaints: list[PersonComplaint] = []
-    found = db.execute(select(Complaint).where(_owned([user])).order_by(Complaint.created_at.desc())).scalars().all()
-    if found:
+    user: User | None = None
+    if customer is not None:
+        if customer.user_id:
+            user = db.get(User, customer.user_id)
+        elif customer.email:
+            user = db.execute(
+                select(User).where(func.lower(User.email) == customer.email.lower())
+            ).scalars().first()
+
+    # 2. If not found by customer ref, try as UUID
+    if user is None and customer is None:
+        try:
+            parsed_id = uuid.UUID(identifier)
+            user = db.get(User, parsed_id)
+            if user is None:
+                customer = db.get(Customer, parsed_id)
+                if customer and customer.user_id:
+                    user = db.get(User, customer.user_id)
+        except ValueError:
+            pass
+
+    if user is not None:
+        row = _rows(db, [user])[0]
+        if customer is None:
+            customer = db.execute(
+                select(Customer).where(or_(Customer.user_id == user.id, func.lower(Customer.email) == user.email.lower()))
+                .order_by(Customer.user_id.is_(None))
+            ).scalars().first()
+
+        complaints: list[PersonComplaint] = []
+        found = db.execute(select(Complaint).where(_owned([user])).order_by(Complaint.created_at.desc())).scalars().all()
+        if found:
+            steps: dict[uuid.UUID, list[ComplaintStatusHistory]] = {}
+            for step in db.execute(
+                select(ComplaintStatusHistory)
+                .where(ComplaintStatusHistory.complaint_id.in_([c.id for c in found]))
+                .order_by(ComplaintStatusHistory.created_at)
+            ).scalars():
+                steps.setdefault(step.complaint_id, []).append(step)
+            complaints = [
+                PersonComplaint(
+                    public_ref=c.public_ref, title=c.title, status=c.status, channel=c.channel,
+                    category=c.category.name if c.category else None,
+                    department=c.department.name if c.department else None,
+                    priority=c.priority_code, urgency=c.urgency, sentiment=c.sentiment,
+                    created_at=c.created_at, resolved_at=c.resolved_at,
+                    updated_at=steps[c.id][-1].created_at if steps.get(c.id) else None,
+                    history=[StatusStep(to_status="SUBMITTED", at=c.created_at, reason=f"via {_CHANNEL.get(c.channel, c.channel.lower())}")] + [
+                        StatusStep(from_status=s.from_status, to_status=s.to_status, at=s.created_at, reason=s.reason)
+                        for s in steps.get(c.id, [])
+                    ],
+                )
+                for c in found
+            ]
+
+        # Failed sign-ins are logged against the email typed; both are this person's history.
+        events = db.execute(
+            select(AuditLog)
+            .where(
+                AuditLog.entity_type.in_(("auth", "user")),
+                or_(AuditLog.entity_id == str(user.id), AuditLog.entity_id == user.email.lower()),
+                AuditLog.action.in_(list(_ACTIVITY)),
+            )
+            .order_by(AuditLog.created_at.desc()).limit(25)
+        ).scalars().all()
+        activity = [
+            PersonActivity(at=e.created_at, action=e.action, label=_ACTIVITY[e.action][0], ok=_ACTIVITY[e.action][1], ip_address=e.ip_address)
+            for e in events
+        ]
+
+        refs = dict(db.execute(select(Complaint.id, Complaint.public_ref).where(
+            Complaint.id.in_(select(EmailMessage.complaint_id).where(EmailMessage.complaint_id.is_not(None)))
+        )).all())
+        address = user.email.lower()
+        mails = db.execute(
+            select(EmailMessage)
+            .where(or_(func.lower(EmailMessage.from_address) == address, func.lower(EmailMessage.to_address) == address))
+            .order_by(EmailMessage.created_at.desc()).limit(25)
+        ).scalars().all()
+        emails = [
+            PersonEmail(id=m.id, direction=m.direction, subject=m.subject or "(no subject)", status=m.status,
+                        at=m.created_at, complaint_ref=refs.get(m.complaint_id))
+            for m in mails
+        ]
+        return PersonDetail(
+            person=row, phone=customer.phone if customer else None, tier=customer.tier if customer else None,
+            region=customer.region if customer else None, complaints=complaints, activity=activity, emails=emails,
+        )
+
+    if customer is not None:
+        found = db.execute(select(Complaint).where(Complaint.customer_id == customer.id).order_by(Complaint.created_at.desc())).scalars().all()
         steps: dict[uuid.UUID, list[ComplaintStatusHistory]] = {}
         if found:
             for step in db.execute(
@@ -227,7 +312,7 @@ def person(user_id: uuid.UUID, db: DbSession) -> PersonDetail:
                 .order_by(ComplaintStatusHistory.created_at)
             ).scalars():
                 steps.setdefault(step.complaint_id, []).append(step)
-        complaints = [
+        complaints_list = [
             PersonComplaint(
                 public_ref=c.public_ref, title=c.title, status=c.status, channel=c.channel,
                 category=c.category.name if c.category else None,
@@ -235,8 +320,6 @@ def person(user_id: uuid.UUID, db: DbSession) -> PersonDetail:
                 priority=c.priority_code, urgency=c.urgency, sentiment=c.sentiment,
                 created_at=c.created_at, resolved_at=c.resolved_at,
                 updated_at=steps[c.id][-1].created_at if steps.get(c.id) else None,
-                # Arriving is the first event in every complaint's life, whether
-                # or not the pipelines have moved it yet.
                 history=[StatusStep(to_status="SUBMITTED", at=c.created_at, reason=f"via {_CHANNEL.get(c.channel, c.channel.lower())}")] + [
                     StatusStep(from_status=s.from_status, to_status=s.to_status, at=s.created_at, reason=s.reason)
                     for s in steps.get(c.id, [])
@@ -244,40 +327,33 @@ def person(user_id: uuid.UUID, db: DbSession) -> PersonDetail:
             )
             for c in found
         ]
-
-    # Failed sign-ins are logged against the email typed; both are this person's history.
-    events = db.execute(
-        select(AuditLog)
-        .where(
-            AuditLog.entity_type.in_(("auth", "user")),
-            or_(AuditLog.entity_id == str(user.id), AuditLog.entity_id == user.email.lower()),
-            AuditLog.action.in_(list(_ACTIVITY)),
+        synth_row = PersonRow(
+            id=customer.id,
+            full_name=customer.display_name,
+            email=customer.email or f"{customer.external_ref.lower()}@customer.local",
+            role=UserRole.CUSTOMER,
+            department=None,
+            is_active=True,
+            created_at=customer.created_at,
+            last_login_at=None,
+            mfa_on=False,
+            customer_ref=customer.external_ref,
+            complaints=len(complaints_list),
+            open_complaints=sum(1 for c in found if c.status not in CLOSED_STATUSES),
+            last_complaint_at=found[0].created_at if found else None,
+            assigned=0,
         )
-        .order_by(AuditLog.created_at.desc()).limit(25)
-    ).scalars().all()
-    activity = [
-        PersonActivity(at=e.created_at, action=e.action, label=_ACTIVITY[e.action][0], ok=_ACTIVITY[e.action][1], ip_address=e.ip_address)
-        for e in events
-    ]
+        return PersonDetail(
+            person=synth_row,
+            phone=customer.phone,
+            tier=customer.tier,
+            region=customer.region,
+            complaints=complaints_list,
+            activity=[],
+            emails=[],
+        )
 
-    refs = dict(db.execute(select(Complaint.id, Complaint.public_ref).where(
-        Complaint.id.in_(select(EmailMessage.complaint_id).where(EmailMessage.complaint_id.is_not(None)))
-    )).all())
-    address = user.email.lower()
-    mails = db.execute(
-        select(EmailMessage)
-        .where(or_(func.lower(EmailMessage.from_address) == address, func.lower(EmailMessage.to_address) == address))
-        .order_by(EmailMessage.created_at.desc()).limit(25)
-    ).scalars().all()
-    emails = [
-        PersonEmail(id=m.id, direction=m.direction, subject=m.subject or "(no subject)", status=m.status,
-                    at=m.created_at, complaint_ref=refs.get(m.complaint_id))
-        for m in mails
-    ]
-    return PersonDetail(
-        person=row, phone=customer.phone if customer else None, tier=customer.tier if customer else None,
-        region=customer.region if customer else None, complaints=complaints, activity=activity, emails=emails,
-    )
+    raise NotFoundError(f"No account or customer found for '{identifier}'.")
 
 
 @live_router.get("/pulse", response_model=Pulse, summary="Counters that move when anything new arrives")
@@ -319,27 +395,38 @@ def _department_id(db: DbSession, code: str | None):
 
 
 @router.post("", response_model=PersonRow, status_code=http_status.HTTP_201_CREATED,
-             dependencies=[AdminOnly], summary="Create an account with a role")
+             dependencies=[CanCreatePerson], summary="Create an account with a role")
 def create_person(payload: PersonCreate, request: Request, db: DbSession, user: CurrentUser) -> PersonRow:
-    """Staff accounts are provisioned here; self-registration always creates a customer."""
+    """Staff accounts are provisioned here; self-registration always creates a customer.
+    Administrators can provision any role; managers can provision agents for their assigned department."""
     from src.services.audit import record_audit
 
     role = payload.role.strip().lower()
     if role not in ROLES:
         raise ValidationError(f"Role must be one of {', '.join(sorted(ROLES))}.")
+
+    if user.role == UserRole.MANAGER:
+        if role != UserRole.AGENT:
+            raise ValidationError("Managers are only permitted to create Agent accounts.")
+        if not user.department_id:
+            raise ValidationError("Your account is not assigned to a department.")
+        dept_id = user.department_id
+    else:
+        dept_id = _department_id(db, payload.department_code)
+
     email = payload.email.strip().lower()
     if db.execute(select(User.id).where(func.lower(User.email) == email)).first():
         raise ConflictError("An account with this email already exists.")
     person = User(
         email=email, full_name=payload.full_name.strip(), role=role,
         password_hash=hash_password(payload.password),
-        department_id=_department_id(db, payload.department_code), is_active=True,
+        department_id=dept_id, is_active=True,
     )
     db.add(person)
     db.flush()
     record_audit(
         db, entity_type="user", entity_id=person.id, action="USER_CREATED", actor=user,
-        after={"email": email, "role": role, "department": payload.department_code}, request=request,
+        after={"email": email, "role": role, "department_id": str(dept_id) if dept_id else None}, request=request,
     )
     return _rows(db, [person])[0]
 

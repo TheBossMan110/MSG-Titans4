@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ArrowRight, Headset, Scale, ShieldCheck, Siren, UserCheck, UserPlus, Users } from 'lucide-react'
+import { AlertTriangle, ArrowRight, BookOpen, CheckCircle2, Headset, Scale, Settings, ShieldCheck, Siren, Upload, UserCheck, UserPlus, Users } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
 import { analytics, complaints, people } from '@/lib/api'
@@ -69,6 +69,24 @@ function AdminDashboard() {
         ))}
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line-soft bg-sand/30 p-5">
+        <div className="max-w-[65ch]">
+          <div className="mb-1 flex items-center gap-2">
+            <Badge tone="verified">Platform Owner & Ingestion Layer</Badge>
+            <span className="font-mono text-[12px] text-taupe-2">SRS Compliance Standard</span>
+          </div>
+          <h3 className="font-display text-[17px] font-semibold text-espresso">Upload Company Policy Documents (PDF & DOCX)</h3>
+          <p className="mt-1 text-[13.5px] leading-relaxed text-espresso-2">
+            Ground AI responses with traceable policy citations. Documents are parsed into semantic chunks, validated against rules, and version-controlled.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2.5">
+          <Button href="/dashboard/knowledge-base/upload" variant="primary" icon={<Upload size={14} aria-hidden />}>Upload Policy Documents</Button>
+          <Button href="/dashboard/knowledge-base" variant="secondary" icon={<BookOpen size={14} aria-hidden />}>Active Policies</Button>
+          <Button href="/dashboard/settings" variant="secondary" icon={<Settings size={14} aria-hidden />}>System Settings</Button>
+        </div>
+      </div>
+
       {q.error ? <ErrorState message={q.error} onRetry={q.refresh} /> : (
         <>
           <DashSection id="total" title="Total complaints" icon={<Scale size={15} aria-hidden />}>
@@ -83,7 +101,12 @@ function AdminDashboard() {
               <ComplaintList
                 rows={newest.data?.items as Array<Record<string, unknown>> | undefined}
                 empty="No complaints yet."
-                render={(r) => <span>{CHANNEL[String(r.channel)] ?? humanise(String(r.channel ?? 'WEB'))} · {fmtRelative(String(r.created_at))}</span>}
+                render={(r) => (
+                  <span>
+                    {r.subcategory ? <><span className="font-semibold text-taupe">Subcategory:</span> {humanise(String(r.subcategory))} · </> : null}
+                    {CHANNEL[String(r.channel)] ?? humanise(String(r.channel ?? 'WEB'))} · {fmtRelative(String(r.created_at))}
+                  </span>
+                )}
                 priorityKey="priority_code"
               />
             </div>
@@ -202,6 +225,55 @@ function AdminDashboard() {
               </div>
             )}
           </DashSection>
+
+          <DashSection id="permissions" title="Administrator Permissions & Platform Authority" icon={<ShieldCheck size={15} aria-hidden />}>
+            <div className="rounded-xl border border-line-soft bg-white/90 p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-3">
+                <div>
+                  <h4 className="font-display font-semibold text-espresso">Platform Authority: Supreme Operational & System Control</h4>
+                  <p className="text-[13px] text-taupe-2">
+                    The Administrator possesses comprehensive platform governance: from official document ingestion and rule authoring to user provisioning and system security.
+                  </p>
+                </div>
+                <Badge tone="verified">Full System Authority</Badge>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  'View all complaints',
+                  'View all users',
+                  'Create users',
+                  'Disable users',
+                  'Assign roles',
+                  'Manage departments',
+                  'Manage categories',
+                  'Upload PDF/DOCX policies',
+                  'Manage policy versions',
+                  'Manage rule matrix',
+                  'Manage routing rules',
+                  'Manage escalation rules',
+                  'Manage SLA rules',
+                  'Manage prompts',
+                  'Configure AI provider',
+                  'View audit logs',
+                  'View security events',
+                  'View analytics',
+                  'Generate reports',
+                  'System configuration',
+                ].map((perm, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between rounded-lg border border-verified/20 bg-verified-wash/30 p-2.5 text-[13px] text-espresso"
+                  >
+                    <span className="font-medium">{perm}</span>
+                    <span className="flex items-center text-[12px] font-semibold text-verified">
+                      <CheckCircle2 size={15} className="mr-1" /> Allowed
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </DashSection>
         </>
       )}
     </div>
@@ -221,7 +293,11 @@ function ComplaintList({ rows, empty, render, priorityKey = 'priority' }: { rows
             {r[priorityKey] ? <Badge tone={priorityTone(String(r[priorityKey]))}>{String(r[priorityKey])}</Badge> : null}
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[14px] font-medium text-espresso">{String(r.title)}</span>
-              <span className="block text-[12.5px] text-taupe-2"><span className="font-mono">{String(r.public_ref)}</span> · {render(r)}</span>
+              <span className="block text-[12.5px] text-taupe-2">
+                <span className="font-mono">{String(r.public_ref)}</span>
+                {r.subcategory && !String(render(r)).includes('Subcategory:') ? <> · <span className="font-semibold text-taupe">Subcategory:</span> {humanise(String(r.subcategory))}</> : null}
+                {' '}· {render(r)}
+              </span>
             </span>
             <ArrowRight size={15} className="shrink-0 text-taupe" aria-hidden />
           </Link>

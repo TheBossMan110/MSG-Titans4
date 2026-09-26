@@ -21,7 +21,7 @@ const DONE = new Set(['RESOLVED', 'CLOSED'])
 
 export default function MyComplaintsPage() {
   return (
-    <AppShell eyebrow="My complaints" wide>
+    <AppShell eyebrow="Customer Dashboard" wide>
       <Mine />
     </AppShell>
   )
@@ -32,6 +32,9 @@ function Mine() {
   const q = useApi(() => complaints.mine(1, 50), [])
   const rows = useMemo(() => q.data?.items ?? [], [q.data])
   const [selected, setSelected] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [tab, setTab] = useState<'all' | 'open' | 'waiting' | 'resolved'>('all')
+  const [confirming, setConfirming] = useState(false)
 
   useEffect(() => {
     if (!selected && rows.length) {
@@ -52,6 +55,32 @@ function Mine() {
       .filter(Boolean)
       .sort()[0] ?? null
     return { open: open.length, waiting: waiting.length, resolved: resolved.length, avgHours, nextDue }
+  }, [rows])
+
+  const filteredRows = useMemo(() => {
+    const s = search.trim().toLowerCase()
+    return rows.filter((r) => {
+      if (tab === 'open' && DONE.has(r.status)) return false
+      if (tab === 'waiting' && !r.action_needed) return false
+      if (tab === 'resolved' && !DONE.has(r.status)) return false
+      if (!s) return true
+      return (
+        r.public_ref.toLowerCase().includes(s) ||
+        r.title.toLowerCase().includes(s) ||
+        (r.category_name && r.category_name.toLowerCase().includes(s)) ||
+        (r.department?.name && r.department.name.toLowerCase().includes(s))
+      )
+    })
+  }, [rows, search, tab])
+
+  const allFollowUps = useMemo(() => {
+    return rows.flatMap((r) =>
+      (r.follow_ups ?? []).map((f) => ({
+        ...f,
+        complaintRef: r.public_ref,
+        complaintTitle: r.title,
+      }))
+    )
   }, [rows])
 
   const current = rows.find((r) => r.public_ref === selected) ?? null
@@ -75,7 +104,7 @@ function Mine() {
                   : 'Submit a complaint and follow every step the system takes on it — read by AI, confirmed against company policy.'}
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Button href="/dashboard/complaints/new" variant="onDark" size="lg" icon={<Plus size={16} aria-hidden />}>Submit a complaint</Button>
+              <Button href="/dashboard/complaints/new" variant="onDark" size="lg" icon={<Plus size={16} aria-hidden />}>Submit Complaint</Button>
               <Button href="/track" size="lg" className="border border-ink-on-dark/25 bg-transparent text-ink-on-dark hover:bg-ink-on-dark/10" icon={<FileSearch size={16} aria-hidden />}>Track by reference</Button>
             </div>
           </div>
@@ -130,52 +159,163 @@ function Mine() {
       ) : (
         <>
         <AtAGlance rows={rows} onPick={setSelected} />
-        <section className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-baseline justify-between">
-              <h2 className="font-display text-h3">Your complaints</h2>
-              <span className="text-[13px] text-taupe">{rows.length} total</span>
+
+        {/* My Complaints Section */}
+        <section id="my-complaints" className="scroll-mt-24 flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-3">
+            <div>
+              <h2 className="font-display text-h3">My Complaints</h2>
+              <p className="text-[13px] text-taupe">Track, inspect details, respond to clarification questions, and view resolution.</p>
             </div>
-            <ul className="flex flex-col gap-3">
-              {rows.map((r) => (
-                <li key={r.public_ref}>
-                  <ComplaintCard row={r} active={r.public_ref === selected} onSelect={() => setSelected(r.public_ref)} />
-                </li>
-              ))}
-            </ul>
+            <div className="flex items-center gap-2">
+              <Button href="/dashboard/complaints/new" size="sm" icon={<Plus size={14} aria-hidden />}>New complaint</Button>
+            </div>
           </div>
 
-          <aside className="lg:sticky lg:top-24 lg:self-start">
-            {current && (
-              <Card tone="glass" padding="lg" radius="xl" className="animate-rise" key={current.public_ref}>
-                <div className="mb-5 flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="eyebrow mb-1.5 font-mono normal-case tracking-normal">{current.public_ref}</p>
-                    <h3 className="font-display text-[22px] leading-tight">{current.title}</h3>
-                  </div>
-                  <Badge tone={statusTone(current.status)} dot>{humanise(current.status)}</Badge>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-1.5">
+              {(['all', 'open', 'waiting', 'resolved'] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTab(t)}
+                  className={cn(
+                    'rounded-full px-3.5 py-1.5 text-[12.5px] font-medium transition',
+                    tab === t ? 'bg-espresso text-white shadow-sm' : 'bg-white/80 text-espresso-2 hover:bg-white',
+                  )}
+                >
+                  {t === 'all' && `All (${rows.length})`}
+                  {t === 'open' && `Open (${metrics.open})`}
+                  {t === 'waiting' && `Waiting on reply (${metrics.waiting})`}
+                  {t === 'resolved' && `Resolved (${metrics.resolved})`}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative min-w-[220px]">
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-taupe" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search reference or topic..."
+                className="h-9 w-full rounded-full border border-line bg-white/80 pl-8 pr-3 text-[13px] text-espresso placeholder:text-taupe focus:border-espresso focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+            <div className="flex flex-col gap-3">
+              {!filteredRows.length ? (
+                <div className="rounded-2xl border border-line-soft bg-white/70 p-8 text-center">
+                  <p className="text-[14.5px] font-medium text-espresso">No complaints match your selection</p>
+                  <p className="mt-1 text-[13px] text-taupe-2">Try clearing your search or filter tab.</p>
                 </div>
-                {current.action_needed && (
-                  <Link href={`/track/${current.public_ref}`} className="mb-5 flex items-center gap-3 rounded-2xl border border-warning/30 bg-warning-dim/70 p-3.5 transition-colors hover:bg-warning-dim">
-                    <Pulse tone="warning" />
-                    <span className="flex-1 text-[14px] font-medium text-warning">{(current.awaiting_information?.length ?? 0) === 1 ? 'We have one question for you' : `We have ${current.awaiting_information?.length ?? 0} questions for you`}</span>
-                    <ArrowRight size={16} className="text-warning" aria-hidden />
-                  </Link>
-                )}
-                <MilestoneTimeline milestones={current.milestones ?? []} />
-                {current.summary && (
-                  <div className="mt-6 rounded-2xl border border-ai-line/70 bg-ai-soft/50 p-4">
-                    <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ai"><Sparkles size={12} aria-hidden /> What we understood</p>
-                    <p className="text-[14px] leading-relaxed text-espresso-2">{current.summary}</p>
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {filteredRows.map((r) => (
+                    <li key={r.public_ref}>
+                      <ComplaintCard row={r} active={r.public_ref === selected} onSelect={() => setSelected(r.public_ref)} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <aside className="lg:sticky lg:top-24 lg:self-start">
+              {current && (
+                <Card tone="glass" padding="lg" radius="xl" className="animate-rise" key={current.public_ref}>
+                  <div className="mb-5 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="eyebrow mb-1.5 font-mono normal-case tracking-normal">{current.public_ref}</p>
+                      <h3 className="font-display text-[22px] leading-tight">{current.title}</h3>
+                    </div>
+                    <Badge tone={statusTone(current.status)} dot>{humanise(current.status)}</Badge>
                   </div>
-                )}
-                <div className="mt-6"><TeamCard department={current.department} publicRef={current.public_ref} compact /></div>
-                <Button href={`/track/${current.public_ref}`} className="mt-6 w-full" arrow>
-                  {current.action_needed ? 'Answer and add evidence' : 'Open full tracking'}
-                </Button>
-              </Card>
-            )}
-          </aside>
+
+                  {current.action_needed && (
+                    <Link href={`/track/${current.public_ref}`} className="mb-5 flex items-center gap-3 rounded-2xl border border-warning/30 bg-warning-dim/70 p-3.5 transition-colors hover:bg-warning-dim">
+                      <Pulse tone="warning" />
+                      <span className="flex-1 text-[14px] font-medium text-warning">{(current.awaiting_information?.length ?? 0) === 1 ? 'We have one question for you' : `We have ${current.awaiting_information?.length ?? 0} questions for you`}</span>
+                      <ArrowRight size={16} className="text-warning" aria-hidden />
+                    </Link>
+                  )}
+
+                  <MilestoneTimeline milestones={current.milestones ?? []} />
+
+                  {current.summary && (
+                    <div className="mt-6 rounded-2xl border border-ai-line/70 bg-ai-soft/50 p-4">
+                      <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ai"><Sparkles size={12} aria-hidden /> What we understood</p>
+                      <p className="text-[14px] leading-relaxed text-espresso-2">{current.summary}</p>
+                    </div>
+                  )}
+
+                  <div className="mt-6"><TeamCard department={current.department} publicRef={current.public_ref} compact /></div>
+
+                  {current.status === 'RESOLVED' && (
+                    <div className="mt-5 rounded-2xl border border-verified/30 bg-verified-dim/50 p-4">
+                      <p className="font-medium text-espresso">Satisfied with the outcome?</p>
+                      <p className="mt-0.5 text-[13px] text-taupe-2">Confirming resolution will complete and close this complaint.</p>
+                      <Button
+                        className="mt-3 w-full bg-verified text-white hover:bg-verified/90"
+                        disabled={confirming}
+                        onClick={async () => {
+                          setConfirming(true)
+                          try {
+                            await complaints.confirmResolution(current.public_ref)
+                            await q.refresh()
+                          } finally {
+                            setConfirming(false)
+                          }
+                        }}
+                      >
+                        {confirming ? 'Confirming...' : 'Confirm Resolution & Close'}
+                      </Button>
+                    </div>
+                  )}
+
+                  <Button href={`/track/${current.public_ref}`} className="mt-6 w-full" arrow>
+                    {current.action_needed ? 'Answer and add evidence' : 'Open full tracking'}
+                  </Button>
+                </Card>
+              )}
+            </aside>
+          </div>
+        </section>
+
+        {/* Follow-ups Section */}
+        <section id="follow-ups" className="scroll-mt-24 flex flex-col gap-3 rounded-[var(--radius-xl)] border border-line-soft bg-white/70 p-6 shadow-card">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <div>
+              <p className="eyebrow mb-1 flex items-center gap-1.5 text-espresso-2"><MessageSquareReply size={13} /> Scheduled Commitments</p>
+              <h2 className="font-display text-h3">Follow-ups</h2>
+            </div>
+            <span className="text-[13px] text-taupe">{allFollowUps.length} follow-up commitments</span>
+          </div>
+
+          {!allFollowUps.length ? (
+            <p className="text-[14px] text-taupe-2">
+              No follow-ups currently scheduled. When support promises to verify eligibility, contact you by phone, or follow up on satisfaction, commitments appear here.
+            </p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {allFollowUps.map((f) => (
+                <div key={f.id} className="flex flex-col justify-between rounded-2xl border border-line-soft bg-white p-4 shadow-sm">
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Link href={`/track/${encodeURIComponent(f.complaintRef)}`} className="font-mono text-[12px] font-semibold text-espresso underline underline-offset-2">
+                        {f.complaintRef}
+                      </Link>
+                      <Badge tone={f.open ? 'warning' : 'verified'}>{f.open ? 'Pending' : 'Completed'}</Badge>
+                    </div>
+                    <p className="mt-2 text-[14px] font-medium text-espresso">{f.message || humanise(f.type)}</p>
+                  </div>
+                  <div className="mt-4 border-t border-line-soft pt-2 text-[12px] font-mono text-taupe-2">
+                    {f.due_at ? `Due: ${new Date(f.due_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : 'Scheduled'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
         </>
       )}
@@ -372,20 +512,23 @@ function Faq() {
  * status. The sidebar links to each column.
  */
 function AtAGlance({ rows, onPick }: { rows: S['ComplaintStatusOut'][]; onPick: (ref: string) => void }) {
-  const th = 'scroll-mt-28 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.1em] text-taupe-2 transition-colors data-[flash=true]:bg-sand'
+  const th = 'scroll-mt-28 px-3.5 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.1em] text-taupe-2 transition-colors data-[flash=true]:bg-sand'
   return (
-    <section aria-labelledby="glance-title" className="flex flex-col gap-3">
-      <h2 id="glance-title" className="font-display text-h3">At a glance</h2>
+    <section id="overview" aria-labelledby="glance-title" className="scroll-mt-24 flex flex-col gap-3">
+      <div className="flex items-baseline justify-between">
+        <h2 id="glance-title" className="font-display text-h3">At a glance</h2>
+        <span className="text-[13px] text-taupe">SRS Complaint Tracking</span>
+      </div>
       <div className="overflow-x-auto rounded-2xl border border-line-soft bg-white/80 shadow-card">
         <table className="w-full min-w-[720px] border-separate border-spacing-0 text-[14px]">
           <thead className="bg-cream/70">
             <tr>
               <th id="complaint-id" data-dash-target className={th}>Complaint ID</th>
               <th id="status" data-dash-target className={th}>Status</th>
-              <th id="submitted" data-dash-target className={th}>Submitted</th>
+              <th id="submitted" data-dash-target className={th}>Submitted date</th>
               <th id="department" data-dash-target className={th}>Department</th>
               <th id="latest-update" data-dash-target className={th}>Latest update</th>
-              <th id="resolution" data-dash-target className={th}>Resolution</th>
+              <th id="resolution" data-dash-target className={th}>Resolution status</th>
             </tr>
           </thead>
           <tbody>

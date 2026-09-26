@@ -82,3 +82,13 @@ class OrganisationOut(APIModel):
     customer_mix: list[CustomerMixOut]
     datasets: list[DatasetBrief]
     knowledge_base: dict[str, Any]
+
+
+class DepartmentCreate(APIModel):
+    code: str
+    name: str
+    description: str | None = None
+    email: str | None = None
+    manager_name: str | None = None
+    manager_email: str | None = None
+    manager_password: str | None = None

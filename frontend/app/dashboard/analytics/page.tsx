@@ -34,6 +34,7 @@ function Story() {
   const cats = useApi(() => analytics.categories(days), [days])
   const depts = useApi(() => analytics.departments(days), [days])
   const pipes = useApi(() => analytics.pipelines(days), [days])
+  const risingTrends = useApi(() => analytics.trends(days <= 7 ? 'DAY' : days <= 30 ? 'WEEK' : 'MONTH'), [days])
   const d = dash.data
 
   return (
@@ -52,6 +53,49 @@ function Story() {
             <Stat label="SLA open at risk" value={d ? d.sla.open_at_risk ?? 0 : undefined} tone={d && (d.sla.open_at_risk ?? 0) > 0 ? 'warning' : 'neutral'} />
           </section>
 
+          {risingTrends.data && risingTrends.data.length > 0 && (
+            <Card tone="cream">
+              <PanelHeader
+                title="Rising Trends & Recurring Issues"
+                eyebrow="Material changes over consecutive periods (categories, products, repeat failures, escalations)"
+              />
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {risingTrends.data.map((t, idx) => (
+                  <div
+                    key={`${t.metric}-${t.dimension}-${t.dimension_value}-${idx}`}
+                    className="flex flex-col justify-between rounded-[var(--radius-md)] border border-line bg-ivory p-3.5 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-taupe-2">
+                        {t.dimension === 'ALL' ? humanise(t.metric) : `${t.dimension}: ${t.dimension_value}`}
+                      </span>
+                      {t.anomaly ? (
+                        <Badge tone="critical">Anomaly</Badge>
+                      ) : (
+                        <Badge tone="warning">Rising</Badge>
+                      )}
+                    </div>
+                    <div className="mt-2 flex items-baseline justify-between">
+                      <span className="font-mono text-[20px] font-medium text-ink">
+                        {t.value}
+                      </span>
+                      <span className="text-[12px] text-taupe-2">
+                        was {t.previous_value}{' '}
+                        {t.delta_pct != null ? (
+                          <span className="font-semibold text-critical">
+                            (+{t.delta_pct}%)
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-warning">(new)</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
           <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
             <Card>
               <PanelHeader title="Volume" eyebrow="By day" />
@@ -63,6 +107,87 @@ function Story() {
               {cats.loading && !cats.data ? <SkeletonRows rows={5} /> : <Bars rows={(cats.data ?? []).map((c) => ({ label: c.name, value: c.count, sub: c.pct != null ? `${c.pct}%` : undefined }))} />}
             </Card>
           </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <PanelHeader title="Products & Services" eyebrow="Breakdown across complaints" />
+              {!d ? <SkeletonRows rows={5} /> : <Bars rows={(d.products ?? []).slice(0, 8).map((p: any) => ({ label: p.product, value: p.count, sub: p.pct != null ? `${p.pct}%` : undefined }))} />}
+            </Card>
+            <Card>
+              <PanelHeader title="Customer Sentiment" eyebrow="Emotion indicator distribution" />
+              {!d ? <SkeletonRows rows={4} /> : (
+                <>
+                  <Stacked parts={Object.entries(d.sentiment ?? {}).map(([k, v]) => ({
+                    label: humanise(k),
+                    value: v as number,
+                    tone: k === 'POSITIVE' ? 'verified' : k === 'NEUTRAL' ? 'taupe' : k === 'STRONGLY_NEGATIVE' ? 'critical' : 'warning'
+                  }))} />
+                  {d.sentiment && (
+                    <div className="mt-5">
+                      <Bars rows={Object.entries(d.sentiment).map(([k, v]) => ({ label: humanise(k), value: v as number }))} tone="taupe" />
+                    </div>
+                  )}
+                </>
+              )}
+            </Card>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <PanelHeader title="Urgency distribution" eyebrow="Triage assessment" />
+              {!d ? <SkeletonRows rows={4} /> : (
+                <Bars rows={Object.entries(d.urgency ?? {}).map(([k, v]) => ({
+                  label: humanise(k),
+                  value: v as number,
+                }))} tone="warning" />
+              )}
+            </Card>
+            <Card>
+              <PanelHeader title="Repeat complaints" eyebrow="Recurrence and history" />
+              {!d ? <SkeletonRows rows={4} /> : (
+                <>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <Stat label="Repeat rate" value={d.repeat_complaints?.repeat_rate_pct ?? null} unit="%" tone={(d.repeat_complaints?.repeat_rate_pct ?? 0) > 15 ? 'warning' : 'neutral'} evidence={`${d.repeat_complaints?.repeated_complaints ?? 0} repeat complaints`} />
+                    <Stat label="Total complaints" value={d.repeat_complaints?.total_complaints ?? 0} />
+                  </div>
+                  {d.repeat_complaints?.top_categories?.length ? (
+                    <div>
+                      <p className="eyebrow mb-2">Top recurring categories</p>
+                      <Bars rows={d.repeat_complaints.top_categories.map((c: any) => ({ label: c.name, value: c.count }))} tone="taupe" />
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </Card>
+          </div>
+
+          <Card>
+            <PanelHeader title="Resolution time" eyebrow="Overall and by priority (hours to resolve)" />
+            {!d ? <SkeletonRows rows={3} /> : (
+              <>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+                  <Stat label="Average resolution" value={d.resolution_time?.overall?.avg_hours ?? null} unit=" hrs" evidence={d.resolution_time?.overall?.count ? `${d.resolution_time.overall.count} resolved cases` : 'No resolved cases'} />
+                  <Stat label="Median resolution" value={d.resolution_time?.overall?.median_hours ?? null} unit=" hrs" />
+                  <Stat label="Fastest resolution" value={d.resolution_time?.overall?.min_hours ?? null} unit=" hrs" tone="verified" />
+                  <Stat label="Longest resolution" value={d.resolution_time?.overall?.max_hours ?? null} unit=" hrs" tone="warning" />
+                </div>
+                {d.resolution_time?.by_priority && Object.keys(d.resolution_time.by_priority).length > 0 && (
+                  <div>
+                    <p className="eyebrow mb-2">Average hours by priority</p>
+                    <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+                      {Object.entries(d.resolution_time.by_priority).map(([prio, stats]: [string, any]) => (
+                        <div key={prio} className="rounded-[var(--radius-md)] border border-line bg-cream/40 p-3">
+                          <p className="text-[12px] font-semibold text-espresso">{prio}</p>
+                          <p className="mt-1 font-mono text-[18px] font-medium text-ink">{stats?.avg_hours != null ? `${stats.avg_hours}h` : '—'}</p>
+                          <p className="text-[11px] text-taupe-2">{stats?.count ?? 0} cases · med {stats?.median_hours != null ? `${stats.median_hours}h` : '—'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </Card>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>

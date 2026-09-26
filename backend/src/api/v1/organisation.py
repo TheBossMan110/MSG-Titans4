@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, status as http_status
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
@@ -18,6 +18,7 @@ from schemas.organisation import (
     CategoryOut,
     CustomerMixOut,
     DatasetBrief,
+    DepartmentCreate,
     OrganisationOut,
     OrganisationProfileOut,
     SLARowOut,
@@ -25,7 +26,8 @@ from schemas.organisation import (
     TeamOut,
     TemplateOut,
 )
-from src.core.deps import DbSession, require_role
+from src.core.deps import CurrentUser, DbSession, require_role
+from src.core.errors import ConflictError, ValidationError
 from src.db.enums import ComplaintStatus, DocStatus, UserRole
 from src.db.models import (
     AppConfig,
@@ -35,6 +37,7 @@ from src.db.models import (
     Document,
     DocumentVersion,
     SLAPolicy,
+    User,
 )
 
 router = APIRouter(prefix="/organisation", tags=["Organisation"])
@@ -179,4 +182,97 @@ def organisation(db: DbSession) -> OrganisationOut:
         customer_mix=mix,
         datasets=datasets,
         knowledge_base=knowledge_base,
+    )
+
+
+@router.post(
+    "/departments",
+    response_model=TeamOut,
+    status_code=http_status.HTTP_201_CREATED,
+    dependencies=[Depends(require_role(UserRole.ADMIN))],
+    summary="Create a new department and optionally provision its manager",
+)
+def create_department(
+    payload: DepartmentCreate,
+    request: Request,
+    db: DbSession,
+    user: CurrentUser,
+) -> TeamOut:
+    """Admin provisions a new department, and optionally creates a manager account for it."""
+    from src.core.security import hash_password
+    from src.services.audit import record_audit
+
+    code = payload.code.strip().upper()
+    name = payload.name.strip()
+    if not code:
+        raise ValidationError("Department code is required.")
+    if not name:
+        raise ValidationError("Department name is required.")
+
+    existing = db.execute(select(Department).where(Department.code == code)).scalars().first()
+    if existing is not None:
+        raise ConflictError(f"Department with code '{code}' already exists.")
+
+    dept = Department(
+        code=code,
+        name=name,
+        description=payload.description.strip() if payload.description else None,
+        email=payload.email.strip().lower() if payload.email else None,
+        is_active=True,
+    )
+    db.add(dept)
+    db.flush()
+
+    record_audit(
+        db,
+        entity_type="department",
+        entity_id=dept.id,
+        action="DEPARTMENT_CREATED",
+        actor=user,
+        after={"code": code, "name": name, "email": dept.email},
+        request=request,
+    )
+
+    manager_created = None
+    if payload.manager_email and payload.manager_email.strip():
+        m_email = payload.manager_email.strip().lower()
+        if db.execute(select(User.id).where(func.lower(User.email) == m_email)).first():
+            raise ConflictError(f"An account with email '{m_email}' already exists.")
+        m_pwd = payload.manager_password or "SupportNova#2026"
+        m_name = (payload.manager_name or f"{name} Manager").strip()
+        manager_user = User(
+            email=m_email,
+            full_name=m_name,
+            role=UserRole.MANAGER,
+            password_hash=hash_password(m_pwd),
+            department_id=dept.id,
+            is_active=True,
+        )
+        db.add(manager_user)
+        db.flush()
+        record_audit(
+            db,
+            entity_type="user",
+            entity_id=manager_user.id,
+            action="USER_CREATED",
+            actor=user,
+            after={"email": m_email, "role": UserRole.MANAGER, "department": code},
+            request=request,
+        )
+        manager_created = manager_user
+
+    db.commit()
+
+    return TeamOut(
+        code=dept.code,
+        name=dept.name,
+        description=dept.description,
+        email=dept.email,
+        escalation_contact=manager_created.full_name if manager_created else None,
+        handles=[],
+        sla_response_hours=4.0,
+        sla_resolution_hours=24.0,
+        categories=[],
+        open_complaints=0,
+        total_complaints=0,
     )

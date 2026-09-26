@@ -1,8 +1,8 @@
 'use client'
 
-import { use } from 'react'
+import { use, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, CalendarClock, Hash, LifeBuoy, ShieldCheck, Sparkles } from 'lucide-react'
+import { ArrowLeft, CalendarClock, CheckCircle2, Hash, LifeBuoy, MessageSquareReply, ShieldCheck, Sparkles } from 'lucide-react'
 import { complaints, type S } from '@/lib/api'
 import { useApi, fmtDate, fmtRelative } from '@/lib/use-api'
 import { AuthGuard } from '@/components/layout/auth-guard'
@@ -32,6 +32,7 @@ export default function TrackRefPage({ params }: { params: Promise<{ ref: string
 }
 
 function Tracking({ refId }: { refId: string }) {
+  const [confirming, setConfirming] = useState(false)
   const q = useApi(() => complaints.status(refId), [refId])
 
   if (q.loading && !q.data) {
@@ -75,7 +76,10 @@ function Tracking({ refId }: { refId: string }) {
             {done ? (
               <div className="flex items-center gap-3">
                 <span className="inline-flex size-10 items-center justify-center rounded-full bg-verified text-white"><ShieldCheck size={18} aria-hidden /></span>
-                <div><p className="font-medium text-espresso">Resolved</p><p className="text-[13px] text-taupe">Confirmed against company policy.</p></div>
+                <div>
+                  <p className="font-medium text-espresso">{s.status === 'CLOSED' ? 'Closed' : 'Resolved'}</p>
+                  <p className="text-[13px] text-taupe">Confirmed against company policy.</p>
+                </div>
               </div>
             ) : (
               <SlaMeter start={s.submitted_at} due={s.target_resolution_at} label="We aim to resolve this by" />
@@ -87,10 +91,63 @@ function Tracking({ refId }: { refId: string }) {
         </div>
       </section>
 
+      {s.status === 'RESOLVED' && (
+        <section className="animate-rise rounded-2xl border border-verified/30 bg-verified-dim/50 p-5 shadow-card">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 size={22} className="mt-0.5 text-verified" />
+              <div>
+                <h3 className="font-medium text-espresso">Satisfied with the resolution?</h3>
+                <p className="mt-0.5 text-[14px] text-taupe-2">
+                  Confirming the resolution lets our team know you are happy with the outcome and closes this ticket.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="md"
+              className="bg-verified text-white hover:bg-verified/90"
+              disabled={confirming}
+              onClick={async () => {
+                setConfirming(true)
+                try {
+                  const updated = await complaints.confirmResolution(s.public_ref)
+                  setStatus(updated)
+                } finally {
+                  setConfirming(false)
+                }
+              }}
+            >
+              {confirming ? 'Confirming...' : 'Confirm Resolution & Close'}
+            </Button>
+          </div>
+        </section>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-[1.45fr_1fr]">
         <div className="flex flex-col gap-6">
           <QuestionsPanel refId={s.public_ref} status={s} onUpdated={setStatus} />
           <EvidencePanel refId={s.public_ref} evidence={s.evidence ?? []} onUploaded={() => void q.refresh()} />
+
+          {(s.follow_ups?.length ?? 0) > 0 && (
+            <Card tone="glass" radius="xl">
+              <p className="eyebrow mb-3 flex items-center gap-1.5"><MessageSquareReply size={13} aria-hidden /> Follow-up commitments</p>
+              <ul className="flex flex-col gap-2.5">
+                {s.follow_ups!.map((f) => (
+                  <li key={f.id} className="flex items-center justify-between rounded-xl border border-line-soft bg-white/70 p-3.5 text-[13.5px]">
+                    <div>
+                      <p className="font-medium text-espresso">{f.message || humanise(f.type)}</p>
+                      <p className="mt-0.5 text-[12px] font-mono text-taupe-2">
+                        {f.due_at ? `Due: ${fmtDate(f.due_at, true)}` : 'Scheduled by support team'}
+                      </p>
+                    </div>
+                    <Badge tone={f.open ? 'warning' : 'verified'}>
+                      {f.open ? 'Pending' : 'Completed'}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
         </div>
 
         <aside className="flex flex-col gap-6">

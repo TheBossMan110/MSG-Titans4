@@ -619,6 +619,8 @@ def runs_for_complaint(db: Session, complaint_id: uuid.UUID) -> list[dict[str, A
             "schema_errors": row.schema_errors,
             "error": row.error_message,
             "created_at": row.created_at.isoformat() if row.created_at else None,
+            "raw_json": row.parsed_json if row.parsed_json else None,
+            "response_raw": row.response_raw,
         }
         for row in rows
     ]

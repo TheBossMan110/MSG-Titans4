@@ -451,6 +451,17 @@ def activate(db: Session, name: str, version: str) -> PromptVersion:
     return target
 
 
+def read_template_text(name: str, version: str) -> str | None:
+    """Read prompt template source from disk."""
+    path = template_path(name, version)
+    if path.exists():
+        try:
+            return path.read_text(encoding="utf-8")
+        except Exception:
+            return None
+    return None
+
+
 def registry_status(db: Session) -> list[dict[str, Any]]:
     """Every registered template with a live on-disk integrity check."""
     rows = db.execute(
@@ -462,6 +473,12 @@ def registry_status(db: Session) -> list[dict[str, Any]]:
         path = template_path(row.name, row.version)
         on_disk = path.exists()
         current = checksum_of(row.name, row.version) if on_disk else None
+        template_text = None
+        if on_disk:
+            try:
+                template_text = path.read_text(encoding="utf-8")
+            except Exception:
+                pass
         status.append(
             {
                 "name": row.name,
@@ -473,6 +490,7 @@ def registry_status(db: Session) -> list[dict[str, Any]]:
                 # False means the file changed without a version bump -- the
                 # one thing a version registry exists to detect.
                 "checksum_matches": on_disk and current == row.checksum,
+                "template_text": template_text,
             }
         )
     return status

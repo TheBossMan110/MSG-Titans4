@@ -107,6 +107,61 @@ def departments(
 
 
 @router.get(
+    "/products",
+    dependencies=[Depends(require_role(*VIEWERS))],
+    summary="Product and service breakdown",
+)
+def products(
+    db: DbSession, days: int | None = Query(30, ge=1, le=365)
+) -> list[dict[str, Any]]:
+    return analytics.by_product(db, days=days)
+
+
+@router.get(
+    "/urgency",
+    dependencies=[Depends(require_role(*VIEWERS))],
+    summary="Urgency level distribution",
+)
+def urgency(
+    db: DbSession, days: int | None = Query(30, ge=1, le=365)
+) -> dict[str, int]:
+    return analytics.by_urgency(db, days=days)
+
+
+@router.get(
+    "/sentiment",
+    dependencies=[Depends(require_role(*VIEWERS))],
+    summary="Customer sentiment distribution",
+)
+def sentiment(
+    db: DbSession, days: int | None = Query(30, ge=1, le=365)
+) -> dict[str, int]:
+    return analytics.by_sentiment(db, days=days)
+
+
+@router.get(
+    "/resolution-time",
+    dependencies=[Depends(require_role(*VIEWERS))],
+    summary="Resolution time metrics",
+)
+def resolution_time(
+    db: DbSession, days: int | None = Query(30, ge=1, le=365)
+) -> dict[str, Any]:
+    return analytics.resolution_time(db, days=days)
+
+
+@router.get(
+    "/repeat-complaints",
+    dependencies=[Depends(require_role(*VIEWERS))],
+    summary="Repeat complaints breakdown",
+)
+def repeat_complaints(
+    db: DbSession, days: int | None = Query(30, ge=1, le=365)
+) -> dict[str, Any]:
+    return analytics.repeat_complaints(db, days=days)
+
+
+@router.get(
     "/pipelines",
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="How often the model matched the rule engine",
@@ -253,7 +308,7 @@ def export_report(
     report_type: str,
     db: DbSession,
     user: CurrentUser,
-    export_format: str = Query("CSV", alias="format", pattern="^(?i)(CSV|XLSX|PDF)$"),
+    export_format: str = Query("CSV", alias="format", pattern="^(?i)(CSV|XLSX|PDF|JSON)$"),
     limit: int = Query(5000, ge=1, le=10000),
     mismatches_only: bool = False,
     breached_only: bool = False,
@@ -378,10 +433,11 @@ def agent_workspace(
     dashboard would hide the team's queue. Managers and admins see every team,
     or one, so an administrator can look at exactly what an agent sees.
     """
-    from src.db.models import Department, GenAIRun, Response, SLAEvent, VerificationDecision
+    from sqlalchemy.orm import joinedload
+    from src.db.models import Department, GenAIRun, Response, SLAEvent, User, VerificationDecision
 
     open_only = Complaint.status.not_in(("RESOLVED", "CLOSED"))
-    query = select(Complaint).where(open_only, Complaint.analyzed_at.is_not(None))
+    query = select(Complaint).options(joinedload(Complaint.customer)).where(open_only, Complaint.analyzed_at.is_not(None))
     team = None
     if user.role in (UserRole.AGENT, UserRole.REVIEWER) and user.department_id:
         team = db.get(Department, user.department_id)
@@ -418,6 +474,12 @@ def agent_workspace(
     for decision in db.execute(select(VerificationDecision).where(VerificationDecision.complaint_id.in_(ids)).order_by(VerificationDecision.created_at.asc())).scalars():
         decisions[decision.complaint_id] = decision
 
+    submitter_ids = [c.submitted_by_user_id for c in rows if c.submitted_by_user_id and not c.customer]
+    users_by_id: dict[Any, Any] = {}
+    if submitter_ids:
+        for u in db.execute(select(User).where(User.id.in_(submitter_ids))).scalars():
+            users_by_id[u.id] = u
+
     items = []
     for c in rows:
         ai = runs.get(c.id) or {}
@@ -437,12 +499,18 @@ def agent_workspace(
         if c.injection_suspected:
             warnings.append("Contains suspicious instructions; read with care")
         draft = drafts.get(c.id)
+        sub_user = users_by_id.get(c.submitted_by_user_id) if c.submitted_by_user_id else None
+        cust_name = c.customer.display_name if c.customer else (sub_user.full_name if sub_user else None)
+        cust_email = c.customer.email if c.customer else (sub_user.email if sub_user else None)
         items.append({
             "public_ref": c.public_ref,
             "title": c.title,
             "status": c.status,
             "assigned_to_me": c.assigned_to == user.id,
+            "customer_name": cust_name,
+            "customer_email": cust_email,
             "category": c.category.name if c.category else None,
+            "subcategory": c.subcategory.name if c.subcategory else None,
             "priority": c.priority_code,
             "urgency": c.urgency,
             "sentiment": c.sentiment,
@@ -462,6 +530,7 @@ def agent_workspace(
                 "text": draft.final_text or draft.draft_text,
                 "guard_status": draft.guard_status,
                 "version": draft.version,
+                "tone": draft.tone,
             } if draft is not None else None,
             "escalation_warnings": warnings,
             "due_at": event.due_at.isoformat() if event is not None and event.due_at else None,

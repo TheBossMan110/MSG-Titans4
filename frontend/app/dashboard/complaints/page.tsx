@@ -45,7 +45,7 @@ function useFilters() {
 const FILTER_KEYS = [
   'search', 'status', 'category', 'department', 'urgency', 'priority',
   'verification_outcome', 'requires_review', 'dataset_tag', 'customer_type',
-  'sentiment', 'escalation', 'date_from', 'date_to',
+  'sentiment', 'escalation', 'date_from', 'date_to', 'assigned_to', 'sla_at_risk',
 ] as const
 
 function Register() {
@@ -60,6 +60,7 @@ function Register() {
     requires_review: f.get('requires_review') === '1' ? true : undefined, dataset_tag: f.get('dataset_tag'),
     customer_type: f.get('customer_type'), sentiment: f.get('sentiment'), escalation: f.get('escalation'),
     date_from: f.get('date_from'), date_to: f.get('date_to'), search: f.get('search'),
+    assigned_to: f.get('assigned_to'), sla_at_risk: f.get('sla_at_risk') === 'true' ? true : undefined,
   }), [f]) // eslint-disable-line react-hooks/exhaustive-deps
   const q = useApi(() => complaints.list(filters), [JSON.stringify(filters)], true, { live: true })
 

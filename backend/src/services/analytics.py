@@ -205,6 +205,136 @@ def department_load(
     return out
 
 
+def by_product(db: Session, *, days: int | None = DEFAULT_WINDOW_DAYS) -> list[dict[str, Any]]:
+    """Product/service breakdown across complaints."""
+    since = _window(days)
+    rows = db.execute(
+        _scoped(
+            select(Complaint.product, func.count(Complaint.id))
+            .select_from(Complaint)
+            .group_by(Complaint.product),
+            since,
+        )
+    ).all()
+    total = sum(c for _, c in rows) or 0
+    out = [
+        {
+            "product": prod or "Unspecified",
+            "count": count,
+            "pct": round(count / total * 100.0, 2) if total else None,
+        }
+        for prod, count in rows
+    ]
+    out.sort(key=lambda r: r["count"], reverse=True)
+    return out
+
+
+def by_urgency(db: Session, *, days: int | None = DEFAULT_WINDOW_DAYS) -> dict[str, int]:
+    """Breakdown by urgency level."""
+    since = _window(days)
+    rows = db.execute(
+        _scoped(
+            select(Complaint.urgency, func.count(Complaint.id))
+            .select_from(Complaint)
+            .group_by(Complaint.urgency),
+            since,
+        )
+    ).all()
+    return {(u or "UNSPECIFIED"): count for u, count in rows}
+
+
+def by_sentiment(db: Session, *, days: int | None = DEFAULT_WINDOW_DAYS) -> dict[str, int]:
+    """Breakdown by customer sentiment."""
+    since = _window(days)
+    rows = db.execute(
+        _scoped(
+            select(Complaint.sentiment, func.count(Complaint.id))
+            .select_from(Complaint)
+            .group_by(Complaint.sentiment),
+            since,
+        )
+    ).all()
+    return {(s or "UNSPECIFIED"): count for s, count in rows}
+
+
+def resolution_time(db: Session, *, days: int | None = DEFAULT_WINDOW_DAYS) -> dict[str, Any]:
+    """Resolution time statistics (hours) overall and by priority."""
+    since = _window(days)
+    query = select(Complaint.priority_code, Complaint.created_at, Complaint.resolved_at).where(
+        Complaint.resolved_at.is_not(None)
+    )
+    if since is not None:
+        query = query.where(Complaint.created_at >= since)
+    rows = db.execute(query).all()
+
+    hours: list[float] = []
+    by_priority: dict[str, list[float]] = {}
+    for prio, created, resolved in rows:
+        if created and resolved:
+            dur = max(0.0, (resolved - created).total_seconds() / 3600.0)
+            hours.append(dur)
+            by_priority.setdefault(prio or "UNSET", []).append(dur)
+
+    def _stats(arr: list[float]) -> dict[str, float | None]:
+        if not arr:
+            return {"count": 0, "avg_hours": None, "median_hours": None, "min_hours": None, "max_hours": None}
+        s = sorted(arr)
+        n = len(s)
+        med = s[n // 2] if n % 2 != 0 else (s[n // 2 - 1] + s[n // 2]) / 2.0
+        return {
+            "count": n,
+            "avg_hours": round(sum(s) / n, 1),
+            "median_hours": round(med, 1),
+            "min_hours": round(s[0], 1),
+            "max_hours": round(s[-1], 1),
+        }
+
+    return {
+        "overall": _stats(hours),
+        "by_priority": {p: _stats(arr) for p, arr in by_priority.items()},
+    }
+
+
+def repeat_complaints(db: Session, *, days: int | None = DEFAULT_WINDOW_DAYS) -> dict[str, Any]:
+    """Repeat complaints analysis (SRS Step 54)."""
+    since = _window(days)
+    query = select(Complaint.repeat_count, func.count(Complaint.id)).group_by(Complaint.repeat_count)
+    if since is not None:
+        query = query.where(Complaint.created_at >= since)
+    rows = db.execute(query).all()
+
+    total_complaints = sum(cnt for _, cnt in rows)
+    repeat_counts = {int(rc or 0): cnt for rc, cnt in rows}
+    repeated_complaints = sum(cnt for rc, cnt in repeat_counts.items() if rc > 0)
+
+    cat_query = (
+        select(Category.code, Category.name, func.count(Complaint.id))
+        .select_from(Complaint)
+        .outerjoin(Category, Complaint.category_id == Category.id)
+        .where(Complaint.repeat_count > 0)
+        .group_by(Category.code, Category.name)
+    )
+    if since is not None:
+        cat_query = cat_query.where(Complaint.created_at >= since)
+    cat_rows = db.execute(cat_query).all()
+    top_repeat_categories = [
+        {"code": code or "UNCLASSIFIED", "name": name or "Unclassified", "count": count}
+        for code, name, count in sorted(cat_rows, key=lambda x: x[2], reverse=True)[:5]
+    ]
+
+    return {
+        "total_complaints": total_complaints,
+        "repeated_complaints": repeated_complaints,
+        "repeat_rate_pct": (
+            round(repeated_complaints / total_complaints * 100.0, 2)
+            if total_complaints > 0
+            else None
+        ),
+        "distribution": repeat_counts,
+        "top_categories": top_repeat_categories,
+    }
+
+
 # ══════════════════════════════════════════════════════════════
 # escalation and SLA
 # ══════════════════════════════════════════════════════════════
@@ -567,6 +697,11 @@ def dashboard(db: Session, *, days: int | None = DEFAULT_WINDOW_DAYS) -> dict[st
         "guard": guard_activity(db, days=days),
         "review": review_activity(db, days=days),
         "priorities": priority_levels(db, days=days),
+        "products": by_product(db, days=days),
+        "urgency": by_urgency(db, days=days),
+        "sentiment": by_sentiment(db, days=days),
+        "resolution_time": resolution_time(db, days=days),
+        "repeat_complaints": repeat_complaints(db, days=days),
         "sla_risks": sla_risks(db),
         "mismatches": recent_mismatches(db),
         "manual_review": manual_review_cases(db),

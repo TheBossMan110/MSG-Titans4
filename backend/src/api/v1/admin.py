@@ -544,6 +544,7 @@ def list_prompts(db: DbSession) -> list[PromptVersionOut]:
             is_active=row["is_active"],
             checksum=row["checksum"],
             variables=[] if row["checksum_matches"] else ["CHECKSUM_MISMATCH"],
+            template_text=row.get("template_text"),
         )
         for row in prompts.registry_status(db)
     ]
@@ -592,6 +593,7 @@ def activate_prompt(
     return PromptVersionOut(
         name=row.name, version=row.version, is_active=row.is_active,
         checksum=row.checksum, variables=[],
+        template_text=prompts.read_template_text(row.name, row.version),
     )
 
 

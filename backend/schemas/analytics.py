@@ -120,6 +120,11 @@ class DashboardOut(APIModel):
     review: ReviewOut
     # Named in the SRS list for administrators and not covered by the panels above.
     priorities: dict[str, int] = Field(default_factory=dict)
+    products: list[dict[str, Any]] = Field(default_factory=list)
+    urgency: dict[str, int] = Field(default_factory=dict)
+    sentiment: dict[str, int] = Field(default_factory=dict)
+    resolution_time: dict[str, Any] = Field(default_factory=dict)
+    repeat_complaints: dict[str, Any] = Field(default_factory=dict)
     sla_risks: list[dict[str, Any]] = Field(default_factory=list)
     mismatches: list[dict[str, Any]] = Field(default_factory=list)
     manual_review: list[dict[str, Any]] = Field(default_factory=list)

@@ -1,6 +1,8 @@
 'use client'
+// SupportNova complaint detail view (Turbopack fresh)
 
 import { use, useState } from 'react'
+import Link from 'next/link'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
 import { complaints, admin, type S } from '@/lib/api'
@@ -13,7 +15,8 @@ import { ErrorState, Loading, Tabs } from '@/components/ui/feedback'
 import {
   StatusBadge, OutcomeBadge, PriorityBadge, UrgencyBadge, EscalationBadge, VerificationCard, ComparisonTable, RuleHits, PolicyTrace,
   Conflicts, GenAIRuns, ResolutionSteps, Eligibility, Guidance, Entities, Links, ChecklistPanel, FollowUpsPanel, LifecyclePanel,
-  SlaPanel, ReviewHistoryPanel, EscalationPanel, AuditTrail, ReviewActionForm, Clarifications,
+  SlaPanel, ReviewHistoryPanel, EscalationPanel, AuditTrail, ReviewActionForm, Clarifications, SuggestedResponsePanel,
+  VerificationMeterBadge, ComplaintTextCard, ExplainabilityPanel,
 } from '@/components/app/complaint-bits'
 import { EvidencePanel } from '@/components/app/customer'
 import { AssignControl } from '@/components/app/assign-control'
@@ -60,9 +63,25 @@ function Detail({ refId }: { refId: string }) {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="mb-2 flex flex-wrap items-center gap-2"><Mono className="text-[13px] text-taupe-2">{c.public_ref}</Mono><StatusBadge status={c.status} /><OutcomeBadge outcome={c.verification_outcome} />{c.injection_suspected && <Badge tone="critical">injection suspected</Badge>}{c.is_duplicate && <Badge tone="warning">duplicate</Badge>}{(c.repeat_count ?? 0) > 1 && <Badge>repeat ×{c.repeat_count}</Badge>}</div>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <Mono className="text-[13px] text-taupe-2">{c.public_ref}</Mono>
+            <StatusBadge status={c.status} />
+            <OutcomeBadge outcome={c.verification_outcome} />
+            <VerificationMeterBadge score={(c as any).agreement_score ?? c.verification?.agreement_score ?? null} outcome={c.verification_outcome} />
+            {c.injection_suspected && <Badge tone="critical">injection suspected</Badge>}
+            {c.is_duplicate && <Badge tone="warning">duplicate</Badge>}
+            {(c.repeat_count ?? 0) > 1 && <Badge>repeat ×{c.repeat_count}</Badge>}
+          </div>
           <h1 className="display text-h2">{c.title}</h1>
-          <div className="mt-3 flex flex-wrap items-center gap-2">{c.category && <Badge tone="ink">{humanise(c.category)}</Badge>}{c.subcategory && <Badge>{humanise(c.subcategory)}</Badge>}{c.department && <Badge tone="info">{humanise(c.department)}</Badge>}<UrgencyBadge u={c.urgency} /><PriorityBadge code={c.priority_code} /><EscalationBadge code={c.escalation_code} />{c.sentiment && <Badge>{humanise(c.sentiment)}</Badge>}</div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {c.category && <Badge tone="ink">Category: {humanise(c.category)}</Badge>}
+            {c.subcategory && <Badge tone="neutral">Subcategory: {humanise(c.subcategory)}</Badge>}
+            {c.department && <Badge tone="info">Department: {humanise(c.department)}</Badge>}
+            <UrgencyBadge u={c.urgency} />
+            <PriorityBadge code={c.priority_code} />
+            <EscalationBadge code={c.escalation_code} />
+            {c.sentiment && <Badge>Sentiment: {humanise(c.sentiment)}</Badge>}
+          </div>
           <div className="mt-3"><AssignControl complaint={c} onChanged={q.refresh} /></div>
         </div>
         {canReanalyse && (
@@ -85,19 +104,34 @@ function Detail({ refId }: { refId: string }) {
       {tab === 'overview' && (
         <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
           <div className="flex flex-col gap-6">
-            <Card>
-              <PanelHeader title="The complaint" eyebrow="As written" />
-              <p className="whitespace-pre-wrap font-display text-[17px] leading-relaxed">{c.description_raw}</p>
-              {c.description_clean !== c.description_raw && <details className="mt-4 text-[13px] text-taupe-2"><summary className="cursor-pointer">Normalised text used by the pipelines</summary><p className="mt-2 whitespace-pre-wrap">{c.description_clean}</p></details>}
+            <ComplaintTextCard raw={c.description_raw} clean={c.description_clean} />
+            <ExplainabilityPanel complaint={c} explain={explain.data} />
+            <Card tone="cream">
+              <PanelHeader title="Summary & Issues" eyebrow="AI, verified" />
+              {c.summary && <p className="text-[15px] leading-relaxed mb-4">{c.summary}</p>}
+              <KV rows={[
+                ['Primary issue', c.primary_issue || <span className="text-taupe">—</span>],
+                ['Secondary issue', c.secondary_issue || <span className="text-taupe">—</span>],
+              ]} />
             </Card>
-            {c.summary && <Card tone="cream"><PanelHeader title="Summary" eyebrow="AI, verified" /><p className="text-[15px] leading-relaxed">{c.summary}</p>{(c.primary_issue || c.secondary_issue) && <KV className="mt-4" rows={[['Primary issue', c.primary_issue], ['Secondary issue', c.secondary_issue]]} />}</Card>}
             <VerificationCard v={c.verification} />
             {(c.validation_issues ?? []).length > 0 && <Card tone="sand"><PanelHeader title="Intake findings" /><ul className="flex flex-col gap-1.5 text-[13.5px]">{c.validation_issues!.map((v, i) => <li key={i} className="flex gap-2"><Badge tone={v.severity === 'ERROR' || v.severity === 'CRITICAL' ? 'critical' : 'warning'}>{v.code}</Badge><span>{v.message}</span></li>)}</ul></Card>}
           </div>
           <div className="flex flex-col gap-6">
             <Card>
               <PanelHeader title="Facts" />
-              <KV rows={[['Received', fmtDate(c.created_at)], ['Analysed', fmtDate(c.analyzed_at)], ['Validated', fmtDate(c.validated_at)], ['Channel', c.channel ? humanise(c.channel) : null], ['Product', c.product], ['Order ref', c.order_ref ? <Mono>{c.order_ref}</Mono> : null], ['Transaction', c.transaction_ref ? <Mono>{c.transaction_ref}</Mono> : null], ['Amount', c.amount != null ? `${c.currency ?? ''} ${c.amount.toLocaleString()}` : null], ['Customer', c.customer_ref ? <Mono>{c.customer_ref}</Mono> : null], ['Support dept', c.support_department ? humanise(c.support_department) : null]]} />
+              <KV rows={[
+                ['Received', fmtDate(c.created_at)],
+                ['Analysed', fmtDate(c.analyzed_at)],
+                ['Validated', fmtDate(c.validated_at)],
+                ['Channel', c.channel ? humanise(c.channel) : null],
+                ['Product', c.product],
+                ['Order ref', c.order_ref ? <Mono>{c.order_ref}</Mono> : null],
+                ['Transaction', c.transaction_ref ? <Mono>{c.transaction_ref}</Mono> : null],
+                ['Amount', c.amount != null ? `${c.currency ?? ''} ${c.amount.toLocaleString()}` : null],
+                ['Customer', c.customer_ref ? <Link href={`/dashboard/users/${encodeURIComponent(c.customer_ref)}`} className="underline decoration-line underline-offset-4 hover:text-espresso"><Mono>{c.customer_ref}</Mono></Link> : null],
+                ['Supporting department', c.support_department ? humanise(c.support_department) : null],
+              ]} />
             </Card>
             <Card><PanelHeader title="Entities" /><Entities rows={c.entities} /></Card>
             {(c.emotion_indicators ?? []).length > 0 && <Card><PanelHeader title="Emotion indicators" /><div className="flex flex-wrap gap-1.5">{(c.emotion_indicators as unknown[]).map((e, i) => <Badge key={i}>{String(e)}</Badge>)}</div></Card>}
@@ -147,6 +181,7 @@ function Detail({ refId }: { refId: string }) {
           <div className="flex flex-col gap-6">
             <section><PanelHeader title="Checklist" eyebrow="Required steps, confirmed by a person" /><ChecklistPanel refId={refId} canConfirm={Boolean(canAct)} /></section>
             <section><PanelHeader title="Resolution steps" eyebrow="Proposed and verified" /><ResolutionSteps steps={c.resolution_steps} /></section>
+            <section><SuggestedResponsePanel refId={refId} canAct={Boolean(canAct)} /></section>
           </div>
           <div className="flex flex-col gap-6">
             <section><PanelHeader title="Eligibility" /><Eligibility rows={c.eligibility} /></section>

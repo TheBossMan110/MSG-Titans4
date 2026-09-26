@@ -18,7 +18,7 @@ type Tab = 'account' | 'system' | 'config' | 'lexicon' | 'sla'
 
 export default function SettingsPage() {
   return (
-    <AppShell eyebrow="Settings" wide>
+    <AppShell eyebrow="Settings" roles={['manager', 'admin', 'evaluator']} wide>
       <Settings />
     </AppShell>
   )

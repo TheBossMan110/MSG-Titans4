@@ -39,11 +39,16 @@ from src.db.models import (
     Comparison,
     Complaint,
     ComplaintPolicyRef,
+    Department,
+    Escalation,
     InjectionEvent,
     ReportExport,
     ResponseFlag,
     ReviewAction,
+    ReviewQueueItem,
     SLAEvent,
+    User,
+    VerificationDecision,
 )
 from src.services import analytics
 
@@ -55,8 +60,23 @@ SLA = "SLA"
 OVERRIDES = "OVERRIDES"
 SECURITY = "SECURITY"
 TRACEABILITY = "TRACEABILITY"
+DEPARTMENT_PERFORMANCE = "DEPARTMENT_PERFORMANCE"
+ESCALATIONS = "ESCALATIONS"
+RESOLUTION_COMPLIANCE = "RESOLUTION_COMPLIANCE"
+MANUAL_REVIEW = "MANUAL_REVIEW"
 
-REPORT_TYPES = (COMPLAINTS, COMPARISON, SLA, OVERRIDES, SECURITY, TRACEABILITY)
+REPORT_TYPES = (
+    COMPLAINTS,
+    COMPARISON,
+    SLA,
+    OVERRIDES,
+    SECURITY,
+    TRACEABILITY,
+    DEPARTMENT_PERFORMANCE,
+    ESCALATIONS,
+    RESOLUTION_COMPLIANCE,
+    MANUAL_REVIEW,
+)
 
 # An export is a file someone downloads; an unbounded one is a way to fall over
 # during a demo. Callers wanting everything page through instead.
@@ -86,6 +106,10 @@ class Report:
             OVERRIDES: "Reviewer Overrides",
             SECURITY: "Security Events",
             TRACEABILITY: "Policy Traceability",
+            DEPARTMENT_PERFORMANCE: "Department Performance",
+            ESCALATIONS: "Escalation Analysis",
+            RESOLUTION_COMPLIANCE: "Resolution Compliance",
+            MANUAL_REVIEW: "Manual Review Queue",
         }.get(self.report_type, self.report_type.title())
 
     def as_dict(self) -> dict[str, Any]:
@@ -388,6 +412,257 @@ def traceability_report(db: Session, *, limit: int = MAX_ROWS, **filters: Any) -
     )
 
 
+def department_performance_report(
+    db: Session, *, limit: int = MAX_ROWS, **filters: Any
+) -> Report:
+    """Department performance: volume, open backlog, resolution times, SLA compliance."""
+    dept_query = select(Department).order_by(Department.code)
+    if filters.get("department"):
+        dept_query = dept_query.where(Department.code == str(filters["department"]).upper())
+    departments = db.execute(dept_query).scalars().all()
+
+    rows = []
+    for d in departments:
+        comp_query = select(Complaint).where(Complaint.department_id == d.id)
+        if filters.get("status"):
+            comp_query = comp_query.where(Complaint.status == str(filters["status"]).upper())
+        comps = db.execute(comp_query).scalars().all()
+
+        total = len(comps)
+        open_cnt = sum(1 for c in comps if c.status not in ("RESOLVED", "CLOSED"))
+        resolved_cnt = sum(1 for c in comps if c.status in ("RESOLVED", "CLOSED"))
+        escalated_cnt = sum(1 for c in comps if c.escalation_code and c.escalation_code != "NONE")
+
+        resolution_hours = [
+            (c.resolved_at - c.created_at).total_seconds() / 3600.0
+            for c in comps
+            if c.resolved_at and c.created_at
+        ]
+        avg_res_hours = (
+            round(sum(resolution_hours) / len(resolution_hours), 1)
+            if resolution_hours
+            else None
+        )
+
+        comp_ids = [c.id for c in comps]
+        breaches_cnt = 0
+        total_sla_events = 0
+        if comp_ids:
+            sla_events = db.execute(
+                select(SLAEvent).where(SLAEvent.complaint_id.in_(comp_ids))
+            ).scalars().all()
+            total_sla_events = len(sla_events)
+            breaches_cnt = sum(1 for s in sla_events if s.breached)
+
+        breach_rate = (
+            round((breaches_cnt / total_sla_events) * 100, 1)
+            if total_sla_events > 0
+            else 0.0
+        )
+        compliance_rate = round(100.0 - breach_rate, 1) if total_sla_events > 0 else 100.0
+
+        rows.append(
+            {
+                "department_code": d.code,
+                "department_name": d.name,
+                "is_active": d.is_active,
+                "total_complaints": total,
+                "open_complaints": open_cnt,
+                "resolved_complaints": resolved_cnt,
+                "escalated_complaints": escalated_cnt,
+                "sla_events": total_sla_events,
+                "sla_breaches": breaches_cnt,
+                "sla_compliance_pct": compliance_rate,
+                "avg_resolution_hours": avg_res_hours,
+            }
+        )
+
+    return Report(
+        report_type=DEPARTMENT_PERFORMANCE,
+        columns=[
+            "department_code",
+            "department_name",
+            "is_active",
+            "total_complaints",
+            "open_complaints",
+            "resolved_complaints",
+            "escalated_complaints",
+            "sla_events",
+            "sla_breaches",
+            "sla_compliance_pct",
+            "avg_resolution_hours",
+        ],
+        rows=rows[:limit],
+        filters=filters,
+    )
+
+
+def escalations_report(
+    db: Session, *, limit: int = MAX_ROWS, **filters: Any
+) -> Report:
+    """Every escalation event with reasons, triggers, and complaint context."""
+    query = (
+        select(Escalation, Complaint)
+        .join(Complaint, Escalation.complaint_id == Complaint.id)
+        .order_by(Escalation.created_at.desc())
+        .limit(limit)
+    )
+    if filters.get("escalation_code"):
+        query = query.where(Escalation.escalation_code == str(filters["escalation_code"]).upper())
+    if filters.get("triggered_by"):
+        query = query.where(Escalation.triggered_by == str(filters["triggered_by"]).upper())
+
+    rows = []
+    for esc, comp in db.execute(query).all():
+        rows.append(
+            {
+                "public_ref": comp.public_ref,
+                "escalation_code": esc.escalation_code,
+                "triggered_by": esc.triggered_by,
+                "rule_ref": esc.rule_ref,
+                "reason": esc.reason,
+                "notes": esc.notes,
+                "department": comp.department.code if comp.department else None,
+                "priority": comp.priority_code,
+                "urgency": comp.urgency,
+                "status": comp.status,
+                "created_at": esc.created_at,
+                "acknowledged": esc.acknowledged_at is not None,
+            }
+        )
+
+    return Report(
+        report_type=ESCALATIONS,
+        columns=[
+            "public_ref",
+            "escalation_code",
+            "triggered_by",
+            "rule_ref",
+            "reason",
+            "notes",
+            "department",
+            "priority",
+            "urgency",
+            "status",
+            "created_at",
+            "acknowledged",
+        ],
+        rows=rows,
+        filters=filters,
+    )
+
+
+def resolution_compliance_report(
+    db: Session, *, limit: int = MAX_ROWS, **filters: Any
+) -> Report:
+    """Resolution compliance: verification outcomes, compliance scores, and review requirements."""
+    query = (
+        select(VerificationDecision, Complaint)
+        .join(Complaint, VerificationDecision.complaint_id == Complaint.id)
+        .order_by(VerificationDecision.created_at.desc())
+        .limit(limit)
+    )
+    if filters.get("outcome"):
+        query = query.where(VerificationDecision.outcome == str(filters["outcome"]).upper())
+    if filters.get("requires_review_only"):
+        query = query.where(VerificationDecision.requires_review.is_(True))
+
+    rows = []
+    for vd, comp in db.execute(query).all():
+        rows.append(
+            {
+                "public_ref": comp.public_ref,
+                "outcome": vd.outcome,
+                "compliance_score": float(vd.compliance_score) if vd.compliance_score is not None else None,
+                "agreement_score": float(vd.agreement_score) if vd.agreement_score is not None else None,
+                "traceability_score": float(vd.traceability_score) if vd.traceability_score is not None else None,
+                "matched_fields": vd.matched_fields,
+                "total_fields": vd.total_fields,
+                "critical_mismatches": vd.critical_mismatches,
+                "high_mismatches": vd.high_mismatches,
+                "requires_review": vd.requires_review,
+                "review_reasons": "; ".join(str(r) for r in (vd.review_reasons or [])),
+                "department": comp.department.code if comp.department else None,
+                "decided_at": vd.decided_at or vd.created_at,
+            }
+        )
+
+    return Report(
+        report_type=RESOLUTION_COMPLIANCE,
+        columns=[
+            "public_ref",
+            "outcome",
+            "compliance_score",
+            "agreement_score",
+            "traceability_score",
+            "matched_fields",
+            "total_fields",
+            "critical_mismatches",
+            "high_mismatches",
+            "requires_review",
+            "review_reasons",
+            "department",
+            "decided_at",
+        ],
+        rows=rows,
+        filters=filters,
+    )
+
+
+def manual_review_report(
+    db: Session, *, limit: int = MAX_ROWS, **filters: Any
+) -> Report:
+    """Manual review queue report: cases routed to human review, entry triggers, and status."""
+    query = (
+        select(ReviewQueueItem, Complaint, User.email)
+        .join(Complaint, ReviewQueueItem.complaint_id == Complaint.id)
+        .outerjoin(User, ReviewQueueItem.assigned_to == User.id)
+        .order_by(ReviewQueueItem.created_at.desc())
+        .limit(limit)
+    )
+    if filters.get("status"):
+        query = query.where(ReviewQueueItem.status == str(filters["status"]).upper())
+    if filters.get("open_only"):
+        query = query.where(ReviewQueueItem.status == "OPEN")
+
+    rows = []
+    for item, comp, user_email in db.execute(query).all():
+        rows.append(
+            {
+                "public_ref": comp.public_ref,
+                "queue_status": item.status,
+                "priority": item.priority_code or comp.priority_code,
+                "reasons": "; ".join(str(r) for r in (item.reasons or [])),
+                "assigned_to": user_email or (str(item.assigned_to) if item.assigned_to else None),
+                "department": comp.department.code if comp.department else None,
+                "escalation": comp.escalation_code,
+                "verification_outcome": comp.verification_outcome,
+                "complaint_status": comp.status,
+                "created_at": item.created_at,
+                "closed_at": item.closed_at,
+            }
+        )
+
+    return Report(
+        report_type=MANUAL_REVIEW,
+        columns=[
+            "public_ref",
+            "queue_status",
+            "priority",
+            "reasons",
+            "assigned_to",
+            "department",
+            "escalation",
+            "verification_outcome",
+            "complaint_status",
+            "created_at",
+            "closed_at",
+        ],
+        rows=rows,
+        filters=filters,
+    )
+
+
 BUILDERS = {
     COMPLAINTS: complaint_register,
     COMPARISON: comparison_report,
@@ -395,6 +670,10 @@ BUILDERS = {
     OVERRIDES: override_report,
     SECURITY: security_report,
     TRACEABILITY: traceability_report,
+    DEPARTMENT_PERFORMANCE: department_performance_report,
+    ESCALATIONS: escalations_report,
+    RESOLUTION_COMPLIANCE: resolution_compliance_report,
+    MANUAL_REVIEW: manual_review_report,
 }
 
 
@@ -541,6 +820,11 @@ def to_pdf(report: Report) -> bytes:
     return buffer.getvalue()
 
 
+def to_json(report: Report) -> bytes:
+    import json
+    return json.dumps(report.as_dict(), indent=2, default=str).encode("utf-8")
+
+
 WRITERS = {
     ExportFormat.CSV: (to_csv, "csv", "text/csv"),
     ExportFormat.XLSX: (
@@ -549,6 +833,7 @@ WRITERS = {
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ),
     ExportFormat.PDF: (to_pdf, "pdf", "application/pdf"),
+    ExportFormat.JSON: (to_json, "json", "application/json"),
 }
 
 
@@ -650,6 +935,10 @@ def available() -> list[dict[str, str]]:
         OVERRIDES: "Every reviewer action and what it changed.",
         SECURITY: "Injection detections and response-guard interventions.",
         TRACEABILITY: "Every policy citation and whether it held up.",
+        DEPARTMENT_PERFORMANCE: "Department performance, workload, and SLA compliance.",
+        ESCALATIONS: "Complaints escalated to higher tiers, reasons, and triggers.",
+        RESOLUTION_COMPLIANCE: "Mandatory steps compliance, prohibited action checks, and verification scores.",
+        MANUAL_REVIEW: "Cases routed to human review, entry triggers, and reviewer decisions.",
     }
     return [
         {"report_type": name, "description": titles[name]} for name in REPORT_TYPES

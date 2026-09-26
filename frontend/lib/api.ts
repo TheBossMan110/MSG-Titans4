@@ -417,6 +417,7 @@ export interface ComplaintFilters {
   urgency?: string; priority?: string; verification_outcome?: string; requires_review?: boolean
   dataset_tag?: string; customer_type?: string; sentiment?: string; escalation?: string
   date_from?: string; date_to?: string; search?: string
+  assigned_to?: string; sla_at_risk?: boolean
 }
 
 export interface ResponseDraft {
@@ -425,11 +426,12 @@ export interface ResponseDraft {
 }
 export interface AgentItem {
   public_ref: string; title: string; status: string; assigned_to_me: boolean
-  category: string | null; priority: string | null; urgency: string | null; sentiment: string | null
+  customer_name?: string | null; customer_email?: string | null
+  category: string | null; subcategory?: string | null; priority: string | null; urgency: string | null; sentiment: string | null
   team: string | null; summary: string | null
   recommendation: { primary_issue?: string | null; steps: string[]; escalation_reason?: string | null } | null
   validation: { outcome: string | null; agreement_pct: number | null; requires_review: boolean }
-  suggested_response: { text: string | null; guard_status: string; version: number } | null
+  suggested_response: { text: string | null; guard_status: string; version: number; tone?: string | null } | null
   escalation_warnings: string[]; due_at: string | null
 }
 export interface AgentWorkspace {
@@ -489,7 +491,8 @@ export const complaints = {
   escalation: (ref: string) => apiFetch<S['schemas__complaints__EscalationOut']>(`/api/complaints/${enc(ref)}/escalation`),
   lifecycle: (ref: string) => apiFetch<S['LifecycleOut']>(`/api/complaints/${enc(ref)}/lifecycle`),
   responses: (ref: string) => apiFetch<ResponseDraft[]>(`/api/complaints/${enc(ref)}/responses`),
-  draftResponse: (ref: string) => apiFetch<ResponseDraft>(`/api/complaints/${enc(ref)}/responses`, { method: 'POST' }),
+  draftResponse: (ref: string, tone?: string) =>
+    apiFetch<ResponseDraft>(`/api/complaints/${enc(ref)}/responses`, { method: 'POST', body: tone ? { tone } : undefined }),
 
   /* ── what the customer can do after submitting ── */
   answer: (ref: string, questionId: string, answer: string) =>
@@ -497,6 +500,8 @@ export const complaints = {
       `/api/complaints/${enc(ref)}/clarifications/${enc(questionId)}/answer`,
       { method: 'POST', body: { answer } },
     ),
+  confirmResolution: (ref: string) =>
+    apiFetch<S['ComplaintStatusOut']>(`/api/complaints/${enc(ref)}/confirm-resolution`, { method: 'POST' }),
   /** Nothing is stored and no model is called; safe to run on every pause in typing. */
   preview: (title: string, description: string) =>
     apiFetch<S['PreviewOut']>('/api/complaints/preview', { method: 'POST', body: { title, description } }),
@@ -553,6 +558,11 @@ export const analytics = {
   categories: (days?: number) => apiFetch<S['CategorySliceOut'][]>(`/api/analytics/categories${qs({ days })}`),
   departments: (days?: number) => apiFetch<S['DepartmentLoadOut'][]>(`/api/analytics/departments${qs({ days })}`),
   pipelines: (days?: number) => apiFetch<S['PipelineOut']>(`/api/analytics/pipelines${qs({ days })}`),
+  products: (days?: number) => apiFetch<{ product: string; count: number; pct?: number | null }[]>(`/api/analytics/products${qs({ days })}`),
+  urgency: (days?: number) => apiFetch<Record<string, number>>(`/api/analytics/urgency${qs({ days })}`),
+  sentiment: (days?: number) => apiFetch<Record<string, number>>(`/api/analytics/sentiment${qs({ days })}`),
+  resolutionTime: (days?: number) => apiFetch<Record<string, any>>(`/api/analytics/resolution-time${qs({ days })}`),
+  repeatComplaints: (days?: number) => apiFetch<Record<string, any>>(`/api/analytics/repeat-complaints${qs({ days })}`),
   trends: (period?: string) => apiFetch<S['TrendOut'][]>(`/api/analytics/trends${qs({ period })}`),
   snapshotTrends: (period?: string) =>
     apiFetch<Record<string, unknown>>(`/api/analytics/trends/snapshot${qs({ period })}`, { method: 'POST' }),
@@ -561,7 +571,7 @@ export const analytics = {
   reports: () => apiFetch<S['ReportTypeOut'][]>('/api/analytics/reports'),
   report: (type: string, f?: ReportFilters) => apiFetch<S['ReportOut']>(`/api/analytics/reports/${enc(type)}${qs(f)}`),
   /** Downloads through fetch so the bearer token stays in a header, never in a URL. */
-  exportReport: async (type: string, format: 'csv' | 'json', f?: ReportFilters) => {
+  exportReport: async (type: string, format: 'csv' | 'xlsx' | 'pdf' | 'json' | string, f?: ReportFilters) => {
     const res = await apiFetch<Response>(`/api/analytics/reports/${enc(type)}/export${qs({ format, ...f })}`, { raw: true })
     const blob = await res.blob()
     const name = res.headers.get('content-disposition')?.match(/filename="?([^"]+)"?/)?.[1] ?? `${type}.${format}`
@@ -693,6 +703,15 @@ export const assistant = {
 /** The organisation the dataset defines: profile, teams, taxonomy, SLAs, templates. */
 export const organisation = {
   get: () => apiFetch<S['OrganisationOut']>('/api/organisation'),
+  createDepartment: (body: {
+    code: string
+    name: string
+    description?: string | null
+    email?: string | null
+    manager_name?: string | null
+    manager_email?: string | null
+    manager_password?: string | null
+  }) => apiFetch<S['TeamOut']>('/api/organisation/departments', { method: 'POST', body }),
 }
 
 export const audit = {

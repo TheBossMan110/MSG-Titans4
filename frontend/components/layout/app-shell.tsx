@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
-  BarChart3, BookOpen, Briefcase, Building2, ChevronDown, ClipboardCheck, Download, FileSearch, FileText, FlaskConical, Gauge, Headset, Inbox, Info, LayoutDashboard, ListChecks, LogOut, type LucideIcon, Mail, MessageCircle, MessageSquareReply, Plus, ScrollText, Settings, ShieldAlert, Siren, Sparkles, Target, TrendingUp, UserCheck, UserRound, Users,
+  AlertTriangle, ArrowRight, BarChart3, BookOpen, Briefcase, Building2, ChevronDown, ClipboardCheck, Clock, Download, FileSearch, FileText, FlaskConical, Gauge, GitCompare, Headset, History, Inbox, Info, LayoutDashboard, ListChecks, LogOut, type LucideIcon, Mail, MessageCircle, MessageSquareReply, Plus, ScrollText, Settings, ShieldAlert, Siren, Sparkles, Target, TrendingUp, TriangleAlert, Trophy, UserCheck, UserRound, Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
@@ -29,6 +29,35 @@ const ACCOUNT: Group = {
   ],
 }
 
+/** Agents and customers do not have access to sensitive platform configuration controls */
+const ACCOUNT_AGENT: Group = {
+  title: 'Account',
+  items: [
+    { href: '/dashboard/profile', label: 'Profile & security', icon: UserRound },
+  ],
+}
+
+const ACCOUNT_REVIEWER: Group = {
+  title: 'Account',
+  items: [
+    { href: '/dashboard/profile', label: 'Profile & security', icon: UserRound },
+  ],
+}
+
+const ACCOUNT_MANAGER: Group = {
+  title: 'Account',
+  items: [
+    { href: '/dashboard/profile', label: 'Profile & security', icon: UserRound },
+  ],
+}
+
+const ACCOUNT_CUSTOMER: Group = {
+  title: 'Account',
+  items: [
+    { href: '/dashboard/profile', label: 'Profile / Settings', icon: UserRound },
+  ],
+}
+
 /** Read-only reference every member of staff works from. Only an administrator changes it. */
 const REFERENCE: Group = {
   title: 'Knowledge (read only)',
@@ -49,108 +78,99 @@ const REFERENCE: Group = {
 const NAV: Record<View, Group[]> = {
   customer: [
     {
-      title: 'My SupportNova',
+      title: 'Customer Dashboard',
       items: [
-        { href: '/dashboard/my-complaints', label: 'Overview', icon: LayoutDashboard },
-        { href: '/dashboard/complaints/new', label: 'Submit a complaint', icon: Plus },
-        { href: '/dashboard/assistant', label: 'Chat with Nova', icon: MessageCircle },
-        { href: '/dashboard/my-emails', label: 'Messages & updates', icon: Mail },
+        { href: '/dashboard/my-complaints', label: 'Overview', icon: LayoutDashboard, exact: true },
+        { href: '/dashboard/complaints/new', label: 'Submit Complaint', icon: Plus },
+        { href: '/dashboard/my-complaints#my-complaints', label: 'My Complaints', icon: Inbox },
+        { href: '/track', label: 'Complaint Details', icon: FileSearch },
+        { href: '/dashboard/my-emails', label: 'Messages / Updates', icon: Mail },
+        { href: '/dashboard/my-complaints#follow-ups', label: 'Follow-ups', icon: MessageSquareReply },
       ],
     },
-    ACCOUNT,
+    ACCOUNT_CUSTOMER,
   ],
   agent: [
     {
-      title: 'My work',
+      title: 'Agent Dashboard',
       items: [
-        { href: '/dashboard/agent', label: 'Agent dashboard', icon: Headset },
-        { href: '/dashboard/complaints', label: 'Team complaints', icon: Inbox, exact: true },
+        { href: '/dashboard/agent', label: 'Overview', icon: LayoutDashboard, exact: true },
+        { href: '/dashboard/complaints?assigned_to=me', label: 'My Assigned Complaints', icon: UserCheck },
+        { href: '/dashboard/complaints', label: 'All Assigned Cases', icon: Inbox, exact: true },
+        { href: '/dashboard/agent#details', label: 'Complaint Details', icon: FileSearch },
+        { href: '/dashboard/agent#ai-analysis', label: 'AI Analysis', icon: Sparkles },
+        { href: '/dashboard/agent#suggested-resolution', label: 'Suggested Resolution', icon: ListChecks },
+        { href: '/dashboard/email', label: 'Customer Communication', icon: Mail },
         { href: '/dashboard/follow-ups', label: 'Follow-ups', icon: MessageSquareReply },
         { href: '/dashboard/escalations', label: 'Escalations', icon: Siren },
-        { href: '/dashboard/email', label: 'Customer email', icon: Mail },
-        { href: '/dashboard/complaints/new', label: 'New complaint', icon: Plus },
+        { href: '/dashboard/agent#performance', label: 'My Performance', icon: Trophy },
       ],
     },
     REFERENCE,
-    ACCOUNT,
+    ACCOUNT_AGENT,
   ],
   reviewer: [
     {
-      title: 'Review desk',
+      title: 'Reviewer Dashboard',
       items: [
-        { href: '/dashboard/reviewer', label: 'Reviewer dashboard', icon: ClipboardCheck },
-        { href: '/dashboard/review', label: 'Review queue', icon: UserCheck },
-        { href: '/dashboard/complaints', label: 'Complaints', icon: Inbox, exact: true },
-        { href: '/dashboard/escalations', label: 'Escalations', icon: Siren },
+        { href: '/dashboard/reviewer', label: 'Review Overview', icon: LayoutDashboard, exact: true },
+        { href: '/dashboard/review', label: 'Review Queue', icon: Inbox, exact: true },
+        { href: '/dashboard/reviewer#disagreement', label: 'AI vs Python Comparison', icon: GitCompare },
+        { href: '/dashboard/complaints', label: 'Complaint Details', icon: FileSearch, exact: true },
+        { href: '/dashboard/reviewer#policy', label: 'Policy Conflicts', icon: ScrollText },
+        { href: '/dashboard/reviewer#escalation', label: 'Escalation Cases', icon: Siren },
+        { href: '/dashboard/reviewer#adversarial', label: 'Adversarial Cases', icon: ShieldAlert },
+        { href: '/dashboard/reviewer#validation', label: 'Validation Failures', icon: TriangleAlert },
+        { href: '/dashboard/reviewer#history', label: 'Review History', icon: History },
+        { href: '/dashboard/audit', label: 'Audit Trail', icon: FileText },
       ],
     },
     REFERENCE,
-    ACCOUNT,
+    ACCOUNT_REVIEWER,
   ],
   manager: [
     {
-      title: 'Operations',
+      title: 'Manager Dashboard',
       items: [
-        { href: '/dashboard/manager', label: 'Manager dashboard', icon: Briefcase },
-        { href: '/dashboard/complaints', label: 'Complaints', icon: Inbox, exact: true },
-        { href: '/dashboard/review', label: 'Review queue', icon: UserCheck },
+        { href: '/dashboard/manager', label: 'Overview', icon: LayoutDashboard, exact: true },
+        { href: '/dashboard/complaints', label: 'Team Complaints', icon: Inbox, exact: true },
+        { href: '/dashboard/manager#teams', label: 'Team Performance', icon: Users },
+        { href: '/dashboard/manager#sla', label: 'SLA Monitoring', icon: AlertTriangle },
         { href: '/dashboard/escalations', label: 'Escalations', icon: Siren },
-        { href: '/dashboard/follow-ups', label: 'Follow-ups', icon: MessageSquareReply },
-        { href: '/dashboard/email', label: 'Email', icon: Mail },
-        { href: '/dashboard/users', label: 'Team', icon: Users },
-      ],
-    },
-    {
-      title: 'Insight',
-      items: [
-        { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+        { href: '/dashboard/manager#critical', label: 'Critical Cases', icon: ShieldAlert },
+        { href: '/dashboard/review', label: 'Review Status', icon: UserCheck },
+        { href: '/dashboard/analytics', label: 'Complaint Analytics', icon: BarChart3 },
         { href: '/dashboard/analytics/trends', label: 'Trends', icon: TrendingUp },
         { href: '/dashboard/reports', label: 'Reports', icon: FileText },
-        { href: '/dashboard/exports', label: 'Exports', icon: Download },
+        { href: '/dashboard/users', label: 'Team Management', icon: Users },
       ],
     },
-    { ...REFERENCE, items: [...REFERENCE.items, { href: '/dashboard/rules/sandbox', label: 'Rule sandbox', icon: FlaskConical }] },
-    ACCOUNT,
+    REFERENCE,
+    ACCOUNT_MANAGER,
   ],
   admin: [
     {
-      title: 'Overview',
+      title: 'Administrator',
       items: [
-        { href: '/dashboard', label: 'Admin dashboard', icon: LayoutDashboard, exact: true },
+        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exact: true },
         { href: '/dashboard/complaints', label: 'Complaints', icon: Inbox, exact: true },
-        { href: '/dashboard/review', label: 'Review queue', icon: UserCheck },
-        { href: '/dashboard/escalations', label: 'Escalations', icon: Siren },
-        { href: '/dashboard/follow-ups', label: 'Follow-ups', icon: MessageSquareReply },
-        { href: '/dashboard/email', label: 'Email', icon: Mail },
-      ],
-    },
-    {
-      title: 'Platform',
-      items: [
-        { href: '/dashboard/users', label: 'Users & roles', icon: Users },
-        { href: '/dashboard/organisation', label: 'Departments & categories', icon: Building2 },
-        { href: '/dashboard/knowledge-base', label: 'Knowledge base', icon: BookOpen },
-        { href: '/dashboard/knowledge-base/search', label: 'Search & trace', icon: FileSearch },
-        { href: '/dashboard/rules', label: 'Rule matrix', icon: ListChecks },
-        { href: '/dashboard/rules/sandbox', label: 'Rule sandbox', icon: FlaskConical },
-        { href: '/dashboard/prompts', label: 'Prompts', icon: Sparkles },
-      ],
-    },
-    {
-      title: 'Insight',
-      items: [
+        { href: '/dashboard/users', label: 'Users & Roles', icon: Users },
+        { href: '/dashboard/organisation#departments', label: 'Departments', icon: Building2 },
+        { href: '/dashboard/organisation#categories', label: 'Categories', icon: ListChecks },
+        { href: '/dashboard/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
+        { href: '/dashboard/knowledge-base/upload', label: 'Policy Versions', icon: FileSearch },
+        { href: '/dashboard/rules#resolution', label: 'Resolution Rules', icon: ListChecks },
+        { href: '/dashboard/rules#routing', label: 'Routing Rules', icon: ArrowRight },
+        { href: '/dashboard/escalations', label: 'Escalation Rules', icon: Siren },
+        { href: '/dashboard/prompts', label: 'Prompt Templates', icon: Sparkles },
+        { href: '/dashboard/settings#ai', label: 'AI Configuration', icon: Sparkles },
+        { href: '/dashboard/rules/sandbox', label: 'Validation Configuration', icon: FlaskConical },
+        { href: '/dashboard/settings#sla', label: 'SLA Configuration', icon: Clock },
         { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
-        { href: '/dashboard/analytics/trends', label: 'Trends', icon: TrendingUp },
         { href: '/dashboard/reports', label: 'Reports', icon: FileText },
-        { href: '/dashboard/exports', label: 'Exports', icon: Download },
-        { href: '/dashboard/benchmark', label: 'Benchmark', icon: Target },
-      ],
-    },
-    {
-      title: 'Trust',
-      items: [
         { href: '/dashboard/security', label: 'Security', icon: ShieldAlert },
-        { href: '/dashboard/audit', label: 'Audit trail', icon: ScrollText },
+        { href: '/dashboard/audit', label: 'Audit Logs', icon: ScrollText },
+        { href: '/dashboard/settings', label: 'System Settings', icon: Settings },
       ],
     },
     ACCOUNT,

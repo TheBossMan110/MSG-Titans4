@@ -105,7 +105,7 @@ from src.core.errors import AppError, NotFoundError, PermissionError_, Validatio
 from src.core.logging import get_logger
 from src.core.ratelimit import limiter
 from src.core.scope import can_see, complaint_in_scope, restrict
-from src.db.enums import UserRole
+from src.db.enums import ComplaintStatus, UserRole
 from src.db.models import (
     AgentGuidance,
     AppConfig,
@@ -118,6 +118,7 @@ from src.db.models import (
     Customer,
     Department,
     EligibilityDecision,
+    FollowUp,
     ResolutionStep,
     SLAEvent,
     User,
@@ -143,6 +144,25 @@ STAFF = (
 # ══════════════════════════════════════════════════════════════
 # serialisation
 # ══════════════════════════════════════════════════════════════
+def _score_for_outcome(outcome: str | None) -> float | None:
+    if not outcome:
+        return None
+    o = outcome.upper()
+    if o == "VERIFIED":
+        return 0.96
+    if o == "VERIFIED_WITH_WARNING":
+        return 0.84
+    if o == "CORRECTED_BY_RULES":
+        return 0.74
+    if o == "MANUAL_REVIEW_REQUIRED":
+        return 0.58
+    if o == "BLOCKED":
+        return 0.30
+    if o == "INCOMPLETE":
+        return 0.45
+    return 0.70
+
+
 def _summary(complaint: Complaint) -> ComplaintSummary:
     return ComplaintSummary(
         id=complaint.id,
@@ -150,11 +170,13 @@ def _summary(complaint: Complaint) -> ComplaintSummary:
         title=complaint.title,
         status=complaint.status,
         category=complaint.category.code if complaint.category else None,
+        subcategory=complaint.subcategory.code if complaint.subcategory else None,
         department=complaint.department.code if complaint.department else None,
         urgency=complaint.urgency,
         priority_code=complaint.priority_code,
         escalation_code=complaint.escalation_code,
         verification_outcome=complaint.verification_outcome,
+        agreement_score=_score_for_outcome(complaint.verification_outcome),
         injection_suspected=complaint.injection_suspected,
         is_duplicate=complaint.is_duplicate,
         repeat_count=complaint.repeat_count,
@@ -238,7 +260,6 @@ def _detail(db: DbSession, complaint: Complaint) -> ComplaintDetail:
         assigned_to=AssigneeOut(id=holder.id, full_name=holder.full_name, role=holder.role) if holder else None,
         description_raw=complaint.description_raw,
         description_clean=complaint.description_clean,
-        subcategory=complaint.subcategory.code if complaint.subcategory else None,
         support_department=(
             complaint.support_department.code if complaint.support_department else None
         ),
@@ -563,9 +584,30 @@ def list_complaints(
     date_from: date | None = Query(None, description="Received on or after this date."),
     date_to: date | None = Query(None, description="Received on or before this date."),
     search: str | None = Query(None, max_length=200),
+    assigned_to: str | None = Query(None, max_length=64),
+    sla_at_risk: bool | None = Query(None),
 ) -> Page[ComplaintSummary]:
     """List and filter complaints (FR lxxi). Agents see their team's and their own (FR ii)."""
     query = restrict(select(Complaint), user)
+
+    if assigned_to:
+        val = assigned_to.strip().lower()
+        if val == "me":
+            query = query.where(Complaint.assigned_to == user.id)
+        elif val == "unassigned":
+            query = query.where(Complaint.assigned_to.is_(None))
+        else:
+            try:
+                assigned_uuid = uuid.UUID(val)
+                query = query.where(Complaint.assigned_to == assigned_uuid)
+            except ValueError:
+                pass
+    if sla_at_risk:
+        from src.db.models import SLAEvent
+        at_risk_ids = select(SLAEvent.complaint_id).where(
+            or_(SLAEvent.at_risk.is_(True), SLAEvent.breached.is_(True))
+        )
+        query = query.where(Complaint.id.in_(at_risk_ids))
 
     if status_filter:
         query = query.where(Complaint.status == status_filter.strip().upper())
@@ -680,6 +722,7 @@ class _ViewData:
     targets: dict[Any, Any]
     history: dict[Any, list[tuple[str, Any]]]
     evidence: dict[Any, list[Any]]
+    follow_ups: dict[Any, list[Any]]
     support_hours: str | None
 
 
@@ -690,7 +733,7 @@ def _prefetch(db: DbSession, ids: list[Any]) -> _ViewData:
     Against a hosted database each query is a network round trip, and a
     customer with 19 complaints waited over six seconds for their list.
     """
-    data = _ViewData(questions={}, targets={}, history={}, evidence={}, support_hours=None)
+    data = _ViewData(questions={}, targets={}, history={}, evidence={}, follow_ups={}, support_hours=None)
     if ids:
         for q in db.execute(
             select(ClarificationQuestion).where(ClarificationQuestion.complaint_id.in_(ids)).order_by(ClarificationQuestion.ordinal)
@@ -711,6 +754,10 @@ def _prefetch(db: DbSession, ids: list[Any]) -> _ViewData:
             select(ComplaintAttachment).where(ComplaintAttachment.complaint_id.in_(ids)).order_by(ComplaintAttachment.created_at)
         ).scalars():
             data.evidence.setdefault(a.complaint_id, []).append(a)
+        for f in db.execute(
+            select(FollowUp).where(FollowUp.complaint_id.in_(ids)).order_by(FollowUp.due_at)
+        ).scalars():
+            data.follow_ups.setdefault(f.complaint_id, []).append(f)
     organisation = db.get(AppConfig, "organisation")
     if organisation is not None and isinstance(organisation.value, dict):
         data.support_hours = organisation.value.get("support_hours")
@@ -766,6 +813,17 @@ def _customer_view(db: DbSession, complaint: Complaint, pre: _ViewData | None = 
         milestones=_milestones(db, complaint, history=history),
         evidence=_evidence(db, complaint, rows=pre.evidence.get(complaint.id, [])),
         action_needed=bool(open_questions),
+        follow_ups=[
+            FollowUpOut(
+                id=str(f.id),
+                type=f.follow_up_type,
+                message=f.message,
+                due_at=f.due_at.isoformat() if f.due_at else None,
+                completed_at=f.completed_at.isoformat() if f.completed_at else None,
+                open=f.completed_at is None,
+            )
+            for f in pre.follow_ups.get(complaint.id, [])
+        ],
     )
 
 
@@ -1316,12 +1374,34 @@ def confirm_step(
 @router.get(
     "/{ref}/follow-ups",
     response_model=list[FollowUpOut],
-    dependencies=[Depends(require_role(*STAFF)), Depends(complaint_in_scope)],
     summary="What the system owes on this complaint",
 )
-def complaint_follow_ups(ref: str, db: DbSession) -> list[FollowUpOut]:
-    complaint = _load(db, ref)
+def complaint_follow_ups(
+    ref: str, db: DbSession, user: CurrentUser
+) -> list[FollowUpOut]:
+    complaint = _own_or_staff(db, ref, user)
     return [FollowUpOut(**row) for row in followup.for_complaint(db, complaint.id)]
+
+
+@router.post(
+    "/{ref}/confirm-resolution",
+    response_model=ComplaintStatusOut,
+    summary="Customer confirms resolution and closes their complaint",
+)
+def customer_confirm_resolution(
+    ref: str, db: DbSession, user: CurrentUser, request: Request,
+) -> ComplaintStatusOut:
+    complaint = _own_or_staff(db, ref, user)
+    if complaint.status != ComplaintStatus.RESOLVED:
+        raise ValidationError(
+            f"Only resolved complaints can be confirmed. Current status is {complaint.status}."
+        )
+    lifecycle.transition(
+        db, complaint, ComplaintStatus.CLOSED, actor=user,
+        reason="Customer confirmed and accepted the resolution."
+    )
+    db.commit()
+    return _customer_view(db, complaint)
 
 
 @router.post(
@@ -1517,7 +1597,14 @@ def list_responses(ref: str, db: DbSession) -> list[dict[str, Any]]:
     summary="Draft a suggested reply from the verified decision",
 )
 @limiter.limit("20/minute")
-def draft_response(ref: str, request: Request, response: Response, db: DbSession, user: CurrentUser) -> dict[str, Any]:
+def draft_response(
+    ref: str,
+    request: Request,
+    response: Response,
+    db: DbSession,
+    user: CurrentUser,
+    payload: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     Write a reply from the *reconciled* record -- what the rules confirmed --
     and run it through the response guard, which blocks any promise the
@@ -1540,7 +1627,8 @@ def draft_response(ref: str, request: Request, response: Response, db: DbSession
         }
         for row in db.execute(select(EligibilityDecision).where(EligibilityDecision.complaint_id == complaint.id)).scalars()
     ]
-    result = generate_response(db, complaint, reconciled=decision.reconciled, eligibility=eligibility)
+    tone = (payload.get("tone") if isinstance(payload, dict) else getattr(payload, "tone", None)) if payload else None
+    result = generate_response(db, complaint, reconciled=decision.reconciled, eligibility=eligibility, tone=tone)
     if not result.ok and not getattr(result, "response_id", None):
         raise ValidationError(f"A reply could not be drafted: {result.failure_detail or result.failure_reason}.")
     record_audit(db, actor=user, entity_type="complaint", entity_id=str(complaint.id), action="RESPONSE_DRAFTED", request=request)

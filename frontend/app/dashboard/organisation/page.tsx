@@ -13,6 +13,8 @@ import { Card } from '@/components/ui/surfaces'
 import { Stat, Table, Td, Th, Tr } from '@/components/ui/data'
 import { ErrorState, Skeleton, Tabs } from '@/components/ui/feedback'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-context'
+import { AddDepartment } from '@/components/app/user-admin'
 
 const STAFF = ['agent', 'reviewer', 'manager', 'admin', 'evaluator'] as const
 type Tab = 'teams' | 'taxonomy' | 'sla' | 'templates' | 'datasets'
@@ -26,6 +28,8 @@ export default function OrganisationPage() {
 }
 
 function Organisation() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
   const q = useApi(() => organisation.get())
   const [tab, setTab] = useState<Tab>('teams')
 
@@ -48,17 +52,22 @@ function Organisation() {
 
       {o && o.customer_mix.length > 0 && <CustomerMix mix={o.customer_mix} />}
 
-      <Tabs
-        value={tab}
-        onChange={setTab}
-        tabs={[
-          { id: 'teams', label: 'Teams', count: o?.departments.length },
-          { id: 'taxonomy', label: 'Categories', count: o?.categories.length },
-          { id: 'sla', label: 'Service levels' },
-          { id: 'templates', label: 'Reply templates', count: o?.templates.length },
-          { id: 'datasets', label: 'Datasets', count: o?.datasets.length },
-        ]}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <Tabs
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { id: 'teams', label: 'Teams', count: o?.departments.length },
+            { id: 'taxonomy', label: 'Categories', count: o?.categories.length },
+            { id: 'sla', label: 'Service levels' },
+            { id: 'templates', label: 'Reply templates', count: o?.templates.length },
+            { id: 'datasets', label: 'Datasets', count: o?.datasets.length },
+          ]}
+        />
+        {isAdmin && tab === 'teams' && (
+          <AddDepartment onCreated={() => q.refresh()} />
+        )}
+      </div>
 
       {!o ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-56" />)}</div>

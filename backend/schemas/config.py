@@ -290,6 +290,7 @@ class PromptVersionOut(APIModel):
     is_active: bool
     checksum: str | None = None
     variables: list[str] = Field(default_factory=list)
+    template_text: str | None = None
 
 
 class PromptActivateIn(BaseModel):

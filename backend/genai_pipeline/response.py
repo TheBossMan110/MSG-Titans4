@@ -242,6 +242,7 @@ def generate_response(
     promise_patterns: list[tuple[str, str, str | None]] | None = None,
     persist: bool = True,
     prompt_version: str | None = None,
+    tone: str | None = None,
 ) -> ResponseResult:
     """
     Draft a customer reply, guard it, and regenerate once if it is blocked.
@@ -265,7 +266,10 @@ def generate_response(
     chain = chain or ProviderChain(build_chain())
     max_regenerations = int(guard_config.get("max_regenerations", 1))
 
-    tone = choose_tone(reconciled)
+    selected_tone = (str(tone).strip().upper() if tone else None) or choose_tone(reconciled)
+    if selected_tone not in (ResponseTone.PROFESSIONAL, ResponseTone.EMPATHETIC, ResponseTone.CONCISE, ResponseTone.FORMAL):
+        selected_tone = choose_tone(reconciled)
+    tone = selected_tone
     result.tone = tone
 
     text = complaint.description_clean or complaint.description_raw or ""

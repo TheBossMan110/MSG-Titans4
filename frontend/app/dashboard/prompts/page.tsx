@@ -50,12 +50,24 @@ function Prompts() {
               <PanelHeader title={humanise(name)} eyebrow={<Mono>{name}</Mono>} />
               <ul className="flex flex-col gap-2">
                 {versions.map((p) => (
-                  <li key={p.version} className={cn('flex flex-wrap items-center gap-3 rounded-[var(--radius-md)] border px-4 py-3', p.is_active ? 'border-espresso bg-espresso text-ink-on-dark' : 'border-line bg-ivory')}>
-                    <Mono className="font-medium">{p.version}</Mono>
-                    {p.is_active ? <Badge tone="neutral" className="bg-ink-on-dark/15 text-ink-on-dark border-transparent">active</Badge> : null}
-                    {p.checksum && <Mono className={cn('text-[11px]', p.is_active ? 'text-sand-2' : 'text-taupe-2')}>{p.checksum.slice(0, 12)}</Mono>}
-                    <span className={cn('flex flex-1 flex-wrap gap-1 text-[11.5px]', p.is_active ? 'text-sand-2' : 'text-taupe-2')}>{(p.variables ?? []).map((v) => <span key={v}>{`{${v}}`}</span>)}</span>
-                    {isAdmin && !p.is_active && <Button size="sm" variant="secondary" loading={activate.pending} onClick={async () => { const r = await activate.run(name, p.version, reason || undefined); if (r) { toast('ok', `${name} now uses ${r.version}.`); q.refresh() } else if (activate.error) toast('err', activate.error) }}>Activate</Button>}
+                  <li key={p.version} className={cn('flex flex-col gap-2 rounded-[var(--radius-md)] border px-4 py-3', p.is_active ? 'border-espresso bg-espresso text-ink-on-dark' : 'border-line bg-ivory')}>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Mono className="font-medium">{p.version}</Mono>
+                      {p.is_active ? <Badge tone="neutral" className="bg-ink-on-dark/15 text-ink-on-dark border-transparent">active</Badge> : null}
+                      {p.checksum && <Mono className={cn('text-[11px]', p.is_active ? 'text-sand-2' : 'text-taupe-2')}>{p.checksum.slice(0, 12)}</Mono>}
+                      <span className={cn('flex flex-1 flex-wrap gap-1 text-[11.5px]', p.is_active ? 'text-sand-2' : 'text-taupe-2')}>{(p.variables ?? []).map((v) => <span key={v}>{`{${v}}`}</span>)}</span>
+                      {isAdmin && !p.is_active && <Button size="sm" variant="secondary" loading={activate.pending} onClick={async () => { const r = await activate.run(name, p.version, reason || undefined); if (r) { toast('ok', `${name} now uses ${r.version}.`); q.refresh() } else if (activate.error) toast('err', activate.error) }}>Activate</Button>}
+                    </div>
+                    {p.template_text ? (
+                      <details className="mt-1">
+                        <summary className={cn('cursor-pointer text-[12px] font-medium hover:underline', p.is_active ? 'text-sand' : 'text-espresso')}>
+                          View template source ({p.version})
+                        </summary>
+                        <pre className={cn('mt-2 max-h-80 overflow-auto rounded p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap', p.is_active ? 'bg-ink text-sand-2' : 'bg-sand/40 text-espresso-2')}>
+                          {p.template_text}
+                        </pre>
+                      </details>
+                    ) : null}
                   </li>
                 ))}
               </ul>

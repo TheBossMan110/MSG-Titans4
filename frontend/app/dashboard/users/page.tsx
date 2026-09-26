@@ -55,10 +55,18 @@ function Users() {
           <p className="mt-2 max-w-[62ch] text-[14.5px] text-taupe-2">
             {isAdmin
               ? 'Every customer and staff account. Add people, give them a role and a team, or disable an account; open one to see their complaints, history and sign-ins.'
+              : user?.role === 'manager'
+              ? 'Manage support agents in your department and oversee team activity.'
               : 'Every customer and staff account, read only. Open one to see their complaints with their full history, sign-ins and emails. Only an administrator changes roles.'}
           </p>
         </div>
-        {isAdmin && <AddUser onCreated={(row) => { q.refresh(); summary.refresh(); router.push(`/dashboard/users/${row.id}`) }} />}
+        {(isAdmin || user?.role === 'manager') && (
+          <AddUser
+            fixedRole={user?.role === 'manager' ? 'agent' : undefined}
+            triggerLabel={user?.role === 'manager' ? 'Add department agent' : 'Add a user'}
+            onCreated={(row) => { q.refresh(); summary.refresh(); router.push(`/dashboard/users/${row.id}`) }}
+          />
+        )}
       </div>
 
       <Card tone="glass" radius="xl" className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">

@@ -274,6 +274,7 @@ class ExportFormat(StrEnum):
     CSV = "CSV"
     PDF = "PDF"
     XLSX = "XLSX"
+    JSON = "JSON"
 
 
 # ══════════════════════════════════════════════════════════════════
