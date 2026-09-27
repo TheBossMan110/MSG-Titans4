@@ -47,6 +47,7 @@ from security import deliberate_defect
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import NotFoundError, ValidationError
 from src.core.logging import get_logger
+from src.core.response_cache import cached_endpoint
 from src.db.enums import UserRole
 from src.services import admin_config
 from src.services.admin_config import ConfigRefused
@@ -148,6 +149,7 @@ def update_config(
     dependencies=[StaffReadAccess],
     summary="Every vocabulary the rules are written against",
 )
+@cached_endpoint(ttl=300)
 def get_taxonomy(db: DbSession) -> TaxonomyOut:
     """
     Read-only on purpose.
@@ -168,6 +170,7 @@ def get_taxonomy(db: DbSession) -> TaxonomyOut:
     dependencies=[StaffReadAccess],
     summary="The rule matrix",
 )
+@cached_endpoint(ttl=300)
 def list_rules(
     db: DbSession,
     rule_type: str | None = None,

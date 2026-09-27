@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { backendUrl, forwardedHeaders, relayError, tokenResponse } from '@/lib/server/session'
+import { backendFetch, forwardedHeaders, relayError, tokenResponse } from '@/lib/server/session'
 
 /**
  * Sign-up, proxied for the same reason login is: the refresh token the
@@ -13,11 +13,10 @@ export async function POST(req: Request) {
   let payload: unknown
   try { payload = await req.json() } catch { return NextResponse.json({ error: { message: 'Malformed request.' } }, { status: 400 }) }
 
-  const upstream = await fetch(`${backendUrl()}/api/auth/register`, {
+  const upstream = await backendFetch('/api/auth/register', {
     method: 'POST',
     headers: await forwardedHeaders(),
     body: JSON.stringify(payload),
-    cache: 'no-store',
   })
   if (!upstream.ok) return relayError(upstream)
   return tokenResponse(await upstream.json(), 201)

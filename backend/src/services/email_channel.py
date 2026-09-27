@@ -48,6 +48,7 @@ from genai_pipeline import email_reply
 from src.core.config import settings
 from src.core.logging import get_logger
 from src.db.models import AppConfig, ClarificationQuestion, Complaint, Customer, EmailMessage, User
+from src.services import email_template
 from src.services.email_template import EmailContent, render_html, render_text
 
 log = get_logger("services.email")
@@ -485,6 +486,10 @@ def _send_smtp(to: str, name: str | None, subject: str, html_body: str, text_bod
         msg["References"] = in_reply_to
     msg.set_content(text_body)
     msg.add_alternative(html_body, subtype="html")
+    logo = email_template.logo_png()
+    if logo and email_template.LOGO_SRC in html_body:
+        # multipart/related: the header image is part of the message, not a download
+        msg.get_payload()[1].add_related(logo, maintype="image", subtype="png", cid=f"<{email_template.LOGO_CID}>", filename="supportnova.png")
     with smtplib.SMTP(settings.email_smtp_host, settings.email_smtp_port, timeout=30) as smtp:
         smtp.starttls()
         smtp.login(settings.email_address, _app_password())
@@ -495,6 +500,10 @@ def _send_resend(to: str, subject: str, html_body: str, text_body: str, message_
     headers = {"Message-ID": message_id, "Auto-Submitted": "auto-replied"}
     if in_reply_to:
         headers.update({"In-Reply-To": in_reply_to, "References": in_reply_to})
+    # Resend is sent as plain HTML: point the logo at the hosted copy, or drop it.
+    base = (settings.public_app_url or "").rstrip("/")
+    hosted = f"{base}/brand/supportnova-mark-email.png" if base.startswith("https://") else None
+    html_body = email_template.with_logo_src(html_body, hosted)
     payload = {"from": settings.resend_from, "to": [to], "subject": subject, "html": html_body, "text": text_body, "headers": headers}
     if settings.email_address:
         payload["reply_to"] = settings.email_address

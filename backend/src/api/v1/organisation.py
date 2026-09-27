@@ -10,7 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, Request, status as http_status
+from fastapi import APIRouter, Depends, Request
+from fastapi import status as http_status
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
@@ -28,6 +29,7 @@ from schemas.organisation import (
 )
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import ConflictError, ValidationError
+from src.core.response_cache import cached_endpoint
 from src.db.enums import ComplaintStatus, DocStatus, UserRole
 from src.db.models import (
     AppConfig,
@@ -57,6 +59,7 @@ def _config(db: Any, key: str, default: Any) -> Any:
     dependencies=[Depends(require_role(*STAFF))],
     summary="The organisation, its teams, taxonomy, SLAs and templates",
 )
+@cached_endpoint(ttl=60)
 def organisation(db: DbSession) -> OrganisationOut:
     profile = _config(db, "organisation", {})
     extras: dict[str, dict[str, Any]] = _config(db, "department_profiles", {})

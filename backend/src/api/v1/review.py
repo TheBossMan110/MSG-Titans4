@@ -21,6 +21,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload, lazyload, load_only
 
 from complaint_processing import followup
 from schemas.common import Page
@@ -37,9 +38,10 @@ from schemas.review import (
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import NotFoundError, ValidationError
 from src.core.logging import get_logger
+from src.core.response_cache import cached_endpoint
 from src.core.scope import complaint_in_scope, is_scoped, restrict
 from src.db.enums import ReviewStatus, UserRole
-from src.db.models import Complaint, ReviewQueueItem, SLAEvent
+from src.db.models import Category, Complaint, Department, ReviewQueueItem, SLAEvent
 from src.services import review, role_views, sla
 
 log = get_logger("api.review")
@@ -53,10 +55,11 @@ READERS = (*REVIEWERS, UserRole.EVALUATOR, UserRole.AGENT)
 QUEUE_READERS = (*REVIEWERS, UserRole.EVALUATOR)
 
 
-def _item_out(db: DbSession, item: ReviewQueueItem, complaint: Complaint) -> ReviewItemOut:
-    events = db.execute(
-        select(SLAEvent).where(SLAEvent.complaint_id == complaint.id)
-    ).scalars().all()
+def _item_out(db: DbSession, item: ReviewQueueItem, complaint: Complaint, events: list | None = None) -> ReviewItemOut:
+    if events is None:
+        events = db.execute(
+            select(SLAEvent).where(SLAEvent.complaint_id == complaint.id)
+        ).scalars().all()
 
     return ReviewItemOut(
         id=item.id,
@@ -104,6 +107,7 @@ def _load_complaint(db: DbSession, ref: str) -> Complaint:
     dependencies=[Depends(require_role(*QUEUE_READERS))],
     summary="The manual review queue",
 )
+@cached_endpoint(ttl=30)
 def list_queue(
     db: DbSession,
     page: int = Query(1, ge=1),
@@ -121,6 +125,16 @@ def list_queue(
     """
     query = select(ReviewQueueItem, Complaint).join(
         Complaint, ReviewQueueItem.complaint_id == Complaint.id
+    ).options(
+        # The queue shows a few columns; whole rows (complaint text included)
+        # for every waiting complaint cost seconds over the hosted database.
+        lazyload("*"),
+        joinedload(Complaint.category).load_only(Category.code),
+        joinedload(Complaint.department).load_only(Department.code),
+        load_only(
+            Complaint.id, Complaint.public_ref, Complaint.title, Complaint.urgency,
+            Complaint.escalation_code, Complaint.verification_outcome,
+        ),
     )
 
     if status_filter:
@@ -147,8 +161,15 @@ def list_queue(
     ).all()
 
     window = rows[(page - 1) * size : page * size]
+    # One query for every row's SLA clocks, not one per row: over a hosted
+    # database, 25 round trips were most of this page's time.
+    clocks: dict = {}
+    ids = [complaint.id for _, complaint in window]
+    if ids:
+        for event in db.execute(select(SLAEvent).where(SLAEvent.complaint_id.in_(ids))).scalars():
+            clocks.setdefault(event.complaint_id, []).append(event)
     return Page[ReviewItemOut](
-        items=[_item_out(db, item, complaint) for item, complaint in window],
+        items=[_item_out(db, item, complaint, clocks.get(complaint.id, [])) for item, complaint in window],
         total=len(rows),
         page=page,
         size=size,
@@ -161,6 +182,7 @@ def list_queue(
     dependencies=[Depends(require_role(*QUEUE_READERS))],
     summary="Queue depth and override rate",
 )
+@cached_endpoint(ttl=30)
 def queue_stats(db: DbSession) -> QueueStatsOut:
     """
     How much is waiting, and how often humans overrule the system (FR lxvii).
@@ -300,6 +322,7 @@ def sweep_sla(db: DbSession, limit: int = Query(500, ge=1, le=5000)) -> SLASweep
     dependencies=[Depends(require_role(*QUEUE_READERS))],
     summary="The reviewer dashboard: the queue grouped by why a person is needed, and your review history",
 )
+@cached_endpoint(ttl=30)
 def reviewer_overview(db: DbSession, user: CurrentUser) -> dict:
     """
     The quality-control desk between the two pipelines and the agent (FR lxi,
@@ -316,6 +339,7 @@ def reviewer_overview(db: DbSession, user: CurrentUser) -> dict:
     dependencies=[Depends(require_role(*READERS))],
     summary="Follow-ups that are due or overdue",
 )
+@cached_endpoint(ttl=60)
 def due_follow_ups(
     db: DbSession, user: CurrentUser, limit: int = Query(100, ge=1, le=500)
 ) -> list[DueFollowUpOut]:

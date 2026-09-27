@@ -13,8 +13,11 @@ the rules, blue for the AI. There is no purple.
 
 from __future__ import annotations
 
+import base64
 import html
+import re
 from dataclasses import dataclass, field
+from pathlib import Path
 
 CREAM = "#f5f0e8"
 IVORY = "#fbf8f2"
@@ -52,7 +55,37 @@ def _p(text: str) -> str:
     )
 
 
-def render_html(content: EmailContent, *, support_hours: str | None = None, org_name: str = "RaftarXpress Logistics") -> str:
+# The brand mark travels inside the email as an inline attachment (Content-ID),
+# so it shows in Gmail even while the site runs on localhost, and with images
+# blocked the header still reads "SupportNova" in live text beside it.
+LOGO_CID = "supportnova-logo"
+LOGO_SRC = f"cid:{LOGO_CID}"
+_LOGO_PATH = Path(__file__).resolve().parent.parent / "assets" / "supportnova-mark-email.png"
+
+
+def logo_png() -> bytes | None:
+    try:
+        return _LOGO_PATH.read_bytes()
+    except OSError:
+        return None
+
+
+def logo_data_uri() -> str | None:
+    data = logo_png()
+    return f"data:image/png;base64,{base64.b64encode(data).decode()}" if data else None
+
+
+def with_logo_src(html_body: str, src: str | None) -> str:
+    """The same email with the inline logo pointed elsewhere (a web preview), or dropped."""
+    if src:
+        return html_body.replace(f'src="{LOGO_SRC}"', f'src="{html.escape(src, quote=True)}"')
+    return re.sub(r'<img src="cid:[^"]*"[^>]*>', "", html_body)
+
+
+def render_html(
+    content: EmailContent, *, support_hours: str | None = None, org_name: str = "RaftarXpress Logistics",
+    logo_src: str | None = LOGO_SRC,
+) -> str:
     ref_block = ""
     if content.reference:
         facts = "".join(
@@ -99,6 +132,11 @@ def render_html(content: EmailContent, *, support_hours: str | None = None, org_
         </td></tr>"""
 
     hours = f" · Support hours {html.escape(support_hours)}" if support_hours else ""
+    logo = (
+        f'<img src="{html.escape(logo_src, quote=True)}" width="40" height="40" alt="SupportNova" '
+        f'style="display:inline-block;vertical-align:middle;margin:-4px 12px 0 0;border:0;border-radius:10px;">'
+        if logo_src and logo_png() else ""
+    )
     paragraphs = "".join(_p(t) for t in content.paragraphs)
     return f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -112,7 +150,7 @@ def render_html(content: EmailContent, *, support_hours: str | None = None, org_
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:{IVORY};border:1px solid {LINE};border-radius:20px;overflow:hidden;">
       <tr><td style="background:{ESPRESSO};padding:24px 36px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-          <td style="font-family:{SERIF};font-size:24px;color:{IVORY};">Support<i>Nova</i></td>
+          <td style="font-family:{SERIF};font-size:24px;color:{IVORY};">{logo}Support<i>Nova</i></td>
           <td align="right" style="font-family:{SANS};font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:#d4c4aa;">{html.escape(org_name)}</td>
         </tr></table>
       </td></tr>

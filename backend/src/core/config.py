@@ -144,6 +144,12 @@ class Settings(BaseSettings):
 
     # ── cors ──────────────────────────────────────────────────
     cors_origins: str = "http://localhost:3000"
+    # Optional pattern for origins that change per deploy, e.g. Vercel previews:
+    # ^https://supportnova(-[a-z0-9-]+)?\.vercel\.app$
+    cors_origin_regex: str = ""
+    # Shared with the frontend's session proxy (SESSION_PROXY_SECRET on Vercel):
+    # sign-ins it forwards are rate-limited by the browser's address, not Vercel's.
+    session_proxy_secret: str = ""
 
     # ── rate limiting ─────────────────────────────────────────
     rate_limit_login: str = "5/minute"

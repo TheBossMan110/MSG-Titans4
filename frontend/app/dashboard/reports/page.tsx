@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
 import { analytics, type ReportFilters } from '@/lib/api'
@@ -9,7 +9,7 @@ import { useApi, useAction, fmtDate } from '@/lib/use-api'
 import { Badge, Button, Mono, humanise } from '@/components/ui/primitives'
 import { Card, PanelHeader } from '@/components/ui/surfaces'
 import { Checkbox, Input, Select } from '@/components/ui/forms'
-import { Table, Th, Td, Tr } from '@/components/ui/data'
+import { Pagination, Table, Th, Td, Tr } from '@/components/ui/data'
 import { Empty, ErrorState, SkeletonRows, useToast } from '@/components/ui/feedback'
 import { cn } from '@/lib/utils'
 
@@ -36,6 +36,10 @@ function Reports() {
   const exp = useAction((fmt: 'csv' | 'xlsx' | 'pdf' | 'json') => analytics.exportReport(type!, fmt, f))
   const canExport = user && ['manager', 'admin'].includes(user.role)
   const set = <K extends keyof ReportFilters>(k: K, v: ReportFilters[K]) => setF((s) => ({ ...s, [k]: v }))
+  // Drawing a thousand rows of a wide report at once froze the page; it is
+  // shown fifty at a time. Downloads still contain every row.
+  const [rowPage, setRowPage] = useState(1)
+  useEffect(() => { setRowPage(1) }, [type, JSON.stringify(f)])
 
   return (
     <div className="flex flex-col gap-6">
@@ -76,15 +80,20 @@ function Reports() {
           )}
         </div>
 
-        <div>
+        <div className="min-w-0">
           {!type ? <Empty title="Choose a report" body="Each report is a live query against the register with the filters on the left." /> : report.error ? <ErrorState message={report.error} onRetry={report.refresh} /> : !report.data ? <SkeletonRows rows={10} /> : (
             <div className="flex flex-col gap-4">
               <PanelHeader title={report.data!.title} eyebrow={<><Mono>{report.data!.report_type}</Mono> · {report.data!.row_count ?? report.data!.rows?.length ?? 0} rows · generated {fmtDate(report.data!.generated_at)}</>} />
               {!report.data!.rows?.length ? <Empty title="No rows" body="Nothing matches these filters." /> : (
-                <Table dense>
-                  <thead><tr>{(report.data!.columns ?? Object.keys(report.data!.rows![0])).map((c) => <Th key={c}>{humanise(c)}</Th>)}</tr></thead>
-                  <tbody>{report.data!.rows!.map((row, i) => <Tr key={i}>{(report.data!.columns ?? Object.keys(row)).map((c) => <Td key={c} className="max-w-[280px] truncate text-[12.5px]" title={String(row[c] ?? '')}>{cell(row[c])}</Td>)}</Tr>)}</tbody>
-                </Table>
+                <>
+                  <p className="text-[12.5px] text-taupe-2">Scroll sideways to see every column. Long values are shortened; hover one to read it in full.</p>
+                  {/* Scrolls both ways inside the card; the header row stays in view. */}
+                  <Table dense className="max-h-[68vh] overflow-auto overscroll-contain">
+                    <thead><tr>{(report.data!.columns ?? Object.keys(report.data!.rows![0])).map((c) => <Th key={c}>{humanise(c)}</Th>)}</tr></thead>
+                    <tbody>{report.data!.rows!.slice((rowPage - 1) * ROWS, rowPage * ROWS).map((row, i) => <Tr key={(rowPage - 1) * ROWS + i}>{(report.data!.columns ?? Object.keys(row)).map((c) => <Td key={c} className="max-w-[280px] truncate whitespace-nowrap text-[12.5px]" title={String(row[c] ?? '')}>{cell(row[c])}</Td>)}</Tr>)}</tbody>
+                  </Table>
+                  {report.data!.rows!.length > ROWS && <Pagination page={rowPage} size={ROWS} total={report.data!.rows!.length} onPage={setRowPage} />}
+                </>
               )}
               {report.data!.filters && Object.keys(report.data!.filters).length > 0 && <p className="text-[12px] text-taupe-2">Filters applied: {Object.entries(report.data!.filters).map(([k, v]) => <Badge key={k} className="mr-1">{k}={String(v)}</Badge>)}</p>}
             </div>
@@ -94,6 +103,8 @@ function Reports() {
     </div>
   )
 }
+
+const ROWS = 50
 
 function cell(v: unknown): React.ReactNode {
   if (v === null || v === undefined || v === '') return <span className="text-taupe">—</span>

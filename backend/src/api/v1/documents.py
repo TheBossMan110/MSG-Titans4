@@ -47,6 +47,7 @@ from schemas.documents import (
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import NotFoundError, ValidationError
 from src.core.logging import get_logger
+from src.core.response_cache import cached_endpoint
 from src.db.enums import DocStatus, UserRole
 from src.db.models import (
     Chunk,
@@ -165,6 +166,7 @@ def upload_documents(
     dependencies=[StaffRead],
     summary="List knowledge-base documents",
 )
+@cached_endpoint(ttl=60)
 def list_documents(
     db: DbSession,
     q: str | None = Query(None, description="Match on title or document reference"),
@@ -223,6 +225,7 @@ def list_documents(
     dependencies=[StaffRead],
     summary="Knowledge-base corpus health",
 )
+@cached_endpoint(ttl=60)
 def coverage(db: DbSession) -> CoverageResponse:
     stats = coverage_stats(db)
     return CoverageResponse(

@@ -33,6 +33,7 @@ from schemas.analytics import (
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import NotFoundError, ValidationError
 from src.core.logging import get_logger
+from src.core.response_cache import cached_endpoint
 from src.db.enums import UserRole
 from src.db.models import Complaint
 from src.services import analytics, reports, role_views, trends
@@ -54,6 +55,7 @@ EXPORTERS = (UserRole.MANAGER, UserRole.ADMIN)
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="The administrator dashboard, in one call",
 )
+@cached_endpoint(ttl=60)
 def dashboard(
     db: DbSession,
     days: int | None = Query(30, ge=1, le=365, description="Null for all time."),
@@ -73,6 +75,7 @@ def dashboard(
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="Complaint volume by status",
 )
+@cached_endpoint(ttl=60)
 def volume(db: DbSession, days: int | None = Query(30, ge=1, le=365)) -> dict[str, Any]:
     return analytics.volume(db, days=days)
 
@@ -82,6 +85,7 @@ def volume(db: DbSession, days: int | None = Query(30, ge=1, le=365)) -> dict[st
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="Category distribution",
 )
+@cached_endpoint(ttl=60)
 def categories(
     db: DbSession, days: int | None = Query(30, ge=1, le=365)
 ) -> list[dict[str, Any]]:
@@ -100,6 +104,7 @@ def categories(
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="Department load and open backlog",
 )
+@cached_endpoint(ttl=60)
 def departments(
     db: DbSession, days: int | None = Query(30, ge=1, le=365)
 ) -> list[dict[str, Any]]:
@@ -111,6 +116,7 @@ def departments(
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="Product and service breakdown",
 )
+@cached_endpoint(ttl=60)
 def products(
     db: DbSession, days: int | None = Query(30, ge=1, le=365)
 ) -> list[dict[str, Any]]:
@@ -122,6 +128,7 @@ def products(
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="Urgency level distribution",
 )
+@cached_endpoint(ttl=60)
 def urgency(
     db: DbSession, days: int | None = Query(30, ge=1, le=365)
 ) -> dict[str, int]:
@@ -133,6 +140,7 @@ def urgency(
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="Customer sentiment distribution",
 )
+@cached_endpoint(ttl=60)
 def sentiment(
     db: DbSession, days: int | None = Query(30, ge=1, le=365)
 ) -> dict[str, int]:
@@ -144,6 +152,7 @@ def sentiment(
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="Resolution time metrics",
 )
+@cached_endpoint(ttl=60)
 def resolution_time(
     db: DbSession, days: int | None = Query(30, ge=1, le=365)
 ) -> dict[str, Any]:
@@ -155,6 +164,7 @@ def resolution_time(
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="Repeat complaints breakdown",
 )
+@cached_endpoint(ttl=60)
 def repeat_complaints(
     db: DbSession, days: int | None = Query(30, ge=1, le=365)
 ) -> dict[str, Any]:
@@ -166,6 +176,7 @@ def repeat_complaints(
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="How often the model matched the rule engine",
 )
+@cached_endpoint(ttl=60)
 def pipelines(
     db: DbSession, days: int | None = Query(30, ge=1, le=365)
 ) -> dict[str, Any]:
@@ -188,6 +199,7 @@ def pipelines(
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="What is rising and matters",
 )
+@cached_endpoint(ttl=120)
 def rising_trends(
     db: DbSession,
     period: str = Query("WEEK", pattern="^(DAY|WEEK|MONTH)$"),
@@ -227,6 +239,7 @@ def snapshot_trends(
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="Stored history for one metric",
 )
+@cached_endpoint(ttl=120)
 def trend_history(
     db: DbSession,
     metric: str = Query("COMPLAINT_VOLUME"),
@@ -260,6 +273,7 @@ def list_reports() -> list[ReportTypeOut]:
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="Read a report as JSON",
 )
+@cached_endpoint(ttl=60)
 def read_report(
     report_type: str,
     db: DbSession,
@@ -374,6 +388,7 @@ def export_history(db: DbSession, limit: int = Query(50, ge=1, le=200)):
     ],
     summary="An agent's own workload",
 )
+@cached_endpoint(ttl=30)
 def my_queue(db: DbSession, user: CurrentUser) -> dict[str, Any]:
     """
     What is assigned to the caller (FR lxvii).
@@ -417,6 +432,7 @@ def my_queue(db: DbSession, user: CurrentUser) -> dict[str, Any]:
     dependencies=[Depends(require_role(UserRole.AGENT, UserRole.REVIEWER, UserRole.MANAGER, UserRole.ADMIN, UserRole.EVALUATOR))],
     summary="The agent dashboard: assigned complaints with what an agent needs to act",
 )
+@cached_endpoint(ttl=30)
 def agent_workspace(
     db: DbSession,
     user: CurrentUser,
@@ -434,6 +450,7 @@ def agent_workspace(
     or one, so an administrator can look at exactly what an agent sees.
     """
     from sqlalchemy.orm import joinedload
+
     from src.db.models import Department, GenAIRun, Response, SLAEvent, User, VerificationDecision
 
     open_only = Complaint.status.not_in(("RESOLVED", "CLOSED"))
@@ -560,6 +577,7 @@ def agent_workspace(
     dependencies=[Depends(require_role(*VIEWERS))],
     summary="The manager dashboard: today's load, team performance, agent workload, SLA and critical cases",
 )
+@cached_endpoint(ttl=30)
 def manager_overview(
     db: DbSession,
     department: str | None = Query(None, max_length=64, description="One team's view, or the whole operation when empty."),

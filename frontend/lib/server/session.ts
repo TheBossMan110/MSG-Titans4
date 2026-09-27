@@ -18,15 +18,39 @@ export function backendUrl(): string {
   return process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 }
 
-/** Forward the caller's address so the backend's per-IP login limit still applies per person. */
+/**
+ * Forward the caller's address so the backend's per-IP login limit still
+ * applies per person. On Vercel every sign-in reaches the backend from the
+ * same few function IPs; the shared secret is how the backend knows this
+ * address was vouched for by our proxy rather than typed by a client.
+ */
 export async function forwardedHeaders(extra: Record<string, string> = {}): Promise<Record<string, string>> {
   const h = await headers()
   const out: Record<string, string> = { 'Content-Type': 'application/json', ...extra }
-  const ip = h.get('x-forwarded-for') ?? h.get('x-real-ip')
-  if (ip) out['X-Forwarded-For'] = ip
+  const ip = (h.get('x-forwarded-for') ?? h.get('x-real-ip') ?? '').split(',')[0].trim()
+  if (ip) {
+    out['X-Forwarded-For'] = ip
+    const secret = process.env.SESSION_PROXY_SECRET
+    if (secret) {
+      out['X-SN-Client-IP'] = ip
+      out['X-SN-Proxy-Secret'] = secret
+    }
+  }
   const ua = h.get('user-agent')
   if (ua) out['User-Agent'] = ua
   return out
+}
+
+/** A backend that cannot be reached answers 502 with a readable reason, not a bare 500. */
+export async function backendFetch(path: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(`${backendUrl()}${path}`, { ...init, cache: 'no-store' })
+  } catch {
+    return Response.json(
+      { error: { code: 'BACKEND_UNREACHABLE', message: 'The server could not be reached. Please try again in a moment.' } },
+      { status: 502 },
+    )
+  }
 }
 
 export async function readRefreshCookie(): Promise<string | null> {

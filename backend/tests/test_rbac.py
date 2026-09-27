@@ -74,8 +74,38 @@ def test_only_an_admin_changes_rules_policies_prompts_and_users(client, auth_hea
     assert client.patch("/api/admin/rules/RULE-001", json={"reason": "x"}, headers=headers).status_code == 403
     assert client.post("/api/documents", files={"files": ("p.txt", b"Document ID: X\n", "text/plain")}, headers=headers).status_code == 403
     assert client.patch("/api/admin/prompts/complaint_intelligence", json={"version": "v1.0"}, headers=headers).status_code == 403
-    assert client.post("/api/people", json={"email": "x@example.com", "full_name": "X Y", "password": "long-enough", "role": "agent"},
-                       headers=headers).status_code == 403
+    if role != "manager":
+        assert client.post("/api/people", json={"email": "x@example.com", "full_name": "X Y", "password": "long-enough", "role": "agent"},
+                           headers=headers).status_code == 403
+
+
+def test_a_manager_adds_agents_to_their_own_team_and_nothing_else(client, auth_headers, db):
+    """
+    The team's rule: a manager may provision agents for the department they
+    manage; every other role -- reviewer, manager, administrator -- is the
+    administrator's to create.
+    """
+    manager = auth_headers("manager")
+    for role in ("reviewer", "manager", "admin"):
+        refused = client.post("/api/people", json={
+            "email": f"m-{role}-{uuid.uuid4().hex[:6]}@example.com", "full_name": "Not Allowed",
+            "password": "a-long-password", "role": role,
+        }, headers=manager)
+        assert refused.status_code == 422, (role, refused.text)
+
+    manager_row = db.execute(select(User).where(User.email == "manager@raftarxpress.com")).scalar_one()
+    added = client.post("/api/people", json={
+        "email": f"m-agent-{uuid.uuid4().hex[:6]}@example.com", "full_name": "Team Agent",
+        "password": "a-long-password", "role": "agent", "department_code": "SAFETY",
+    }, headers=manager)
+    if manager_row.department_id is None:
+        assert added.status_code == 422
+    else:
+        assert added.status_code == 201, added.text
+        body = added.json()
+        assert body["role"] == "agent"
+        own_team = db.execute(select(Department.name).where(Department.id == manager_row.department_id)).scalar_one()
+        assert body["department"] == own_team, "a manager's agent joins the manager's own team, whatever was asked"
 
 
 # ── agents see their team's work, not the register ───────────────

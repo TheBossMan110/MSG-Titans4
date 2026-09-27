@@ -20,10 +20,11 @@ from sqlalchemy import func, or_, select
 from schemas.common import Page
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import NotFoundError
+from src.core.response_cache import cached_endpoint
 from src.db.enums import UserRole
 from src.db.models import EmailMessage
 from src.services import email_channel
-from src.services.email_template import EmailContent, render_html
+from src.services.email_template import EmailContent, logo_data_uri, render_html, with_logo_src
 
 router = APIRouter(prefix="/email", tags=["Email"])
 
@@ -85,6 +86,7 @@ def status() -> dict[str, Any]:
 
 
 @router.get("/messages", response_model=Page[EmailOut], summary="Emails received and sent")
+@cached_endpoint(ttl=30)
 def messages(
     db: DbSession,
     user: CurrentUser,
@@ -124,7 +126,7 @@ def message(message_id: uuid.UUID, db: DbSession, user: CurrentUser) -> EmailDet
         mine = user.email.lower()
         thread = [t for t in thread if mine in (t.from_address.lower(), t.to_address.lower())]
     base = _out(row)
-    return EmailDetail(**base.model_dump(), body_text=row.body_text, body_html=row.body_html, thread=[_out(t) for t in thread])
+    return EmailDetail(**base.model_dump(), body_text=row.body_text, body_html=with_logo_src(row.body_html, logo_data_uri()) if row.body_html else None, thread=[_out(t) for t in thread])
 
 
 @router.post("/poll", dependencies=[Depends(require_role(*OPERATORS))], summary="Check the inbox now")
@@ -161,4 +163,4 @@ def preview() -> dict[str, str]:
         cta_label="Track your complaint", cta_url=email_channel.settings.public_app_url.rstrip("/") + "/track/CMP-000123",
         preheader="We received your complaint: reference CMP-000123.",
     )
-    return {"html": render_html(content, support_hours="09:00-21:00 PKT, Mon-Sat")}
+    return {"html": render_html(content, support_hours="09:00-21:00 PKT, Mon-Sat", logo_src=logo_data_uri())}

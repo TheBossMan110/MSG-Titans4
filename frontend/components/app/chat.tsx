@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowUp, CheckCircle2, FileText, Loader2, MessageCircle, Pencil, Sparkles, X } from 'lucide-react'
+import { ArrowUp, CheckCircle2, FileText, Loader2, Pencil, X } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { assistant, errorMessage, submitWithProgress, type ProgressStep, type S } from '@/lib/api'
-import { Button } from '@/components/ui/primitives'
+import { Button, NovaAvatar } from '@/components/ui/primitives'
 import { cn } from '@/lib/utils'
 
 type Draft = S['DraftOut']
@@ -112,7 +112,7 @@ export function ChatPanel({ onClose, className }: { onClose?: () => void; classN
   return (
     <div className={cn('flex min-h-0 flex-col bg-ivory', className)}>
       <header className="flex items-center gap-3 border-b border-line-soft bg-espresso px-4 py-3 text-ink-on-dark">
-        <span className="relative inline-flex size-9 items-center justify-center rounded-full bg-ink-on-dark/15"><Sparkles size={16} aria-hidden /><span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-espresso bg-verified-dim" aria-hidden /></span>
+        <span className="relative inline-flex size-9 items-center justify-center rounded-full ring-1 ring-ink-on-dark/20"><NovaAvatar size={36} /><span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-espresso bg-verified-dim" aria-hidden /></span>
         <div className="min-w-0 flex-1">
           <p className="text-[14.5px] font-medium leading-tight">Nova</p>
           <p className="text-[12px] text-ink-on-dark/70">RaftarXpress support · usually replies in seconds</p>
@@ -264,7 +264,7 @@ export function ChatLauncher() {
           open && 'hidden sm:flex',
         )}
       >
-        {open ? <X size={20} aria-hidden /> : <MessageCircle size={20} aria-hidden />}
+        {open ? <X size={20} aria-hidden /> : <NovaAvatar size={24} className="-my-1 -ml-1" />}
         <span className="hidden text-[14px] font-medium sm:inline">{open ? 'Close' : 'Chat with Nova'}</span>
       </button>
     </>

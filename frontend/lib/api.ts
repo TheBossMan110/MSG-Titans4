@@ -80,10 +80,15 @@ let refreshing: Promise<boolean> | null = null
 let sessionUser: User | null = null
 export const getSessionUser = () => sessionUser
 
-/** Rotate the session through the proxy. Concurrent callers share one attempt. */
+/**
+ * Rotate the session through the proxy. Concurrent callers share one attempt,
+ * and tabs take turns: every refresh spends the cookie's token, so two tabs
+ * loading at once would otherwise both present it and the slower one be
+ * refused. Under the lock, the second tab sends the cookie the first one got.
+ */
 export async function refreshSession(): Promise<boolean> {
   if (!refreshing) {
-    refreshing = (async () => {
+    const attempt = async (): Promise<boolean> => {
       try {
         const res = await fetch('/api/session/refresh', { method: 'POST', credentials: 'same-origin' })
         if (!res.ok) return false
@@ -93,10 +98,10 @@ export async function refreshSession(): Promise<boolean> {
         return true
       } catch {
         return false
-      } finally {
-        refreshing = null
       }
-    })()
+    }
+    const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined
+    refreshing = (locks ? locks.request('sn-session-refresh', attempt) : attempt()).finally(() => { refreshing = null })
   }
   return refreshing
 }

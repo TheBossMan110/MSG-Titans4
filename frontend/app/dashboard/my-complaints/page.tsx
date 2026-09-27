@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight, CheckCircle2, ChevronDown, Clock, FileSearch, Inbox, Lock, Mail, MessageCircleQuestion, MessageSquareReply, Paperclip, Plus, RotateCcw, Scale, Search, ShieldCheck, Sparkles,
@@ -32,6 +32,12 @@ function Mine() {
   const q = useApi(() => complaints.mine(1, 50), [])
   const rows = useMemo(() => q.data?.items ?? [], [q.data])
   const [selected, setSelected] = useState<string | null>(null)
+  // Both columns follow the reader: the shorter one stays in view while the
+  // longer one scrolls, so neither side is left as empty space.
+  const listCol = useRef<HTMLDivElement>(null)
+  const detailCol = useRef<HTMLElement>(null)
+  useStickyColumn(listCol, q.data)
+  useStickyColumn(detailCol, q.data)
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<'all' | 'open' | 'waiting' | 'resolved'>('all')
   const [confirming, setConfirming] = useState(false)
@@ -204,7 +210,7 @@ function Mine() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
-            <div className="flex flex-col gap-3">
+            <div ref={listCol} className="flex flex-col gap-3 lg:sticky lg:self-start">
               {!filteredRows.length ? (
                 <div className="rounded-2xl border border-line-soft bg-white/70 p-8 text-center">
                   <p className="text-[14.5px] font-medium text-espresso">No complaints match your selection</p>
@@ -221,7 +227,7 @@ function Mine() {
               )}
             </div>
 
-            <aside className="lg:sticky lg:top-24 lg:self-start">
+            <aside ref={detailCol} className="lg:sticky lg:self-start">
               {current && (
                 <Card tone="glass" padding="lg" radius="xl" className="animate-rise" key={current.public_ref}>
                   <div className="mb-5 flex items-start justify-between gap-3">
@@ -323,6 +329,31 @@ function Mine() {
       <Faq />
     </div>
   )
+}
+
+const STICKY_TOP = 96 // clears the top bar
+
+/**
+ * A sticky column that is never cut off. Shorter than the screen, it stays
+ * pinned below the top bar. Taller than the screen, its offset goes negative
+ * by the overflow, so it scrolls to its own end first and only then stays --
+ * the reader can always reach its last line.
+ */
+function useStickyColumn(ref: RefObject<HTMLElement | null>, trigger: unknown) {
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const place = () => {
+      const fits = window.innerHeight - STICKY_TOP - 24
+      el.style.top = `${el.offsetHeight <= fits ? STICKY_TOP : Math.min(STICKY_TOP, window.innerHeight - el.offsetHeight - 24)}px`
+    }
+    place()
+    const observer = new ResizeObserver(place)
+    observer.observe(el)
+    window.addEventListener('resize', place)
+    return () => { observer.disconnect(); window.removeEventListener('resize', place) }
+    // The columns appear once complaints have loaded; attach again when they do.
+  }, [ref, trigger])
 }
 
 function Metric({ icon, label, value, note, tone = 'neutral', pulse }: {

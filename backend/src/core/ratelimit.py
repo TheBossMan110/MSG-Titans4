@@ -11,13 +11,37 @@ a shared backend.
 
 from __future__ import annotations
 
+import hmac
+
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from starlette.requests import Request
 
 from src.core.config import settings
 
+
+def client_address(request: Request) -> str:
+    """
+    Who to count a request against.
+
+    Sign-in, sign-up and refresh arrive through the frontend's session proxy,
+    so on a hosted frontend they all come from its handful of server IPs. The
+    proxy names the browser's address in ``X-SN-Client-IP``; that header is
+    believed only alongside the shared secret, so a client cannot pick its
+    own bucket. Everything else is keyed on the connecting address.
+    """
+    secret = settings.session_proxy_secret
+    if secret:
+        sent = request.headers.get("x-sn-proxy-secret", "")
+        if sent and hmac.compare_digest(sent.encode(), secret.encode()):
+            vouched = request.headers.get("x-sn-client-ip", "").split(",")[0].strip()
+            if vouched:
+                return vouched
+    return get_remote_address(request)
+
+
 limiter = Limiter(
-    key_func=get_remote_address,
+    key_func=client_address,
     default_limits=[settings.rate_limit_default],
     headers_enabled=True,
 )

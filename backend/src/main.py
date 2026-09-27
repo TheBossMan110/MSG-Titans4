@@ -57,6 +57,14 @@ async def lifespan(app: FastAPI):
         database="postgresql" if settings.is_postgres else "sqlite",
         llm_primary=settings.llm_primary_provider,
     )
+    if settings.is_production:
+        if settings.jwt_secret == "insecure-dev-secret-change-me" or len(settings.jwt_secret) < 32:
+            # Anyone who reads the source could sign an admin token with the default.
+            raise RuntimeError("JWT_SECRET must be set to a random value of at least 32 characters in production.")
+        if not settings.is_postgres:
+            # A missing or misnamed .env leaves DATABASE_URL at its SQLite default:
+            # the app would start "fine" on an empty file where nobody can sign in.
+            raise RuntimeError("DATABASE_URL must point at PostgreSQL in production; is backend/.env in place?")
     settings.storage_local_dir.mkdir(parents=True, exist_ok=True)
     settings.reports_dir.mkdir(parents=True, exist_ok=True)
     if settings.app_env != "test":
@@ -69,6 +77,11 @@ async def lifespan(app: FastAPI):
         from src.services.email_channel import start_poller
 
         start_poller()
+
+        # The heaviest shared pages, computed once so nobody waits for them.
+        from src.services import warmup
+
+        warmup.start()
     yield
     log.info("shutdown")
 
@@ -93,10 +106,12 @@ app.add_middleware(GZipMiddleware, minimum_size=1024)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
+    allow_origin_regex=settings.cors_origin_regex or None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Request-ID", "X-Response-Time-ms"],
+    # Content-Disposition carries an export's file name to the browser
+    expose_headers=["X-Request-ID", "X-Response-Time-ms", "Content-Disposition"],
 )
 
 # ── errors ───────────────────────────────────────────────────

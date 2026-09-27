@@ -27,21 +27,23 @@ router = APIRouter(tags=["System"])
 
 @router.get("/health", response_model=HealthResponse, summary="Liveness and readiness")
 def health(db: DbSession) -> HealthResponse:
+    # During a database outage this still answers, "degraded", rather than
+    # failing with a 500 that monitors and browsers cannot tell apart.
+    active_docs = active_rules = 0
     try:
         db.execute(select(1))
         database = "ok"
+        active_docs = db.execute(
+            select(func.count())
+            .select_from(DocumentVersion)
+            .where(DocumentVersion.status == DocStatus.ACTIVE)
+        ).scalar_one()
+        active_rules = db.execute(
+            select(func.count()).select_from(Rule).where(Rule.is_active.is_(True))
+        ).scalar_one()
     except Exception:  # pragma: no cover - only on a real outage
+        db.rollback()
         database = "unavailable"
-
-    active_docs = db.execute(
-        select(func.count())
-        .select_from(DocumentVersion)
-        .where(DocumentVersion.status == DocStatus.ACTIVE)
-    ).scalar_one()
-
-    active_rules = db.execute(
-        select(func.count()).select_from(Rule).where(Rule.is_active.is_(True))
-    ).scalar_one()
 
     llm_configured = bool(
         settings.gemini_api_key or settings.groq_api_key or settings.openrouter_api_key

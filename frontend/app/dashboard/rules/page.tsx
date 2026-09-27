@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ShieldCheck } from 'lucide-react'
@@ -11,11 +11,13 @@ import { useApi, useAction } from '@/lib/use-api'
 import { Badge, Button, Mono, humanise, escalationTone, priorityTone, urgencyTone } from '@/components/ui/primitives'
 import { Card } from '@/components/ui/surfaces'
 import { Select, SearchBox, Checkbox } from '@/components/ui/forms'
-import { Table, Th, Td, Tr, Stat } from '@/components/ui/data'
+import { Pagination, Table, Th, Td, Tr, Stat } from '@/components/ui/data'
 import { Empty, ErrorState, SkeletonRows, Tabs, useToast } from '@/components/ui/feedback'
 import { cn } from '@/lib/utils'
 
 const OVERSIGHT = ['manager', 'admin', 'evaluator'] as const
+// 619 rules on one page is ~9,000 elements: slow to draw and slow to leave.
+const ROWS = 50
 
 export default function RulesPage() {
   return (
@@ -38,6 +40,8 @@ function Matrix() {
   const [search, setSearch] = useState('')
   const [mandatory, setMandatory] = useState(false)
   const [inactive, setInactive] = useState(false)
+  const [page, setPage] = useState(1)
+  useEffect(() => { setPage(1) }, [type, search, mandatory, inactive])
   const rules = useApi(() => admin.rules({ rule_type: type || undefined, search: search || undefined, mandatory: mandatory || undefined, active: inactive ? undefined : true }), [type, search, mandatory, inactive])
   const taxonomy = useApi(() => admin.taxonomy())
   const reload = useAction(() => admin.reloadRules())
@@ -80,7 +84,7 @@ function Matrix() {
             <Table>
               <thead><tr><Th>Rule</Th><Th>Type</Th><Th align="right">Precedence</Th><Th>Outcome</Th><Th>Flags</Th><Th align="right">Version</Th></tr></thead>
               <tbody>
-                {all.map((r) => (
+                {all.slice((page - 1) * ROWS, page * ROWS).map((r) => (
                   <Tr key={r.rule_ref} onClick={() => router.push(`/dashboard/rules/${encodeURIComponent(r.rule_ref)}`)} className={cn(!r.is_active && 'opacity-55')}>
                     <Td className="max-w-[420px]">
                       <Link href={`/dashboard/rules/${encodeURIComponent(r.rule_ref)}`} onClick={(e) => e.stopPropagation()} className="font-mono text-[12.5px] text-taupe transition-colors hover:text-ai">{r.rule_ref}</Link>
@@ -110,6 +114,7 @@ function Matrix() {
               </tbody>
             </Table>
           )}
+          {all.length > ROWS && <Pagination page={page} size={ROWS} total={all.length} onPage={setPage} />}
         </>
       )}
 

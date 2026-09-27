@@ -101,6 +101,15 @@ def _database() -> Generator[None, None, None]:
         TEST_DB.unlink(missing_ok=True)
 
 
+@pytest.fixture(autouse=True)
+def _fresh_response_cache() -> Generator[None, None, None]:
+    """Each test starts with an empty response cache: no answer computed for one test is served to another."""
+    from src.core import response_cache
+
+    response_cache.clear()
+    yield
+
+
 @pytest.fixture
 def db() -> Generator[Session, None, None]:
     session = SessionLocal()

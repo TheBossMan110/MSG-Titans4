@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { auth as authApi, errorMessage, setAccessToken, type User } from '@/lib/api'
+import { clearAnswers } from '@/lib/use-api'
 
 interface AuthCtx {
   user: User | null
@@ -87,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await authApi.logout()
+    clearAnswers()
     setUser(null)
   }, [])
 

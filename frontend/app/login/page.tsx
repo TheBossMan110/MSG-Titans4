@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { errorMessage, type User } from '@/lib/api'
 import { ShieldCheck } from 'lucide-react'
-import { Button, Wordmark, Eyebrow } from '@/components/ui/primitives'
+import { BrandMark, Button, Wordmark, Eyebrow } from '@/components/ui/primitives'
 import { Field, Input, PasswordInput } from '@/components/ui/forms'
 import { homeFor as roleHome } from '@/lib/roles'
 
@@ -79,6 +79,7 @@ function Login() {
       <section className="flex items-center justify-center px-[var(--gutter)] py-16">
         <div className="w-full max-w-[400px]">
           <Link href="/" className="mb-10 block lg:hidden"><Wordmark /></Link>
+          <BrandMark size={72} className="mb-7 hidden lg:block" />
           <h2 className="font-display text-h2 leading-none">Welcome back.</h2>
           <p className="mt-3 text-[14px] text-taupe-2">Use the account your administrator provisioned.</p>
 

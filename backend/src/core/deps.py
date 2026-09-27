@@ -10,13 +10,13 @@ which is what the Unauthorised-Access section of the Security Testing Report
 from __future__ import annotations
 
 import threading
-
 from collections.abc import Callable, Generator
 from typing import Annotated
 
 import jwt
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import event
 from sqlalchemy.orm import Session
 
 from src.core.config import settings
@@ -68,6 +68,58 @@ def session_revoked(sid: str) -> bool:
     return until is not None and until > _time.time()
 
 
+# Who a token belongs to, remembered briefly so that a page served from the
+# response cache needs no database round trip at all. A copy is valid for a
+# minute and only while nothing tracked has changed (response_cache
+# generation: any change to users -- a role, a deactivation -- clears it), so
+# a demotion or a disabled account takes effect on the very next request.
+# Signed-out sessions are refused separately, before this, by session_revoked.
+_USER_TTL_S = 60.0
+_user_copies: dict = {}
+
+
+# Any write to a user's row -- a password, two-step secret, lockout counter --
+# drops that user's remembered copy once the write is committed, so the next
+# request reads the row as it now is. (The response-cache generation, which
+# also clears it, deliberately ignores sign-in bookkeeping; this does not.)
+@event.listens_for(Session, "after_flush")
+def _users_written(session: Session, _ctx) -> None:
+    touched = {obj.id for obj in (*session.new, *session.dirty, *session.deleted) if isinstance(obj, User)}
+    if touched:
+        session.info.setdefault("sn_users_written", set()).update(touched)
+
+
+@event.listens_for(Session, "after_commit")
+def _forget_written_users(session: Session) -> None:
+    for user_id in session.info.pop("sn_users_written", ()):
+        _user_copies.pop(user_id, None)
+
+
+@event.listens_for(Session, "after_rollback")
+def _discard_written_users(session: Session) -> None:
+    session.info.pop("sn_users_written", None)
+
+
+def _known_user(db: Session, user_id):
+    import time as _time
+
+    from sqlalchemy.orm import make_transient_to_detached
+
+    from src.core import response_cache
+
+    now = _time.monotonic()
+    known = _user_copies.get(user_id)
+    if known is not None and known[1] == response_cache.generation() and now - known[2] < _USER_TTL_S:
+        # Attach the remembered state to this request's session without a SELECT.
+        return db.merge(known[0], load=False)
+    user = db.get(User, user_id)
+    if user is not None:
+        copy = User(**{column.key: getattr(user, column.key) for column in User.__table__.columns})
+        make_transient_to_detached(copy)
+        _user_copies[user_id] = (copy, response_cache.generation(), now)
+    return user
+
+
 def get_current_user(
     request: Request,
     db: DbSession,
@@ -88,7 +140,7 @@ def get_current_user(
         raise AuthError("This session has been signed out.", code="SESSION_REVOKED")
 
     user_id = parse_uuid(payload.get("sub"))
-    user = db.get(User, user_id) if user_id else None
+    user = _known_user(db, user_id) if user_id else None
     if user is None or not user.is_active:
         raise AuthError("Account not found or deactivated.")
 

@@ -311,18 +311,41 @@ export function Spinner({ size = 18, className }: { size?: number; className?: s
 
 /* ------------------------------------------------------------------ Wordmark */
 
+/** The brand badge on its own: complaint → AI → department, copper on espresso. */
+export function BrandMark({ size = 30, dark = false, className }: { size?: number; dark?: boolean; className?: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- a 128 px PNG; next/image would add a request for nothing
+    <img
+      src={size > 56 ? '/brand/supportnova-mark-256.png' : '/brand/supportnova-mark.png'}
+      alt=""
+      aria-hidden
+      width={size}
+      height={size}
+      draggable={false}
+      className={cn('shrink-0 rounded-[24%]', dark ? 'ring-1 ring-ink-on-dark/20' : 'shadow-[0_1px_2px_rgba(42,31,23,0.18)]', className)}
+    />
+  )
+}
+
+/** Nova, the assistant: the robot from the brand mark, drawn so it stays crisp at 20 px. */
+export function NovaAvatar({ size = 36, className }: { size?: number; className?: string }) {
+  return (
+    <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden className={cn('shrink-0', className)}>
+      <circle cx="20" cy="20" r="20" fill="#2a1f17" />
+      <path d="M20 10v2.6" stroke="#e2bb8f" strokeWidth="1.9" strokeLinecap="round" />
+      <circle cx="20" cy="8.2" r="2.3" fill="#e2bb8f" />
+      <rect x="10.3" y="12.4" width="19.4" height="16.2" rx="7.4" fill="none" stroke="#e2bb8f" strokeWidth="2.6" />
+      <rect x="6.6" y="16.6" width="3.6" height="7.8" rx="1.8" fill="#c8976a" />
+      <rect x="29.8" y="16.6" width="3.6" height="7.8" rx="1.8" fill="#c8976a" />
+      <path d="M14.9 22.4a2.3 2.3 0 0 1 4.6 0M20.5 22.4a2.3 2.3 0 0 1 4.6 0" fill="none" stroke="#efd0ab" strokeWidth="1.9" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export function Wordmark({ dark = false, className }: { dark?: boolean; className?: string }) {
   return (
-    <span className={cn('group/mark inline-flex items-baseline gap-2 select-none', className)}>
-      <span aria-hidden className="relative inline-block size-2.5 translate-y-[-1px]">
-        <span
-          className={cn(
-            'absolute inset-0 rounded-[3px] transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover/mark:rotate-45',
-            dark ? 'bg-ink-on-dark' : 'bg-espresso',
-          )}
-        />
-        <span className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-ai-2 shadow-[0_0_8px_rgba(59,140,196,0.9)]" />
-      </span>
+    <span className={cn('group/mark inline-flex items-center gap-2.5 select-none', className)}>
+      <BrandMark dark={dark} className="transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover/mark:-rotate-6" />
       <span className={cn('font-display text-[21px] leading-none tracking-[-0.025em]', dark ? 'text-ink-on-dark' : 'text-espresso')}>
         Support<span className="italic font-light">Nova</span>
       </span>

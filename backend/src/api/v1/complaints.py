@@ -104,6 +104,7 @@ from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import AppError, NotFoundError, PermissionError_, ValidationError
 from src.core.logging import get_logger
 from src.core.ratelimit import limiter
+from src.core.response_cache import cached_endpoint
 from src.core.scope import can_see, complaint_in_scope, restrict
 from src.db.enums import ComplaintStatus, UserRole
 from src.db.models import (
@@ -565,6 +566,7 @@ def _intake(
     dependencies=[Depends(require_role(*STAFF))],
     summary="List complaints",
 )
+@cached_endpoint(ttl=30)
 def list_complaints(
     db: DbSession,
     user: CurrentUser,
@@ -910,6 +912,7 @@ def _milestones(db: DbSession, complaint: Complaint, *, history: list[tuple[str,
     response_model=Page[ComplaintStatusOut],
     summary="Your own complaints",
 )
+@cached_endpoint(ttl=60)
 def my_complaints(
     db: DbSession,
     user: CurrentUser,

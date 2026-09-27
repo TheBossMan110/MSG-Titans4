@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type DependencyList } from 'react'
-import { errorMessage } from '@/lib/api'
+import { errorMessage, getSessionUser } from '@/lib/api'
 
 export interface Query<T> {
   data: T | null
@@ -18,6 +18,34 @@ export interface Query<T> {
  * the backend's live truth and the judge will change it under us during the
  * demo; a stale cache would show the wrong thing with confidence.
  */
+/**
+ * The last answer each query received, kept in memory for the tab.
+ *
+ * Going back to a page shows what it showed last time at once, and the fresh
+ * answer replaces it a moment later -- stale-while-revalidate. Keyed by the
+ * signed-in user, the query's code and its inputs, so one person's data is
+ * never shown to another; emptied on sign-out.
+ */
+const answers = new Map<string, unknown>()
+const MAX_ANSWERS = 250
+
+function answerKey(fetcher: () => unknown, deps: DependencyList): string {
+  let inputs = ''
+  try { inputs = JSON.stringify(deps) } catch { inputs = String(deps.length) }
+  return `${getSessionUser()?.id ?? 'anon'}|${fetcher.toString()}|${inputs}`
+}
+
+function remember(key: string, value: unknown) {
+  answers.delete(key)
+  answers.set(key, value)
+  if (answers.size > MAX_ANSWERS) answers.delete(answers.keys().next().value as string)
+}
+
+/** Forget every remembered answer (sign-out, a user switch). */
+export function clearAnswers() {
+  answers.clear()
+}
+
 /** Fired by the live indicator when something new reached the database. */
 export const LIVE_EVENT = 'sn-live'
 export interface LiveChange { complaints: number; users: number; emails: number; statuses: boolean }
@@ -28,7 +56,10 @@ export function useApi<T>(
   enabled = true,
   opts?: { live?: boolean },
 ): Query<T> {
-  const [data, setData] = useState<T | null>(null)
+  const key = answerKey(fetcher, deps)
+  const keyRef = useRef(key)
+  keyRef.current = key
+  const [data, setData] = useState<T | null>(() => (enabled ? ((answers.get(key) as T | undefined) ?? null) : null))
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(enabled)
   const seq = useRef(0)
@@ -46,7 +77,9 @@ export function useApi<T>(
     setLoading(true)
     setError(null)
     try {
+      const forKey = keyRef.current
       const result = await fn.current()
+      remember(forKey, result)
       if (id === seq.current) setData(result)
     } catch (e) {
       if (id === seq.current) setError(errorMessage(e))
@@ -57,6 +90,9 @@ export function useApi<T>(
 
   useEffect(() => {
     if (!enabled) return
+    // Show the remembered answer for these inputs at once; the request below replaces it.
+    const known = answers.get(keyRef.current) as T | undefined
+    if (known !== undefined) setData(known)
     void run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, run, ...deps])
@@ -70,7 +106,9 @@ export function useApi<T>(
     const onLive = async () => {
       const id = ++seq.current
       try {
+        const forKey = keyRef.current
         const result = await fn.current()
+        remember(forKey, result)
         if (id === seq.current) { setData(result); setError(null) }
       } catch {
         /* keep what is on screen */

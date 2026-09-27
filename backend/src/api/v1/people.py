@@ -38,6 +38,7 @@ from schemas.people import (
 )
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import ConflictError, NotFoundError, ValidationError
+from src.core.response_cache import cached_endpoint
 from src.core.security import hash_password
 from src.db.enums import UserRole
 from src.db.models import AuditLog, Complaint, ComplaintStatusHistory, Customer, Department, User
@@ -141,6 +142,7 @@ def _rows(db: DbSession, users: list[User]) -> list[PersonRow]:
 
 
 @router.get("", response_model=Page[PersonRow], dependencies=[Depends(require_role(*OVERSIGHT))], summary="Every account, newest first")
+@cached_endpoint(ttl=30)
 def list_people(
     db: DbSession,
     role: str | None = Query(None, max_length=32),
@@ -165,6 +167,7 @@ def list_people(
 
 
 @router.get("/summary", response_model=PeopleSummary, dependencies=[Depends(require_role(*OVERSIGHT))], summary="Accounts at a glance: new sign-ups and recent sign-ins")
+@cached_endpoint(ttl=30)
 def people_summary(db: DbSession) -> PeopleSummary:
     now = datetime.now(UTC)
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -207,6 +210,7 @@ def people_summary(db: DbSession) -> PeopleSummary:
 
 
 @router.get("/{identifier}", response_model=PersonDetail, dependencies=[Depends(require_role(*STAFF))], summary="One account: details, complaints with history, sign-ins, emails")
+@cached_endpoint(ttl=30)
 def person(identifier: str, db: DbSession) -> PersonDetail:
     # 1. Try finding by Customer.external_ref (e.g. CUST-00184)
     customer = db.execute(

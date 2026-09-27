@@ -25,13 +25,26 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import case, func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, lazyload, load_only
 
 from src.db.models import Complaint, Department, ReviewQueueItem, SLAEvent, User
 from src.db.models.workflow import ReviewAction
 from src.services import analytics
 
 CLOSED = ("RESOLVED", "CLOSED")
+
+# The dashboards read a handful of small columns. Loading whole rows -- the
+# complaint text, and the category/department joins every Complaint query
+# carries by default -- made one query 7-9 s over the hosted database.
+_SLIM = (
+    lazyload("*"),
+    joinedload(Complaint.department).load_only(Department.name),
+    load_only(
+        Complaint.id, Complaint.public_ref, Complaint.title, Complaint.status, Complaint.priority_code,
+        Complaint.escalation_code, Complaint.department_id, Complaint.assigned_to, Complaint.injection_suspected,
+        Complaint.created_at, Complaint.resolved_at, Complaint.closed_at,
+    ),
+)
 IN_PROGRESS = ("ASSIGNED", "IN_PROGRESS", "AWAITING_CUSTOMER", "REOPENED")
 
 # The reviewer's desk, grouped the way the work is done.
@@ -76,7 +89,7 @@ def manager_overview(db: Session, *, department_code: str | None = None) -> dict
     def scoped(query):
         return query.where(Complaint.department_id == team.id) if team else query
 
-    complaints = db.execute(scoped(select(Complaint))).scalars().all()
+    complaints = db.execute(scoped(select(Complaint).options(*_SLIM))).scalars().all()
     open_ = [c for c in complaints if c.status not in CLOSED]
 
     at_risk_ids = {cid for (cid,) in db.execute(
@@ -133,7 +146,7 @@ def manager_overview(db: Session, *, department_code: str | None = None) -> dict
     if team:
         agents = [a for a in agents if a.department_id == team.id]
     assigned: dict[Any, list[Complaint]] = defaultdict(list)
-    for c in db.execute(select(Complaint).where(Complaint.assigned_to.in_([a.id for a in agents]))).scalars() if agents else []:
+    for c in db.execute(select(Complaint).options(*_SLIM).where(Complaint.assigned_to.in_([a.id for a in agents]))).scalars() if agents else []:
         assigned[c.assigned_to].append(c)
     names = {d.id: d.name for d in departments}
     agent_rows = []
@@ -178,6 +191,7 @@ def reviewer_overview(db: Session, user: User) -> dict[str, Any]:
     items = db.execute(
         select(ReviewQueueItem, Complaint)
         .join(Complaint, Complaint.id == ReviewQueueItem.complaint_id)
+        .options(*_SLIM)
         .where(ReviewQueueItem.status.in_(("OPEN", "IN_REVIEW")))
         .order_by(ReviewQueueItem.priority_code.asc().nulls_last(), ReviewQueueItem.created_at.asc())
     ).all()
@@ -244,7 +258,7 @@ def reviewer_overview(db: Session, user: User) -> dict[str, Any]:
 # agent
 # ══════════════════════════════════════════════════════════════
 def agent_performance(db: Session, user: User) -> dict[str, Any]:
-    rows = db.execute(select(Complaint).where(Complaint.assigned_to == user.id)).scalars().all()
+    rows = db.execute(select(Complaint).options(*_SLIM).where(Complaint.assigned_to == user.id)).scalars().all()
     resolved = [c for c in rows if c.status in CLOSED]
     week = datetime.now(UTC) - timedelta(days=7)
     hours = [h for h in (_hours(c.created_at, c.resolved_at or c.closed_at) for c in resolved) if h is not None]
