@@ -154,6 +154,7 @@ const NAV: Record<View, Group[]> = {
       items: [
         { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exact: true },
         { href: '/dashboard/complaints', label: 'Complaints', icon: Inbox, exact: true },
+        { href: '/dashboard/email', label: 'Email', icon: Mail },
         { href: '/dashboard/users', label: 'Users & Roles', icon: Users },
         { href: '/dashboard/organisation#departments', label: 'Departments', icon: Building2 },
         { href: '/dashboard/organisation#categories', label: 'Categories', icon: ListChecks },

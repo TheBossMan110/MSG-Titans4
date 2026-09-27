@@ -109,6 +109,11 @@ class Settings(BaseSettings):
     email_poll_seconds: int = 60
     email_sender_name: str = "RaftarXpress Support"
     resend_api_key: str = ""
+    # Google Apps Script web app that sends as the Gmail account over HTTPS.
+    # Hosts that block outbound SMTP (Render's free plan) still allow this.
+    # The script is backend/scripts/gmail-relay.gs; the secret must match it.
+    email_relay_url: str = ""
+    email_relay_secret: str = ""
     resend_from: str = ""
     # Where links in emails point: the website customers sign in to.
     public_app_url: str = "http://localhost:3000"
@@ -262,7 +267,7 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        return [o.strip().rstrip("/") for o in self.cors_origins.split(",") if o.strip()]
 
     @property
     def max_upload_bytes(self) -> int:

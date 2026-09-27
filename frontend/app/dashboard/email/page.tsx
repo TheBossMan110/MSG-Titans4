@@ -56,7 +56,7 @@ function EmailInbox() {
       <div className="grid gap-4 md:grid-cols-3">
         <StatusCard ok={s?.receiving} title="Receiving" value={s ? (s.receiving ? 'Connected' : 'Not connected') : undefined}
           note={s?.receiving ? (s.last_poll_at ? `Checked ${fmtRelative(s.last_poll_at)}` : 'Checked every minute') : 'Add the Gmail App Password to backend/.env (EMAIL_APP_PASSWORD).'} />
-        <StatusCard ok={Boolean(s?.sending)} title="Sending replies" value={s ? (s.sending === 'smtp' ? 'From Gmail' : s.sending === 'resend' ? 'Through Resend' : 'Not connected') : undefined}
+        <StatusCard ok={Boolean(s?.sending)} title="Sending replies" value={s ? (s.sending === 'smtp' || s.sending === 'relay' ? 'From Gmail' : s.sending === 'resend' ? 'Through Resend' : 'Not connected') : undefined}
           note={s?.sending ? 'Replies go out automatically' : 'Replies are written and stored, but not sent'} />
         <StatusCard ok={!s?.last_error} title="Last check" value={s ? (s.last_error ? 'Problem' : 'OK') : undefined} note={s?.last_error ?? 'No errors'} />
       </div>

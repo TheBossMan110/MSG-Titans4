@@ -25,6 +25,7 @@ and checked for promises before sending; see that module for the limits.
 
 from __future__ import annotations
 
+import base64
 import email
 import email.utils
 import imaplib
@@ -76,7 +77,9 @@ def receiving_configured() -> bool:
 
 
 def sending_method() -> str | None:
-    """How replies go out: through Resend from a verified domain, or Gmail SMTP."""
+    """How replies go out: the Gmail relay (HTTPS), Resend from a verified domain, or Gmail SMTP."""
+    if settings.email_relay_url and settings.email_relay_secret:
+        return "relay"
     if settings.resend_api_key and settings.resend_from:
         return "resend"
     if settings.email_address and settings.email_app_password:
@@ -457,11 +460,13 @@ def send(db: Session, *, to: str, name: str | None, subject: str, content: Email
         db.flush()
         return row
     if method is None:
-        row.error = "No way to send is configured (set EMAIL_APP_PASSWORD, or RESEND_FROM with RESEND_API_KEY)."
+        row.error = "No way to send is configured (set EMAIL_RELAY_URL with EMAIL_RELAY_SECRET, EMAIL_APP_PASSWORD, or RESEND_FROM with RESEND_API_KEY)."
         db.flush()
         return row
     try:
-        if method == "resend":
+        if method == "relay":
+            _send_relay(to, name, subject, html_body, text_body)
+        elif method == "resend":
             _send_resend(to, subject, html_body, text_body, message_id, in_reply_to)
         else:
             _send_smtp(to, name, subject, html_body, text_body, message_id, in_reply_to)
@@ -494,6 +499,34 @@ def _send_smtp(to: str, name: str | None, subject: str, html_body: str, text_bod
         smtp.starttls()
         smtp.login(settings.email_address, _app_password())
         smtp.send_message(msg)
+
+
+def _send_relay(to: str, name: str | None, subject: str, html_body: str, text_body: str) -> None:
+    """
+    Send through the Apps Script web app running as the Gmail account. It is
+    plain HTTPS, so it works where SMTP ports are closed, and the mail still
+    leaves from Gmail itself. The logo travels along and is attached inline.
+    """
+    logo = email_template.logo_png()
+    payload = {
+        "secret": settings.email_relay_secret,
+        "to": email.utils.formataddr((name or "", to)) if name else to,
+        "subject": subject,
+        "html": html_body if logo else email_template.with_logo_src(html_body, None),
+        "text": text_body,
+        "fromName": settings.email_sender_name,
+        "logo": base64.b64encode(logo).decode() if logo else None,
+        "logoCid": email_template.LOGO_CID,
+    }
+    # Apps Script answers a POST with a redirect to the result; follow it.
+    response = httpx.post(settings.email_relay_url, json=payload, timeout=45, follow_redirects=True)
+    try:
+        body = response.json()
+    except ValueError:
+        body = {}
+    if response.status_code >= 300 or not body.get("ok"):
+        detail = body.get("error") or response.text[:200]
+        raise RuntimeError(f"Gmail relay {response.status_code}: {detail}")
 
 
 def _send_resend(to: str, subject: str, html_body: str, text_body: str, message_id: str, in_reply_to: str | None) -> None:

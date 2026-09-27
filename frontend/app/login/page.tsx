@@ -107,12 +107,7 @@ function Login() {
             {mfaToken && <button type="button" onClick={() => { setMfaToken(null); setCode(''); setError(null) }} className="text-[13px] text-taupe-2 underline underline-offset-4">Use a different account</button>}
           </form>
 
-          <div className="mt-8 rounded-[var(--radius-lg)] border border-line bg-ivory p-5 text-[13px] text-taupe-2">
-            <p className="eyebrow mb-2">Evaluation accounts</p>
-            <p>The seeded staff accounts, one per role, are listed in the backend README with the published demo password. Use <span className="font-mono text-[12px] text-espresso">admin@raftarxpress.com</span> to reach the rule matrix, knowledge base and audit trail.</p>
-          </div>
-
-          <p className="mt-6 text-[13px] text-taupe-2">
+          <p className="mt-8 text-[13px] text-taupe-2">
             No account?{' '}
             <Link href="/register" className="text-espresso underline decoration-line underline-offset-4">Create one</Link>
             {' '}&mdash; sign-up creates a customer account.
