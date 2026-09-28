@@ -18,6 +18,8 @@ dataset/
 
 ## Complaints
 
+> **Note:** the column contract below was written for an earlier draft domain ("Zenithra", `ZN-` order references). The current import rules for the RaftarXpress data, taken from `backend/src/services/dataset.py`, are documented in `backend/hidden_test_ready/README.md`.
+
 One spreadsheet per file, any filename. Required columns:
 
 | Column | Required | Notes |

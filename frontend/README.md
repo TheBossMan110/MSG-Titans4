@@ -17,7 +17,7 @@ npm run build && npm start        # production
 
 The backend must be running (`uvicorn src.main:app` in `../backend`) with `CORS_ORIGINS`
 including `http://localhost:3000`. Seeded accounts and the published demo password are in
-the backend README; there is no self-registration by design (`/register` explains why).
+the backend README. Anyone can create an account at `/register`; it is always a customer account. Staff accounts are created by an administrator (or, for agents, a manager).
 
 ## What is where
 

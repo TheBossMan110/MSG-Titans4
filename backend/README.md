@@ -52,7 +52,7 @@ python -m python_validation.cli --complaint-ref CMP-00421
 | Review queue, reviewer overrides, SLA tracking | ✅ Done |
 | Analytics, trends, reports + CSV/XLSX/PDF export | ✅ Done |
 | Benchmark runner + dataset import (labelled & hidden) | ✅ Done |
-| Test suite | ✅ 547 passing (SQLite + PostgreSQL in CI) |
+| Test suite | ✅ 989 passing (SQLite + PostgreSQL in CI) |
 | 500-complaint dataset + 17 policy documents | 🔜 In progress |
 | Admin config endpoints (live rule editing) | 🔜 |
 
@@ -170,20 +170,22 @@ demonstration system holding **synthetic data only**. Override with `SEED_PASSWO
 
 **Password:** `SupportNova#2026`
 
-No email is ever sent by this application. `raftarxpress.com` is a fictional organisation.
+`raftarxpress.com` is a fictional organisation. The only real mailbox is the support inbox, supportnova110@gmail.com: complaints emailed there are registered and answered automatically (see `../DEPLOYMENT.md`, section 3).
 
 ---
 
 ## 4. The fictional organisation
 
-**Zenithra** — consumer electronics & appliances e-commerce with in-house logistics,
-operating in IN / AE / UK.
+**RaftarXpress Logistics (Pvt) Ltd**: a logistics and last-mile delivery company with
+e-commerce customers (synthetic data only). An earlier draft used a fictional retailer,
+"Zenithra"; any `*.zenithra.bak` file in the repository is a leftover backup of that draft
+and is not loaded.
 
 | | Count | SRS minimum |
 |---|---|---|
-| Departments | 10 | 8 |
-| Complaint categories | 11 | 10 |
-| Subcategories | 37 | 20 |
+| Departments | 9 | 8 |
+| Complaint categories | 13 | 10 |
+| Subcategories | 34 | 20 |
 | Priority levels | 4 | — |
 | Escalation levels | 6 | — |
 

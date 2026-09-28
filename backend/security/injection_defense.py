@@ -13,7 +13,7 @@ Four layers, each doing something the others cannot:
    instruction region.
 
 **2. Detection** — a configurable pattern library (``injection_patterns``,
-   28 patterns seeded) flags override attempts, role hijacks, fake authority,
+   76 patterns seeded) flags override attempts, role hijacks, fake authority,
    forced outcomes and hidden content. Findings are persisted to
    ``injection_events``.
 

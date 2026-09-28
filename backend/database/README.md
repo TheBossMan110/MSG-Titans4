@@ -233,3 +233,25 @@ python -m src.db.seed.run                 # idempotent — safe to re-run
 python -m src.db.seed.run --only users
 python -m src.db.seed.run --reset         # drops everything first (blocked in production)
 ```
+
+---
+
+## Files in this folder
+
+| File | What it is |
+|---|---|
+| `README.md` | This design note. |
+| `schema.sql` | PostgreSQL DDL for all **54** tables (the 53 described above plus `email_messages`, added by migration `0004_email_messages`), with every index, the `CHECK` constraints and the four PostgreSQL-only search indexes. **Generated** from the SQLAlchemy metadata (`src/db/models`, via `src.db.base.Base.metadata`) by compiling `CreateTable` / `CreateIndex` for the `postgresql` dialect. The extensions it needs (`pgcrypto`, `pg_trgm`, `vector`) are listed at the top. |
+| `ER_DIAGRAM.md` | Mermaid entity-relationship diagrams, one per domain (A-M) plus an overview of the dual-pipeline core, with real columns, keys and foreign keys, followed by a table-by-table description with row counts from a read-only production snapshot. Generated from the same metadata. |
+| `__init__.py` | Package marker. |
+
+**Source of truth.** Alembic (`backend/alembic/versions`, head `0004_email_messages`)
+builds the real database; `schema.sql` and `ER_DIAGRAM.md` are review artefacts derived
+from the same ORM metadata. If either ever disagrees with the migrations, the
+migrations win. The one known difference is recorded in the header of `schema.sql`
+(server defaults that migration 0004 sets on three `email_messages` columns).
+
+Non-sensitive reference and business tables (taxonomy, rules, SLA policies, document
+metadata, complaints, comparisons and verification decisions) are exported as CSV
+outside the repository, in the submission folder `DATABASE\data\`, with their own
+`README.md` listing each file, its row count and its source table.

@@ -1,0 +1,2 @@
+# SupportNova: the Python backend lives in backend/. This file only points there (pinned versions: backend/constraints.txt).
+-r backend/requirements.txt
