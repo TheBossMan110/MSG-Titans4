@@ -304,19 +304,27 @@ def test_rules(payload: RuleTestIn, db: DbSession) -> RuleTestOut:
     "/rules/reload",
     response_model=ReloadOut,
     dependencies=[WriteAccess],
-    summary="Restore the rule matrix from its committed source",
+    summary="Restore the rule matrix and its vocabulary from their committed source",
 )
 def reload_rules(db: DbSession, user: CurrentUser, request: Request) -> ReloadOut:
     """
-    The undo for a live demonstration.
+    The undo for a live demonstration, and the way a deployed configuration
+    change reaches the database.
 
     Whatever was changed on stage goes back to the committed YAML in one call,
     so the next demonstration starts from a known state rather than from
-    whatever the last one left behind.
+    whatever the last one left behind. The vocabulary the rules read
+    (signals.yaml, topics.yaml) is reloaded with them: a rule naming a signal
+    whose terms are not loaded can never fire. Terms are added or updated,
+    never deleted, so vocabulary an administrator added live survives.
     """
+    from src.core import refcache
+    from src.db.seed.core_data import seed_signals
     from src.db.seed.rules import current_ruleset_version, seed_rules
 
-    report = seed_rules(db)
+    report = {**seed_rules(db), **seed_signals(db)}
+    db.flush()
+    refcache.invalidate()
     record_audit(
         db,
         entity_type="rule",
@@ -580,11 +588,13 @@ def activate_prompt(
     except Exception as exc:  # noqa: BLE001 - surfaced as a 422 with the reason
         raise ValidationError(str(exc)) from exc
 
+    # This row is what makes the choice a pin: the prompt seeder reads it and
+    # leaves a pinned version alone (prompts.sync_registry).
     record_audit(
         db,
         entity_type="prompt_version",
         entity_id=name,
-        action="PROMPT_ACTIVATED",
+        action=prompts.PROMPT_ACTIVATED,
         actor=user,
         before={"version": before},
         after={"version": row.version},

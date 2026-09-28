@@ -66,6 +66,41 @@ lexicon:
       - { t: "taking (too )?long",              m: REGEX }
       - { t: "still waiting",                   m: PHRASE }
 
+  delivery_inquiry_terms:
+    description: >-
+      The customer is asking where their shipment is. Names the topic without
+      naming a failure; used by the category fallback (complaint_rules/
+      category_fallback.yaml), never to decide severity.
+    weight: 1.0
+    terms:
+      - { t: "where('?s| is) my (parcel|package|order|shipment|consignment|delivery|courier)", m: REGEX }
+      - { t: "(parcel|package|order|shipment|consignment) (status|update)", m: REGEX }
+      - { t: "(not|n'?t|never) (yet )?(been )?receiv(ed|e) (my|the|our) (parcel|package|order|shipment|consignment)", m: REGEX }
+      - { t: "when will (i|we|it|my \\w+) (get|receive|arrive|be delivered|reach)", m: REGEX }
+      - { t: "still (not|hasn'?t) (arrived|come|reached)", m: REGEX }
+      - { t: "no (update|news|information) (on|about) my", m: REGEX }
+      - { t: "has not reached",               m: PHRASE }
+      - { t: "hasn't reached",                m: PHRASE }
+      - { t: "not delivered yet",             m: PHRASE }
+
+  # ── CUSTOMS ─────────────────────────────────────────────────────────────
+  customs_terms:
+    description: >-
+      Customs, border and regulatory holds on a consignment. Used by the
+      category fallback; the regulatory_body risk signal decides severity.
+    weight: 1.5
+    terms:
+      - { t: "customs",                       m: WORD }
+      - { t: "clearance",                     m: WORD }
+      - { t: "import duty",                   m: PHRASE }
+      - { t: "excise",                        m: WORD }
+      - { t: "border",                        m: WORD }
+      - { t: "seiz(ed|ure)",                  m: REGEX }
+      - { t: "impound(ed)?",                  m: REGEX }
+      - { t: "confiscat(ed|ion)",             m: REGEX }
+      - { t: "detained (at|by)",              m: REGEX }
+      - { t: "held (at|by) (the )?(port|customs|authorities|border)", m: REGEX }
+
   # ── BILLING ─────────────────────────────────────────────────────────────
   billing_terms:
     description: Charges, invoices and payment vocabulary.

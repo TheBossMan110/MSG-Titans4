@@ -1,0 +1,116 @@
+{
+ "sample_size": 500,
+ "processed": 500,
+ "failed": 0,
+ "skipped_unlabelled": 0,
+ "genai_available_count": 0,
+ "by_field": [
+  {
+   "field": "category",
+   "scored": 500,
+   "genai_scored": 0,
+   "genai_accuracy_pct": null,
+   "python_accuracy_pct": 40.4,
+   "agreement_pct": null,
+   "genai_correct": 0,
+   "python_correct": 202
+  },
+  {
+   "field": "subcategory",
+   "scored": 500,
+   "genai_scored": 0,
+   "genai_accuracy_pct": null,
+   "python_accuracy_pct": 35.0,
+   "agreement_pct": null,
+   "genai_correct": 0,
+   "python_correct": 175
+  },
+  {
+   "field": "department",
+   "scored": 500,
+   "genai_scored": 0,
+   "genai_accuracy_pct": null,
+   "python_accuracy_pct": 42.0,
+   "agreement_pct": null,
+   "genai_correct": 0,
+   "python_correct": 210
+  },
+  {
+   "field": "urgency",
+   "scored": 500,
+   "genai_scored": 0,
+   "genai_accuracy_pct": null,
+   "python_accuracy_pct": 43.0,
+   "agreement_pct": null,
+   "genai_correct": 0,
+   "python_correct": 215
+  },
+  {
+   "field": "priority",
+   "scored": 500,
+   "genai_scored": 0,
+   "genai_accuracy_pct": null,
+   "python_accuracy_pct": 39.4,
+   "agreement_pct": null,
+   "genai_correct": 0,
+   "python_correct": 197
+  },
+  {
+   "field": "escalation_level",
+   "scored": 500,
+   "genai_scored": 0,
+   "genai_accuracy_pct": null,
+   "python_accuracy_pct": 52.2,
+   "agreement_pct": null,
+   "genai_correct": 0,
+   "python_correct": 261
+  }
+ ],
+ "overall": {
+  "genai_accuracy_pct": null,
+  "python_accuracy_pct": 42.0,
+  "agreement_pct": null
+ },
+ "mandatory_escalation": {
+  "expected": 317,
+  "recalled": 187,
+  "recall_pct": 58.99,
+  "missed": [
+   "CMP-000006: expected SPECIALIST, got DEPT_MANAGER",
+   "CMP-000007: expected CRITICAL_MGMT, got SPECIALIST",
+   "CMP-000009: expected SPECIALIST, got SUPERVISOR",
+   "CMP-000010: expected CRITICAL_MGMT, got DEPT_MANAGER",
+   "CMP-000012: expected SUPERVISOR, got None",
+   "CMP-000014: expected CRITICAL_MGMT, got COMPLIANCE_REVIEW",
+   "CMP-000018: expected SUPERVISOR, got None",
+   "CMP-000026: expected SUPERVISOR, got None",
+   "CMP-000030: expected CRITICAL_MGMT, got SUPERVISOR",
+   "CMP-000034: expected CRITICAL_MGMT, got None",
+   "CMP-000050: expected CRITICAL_MGMT, got None",
+   "CMP-000052: expected DEPT_MANAGER, got None",
+   "CMP-000075: expected COMPLIANCE_REVIEW, got SUPERVISOR",
+   "CMP-000087: expected SPECIALIST, got DEPT_MANAGER",
+   "CMP-000097: expected DEPT_MANAGER, got None",
+   "CMP-000108: expected SPECIALIST, got DEPT_MANAGER",
+   "CMP-000133: expected DEPT_MANAGER, got None",
+   "CMP-000140: expected CRITICAL_MGMT, got SUPERVISOR",
+   "CMP-000150: expected CRITICAL_MGMT, got None",
+   "CMP-000181: expected CRITICAL_MGMT, got None",
+   "CMP-000185: expected CRITICAL_MGMT, got COMPLIANCE_REVIEW",
+   "CMP-000186: expected CRITICAL_MGMT, got DEPT_MANAGER",
+   "CMP-000194: expected CRITICAL_MGMT, got None",
+   "CMP-000198: expected CRITICAL_MGMT, got None",
+   "CMP-000204: expected SPECIALIST, got SUPERVISOR"
+  ],
+  "over_escalated": 74,
+  "target_pct": 100.0,
+  "met": false
+ },
+ "latency": {
+  "mean_ms": 294.4,
+  "p50_ms": 266.2,
+  "p95_ms": 492.9,
+  "max_ms": 1083.8
+ },
+ "errors": []
+}

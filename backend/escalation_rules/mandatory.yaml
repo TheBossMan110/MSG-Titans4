@@ -131,9 +131,7 @@ rules:
     mandatory_escalation: true
     rationale: "RULE-014 makes this escalation mandatory. The floor may be raised above DEPT_MANAGER, never lowered below it."
     when:
-      all_of:
-        - signal: lost_parcel_terms
-        - signal: rule_014_evidence
+      signal: lost_parcel_terms
     then:
       escalation: DEPT_MANAGER
       department: WARRANTY_CLAIMS
@@ -167,9 +165,7 @@ rules:
     mandatory_escalation: true
     rationale: RULE-017 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
     when:
-      all_of:
-        - signal: partial_shipment_missing_terms
-        - signal: rule_017_evidence
+      signal: partial_shipment_missing_terms
     then:
       escalation: SUPERVISOR
       department: WARRANTY_CLAIMS
@@ -563,9 +559,7 @@ rules:
     mandatory_escalation: true
     rationale: RULE-052 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
     when:
-      all_of:
-        - signal: unauthorized_account_access_terms
-        - signal: rule_052_evidence
+      signal: unauthorized_account_access_terms
     then:
       escalation: SUPERVISOR
       department: ACCOUNT_SECURITY
@@ -851,9 +845,7 @@ rules:
     mandatory_escalation: true
     rationale: RULE-079 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
     when:
-      all_of:
-        - signal: data_privacy_breach_terms
-        - signal: rule_079_evidence
+      signal: data_privacy_breach_terms
     then:
       escalation: SUPERVISOR
       department: ACCOUNT_SECURITY
@@ -923,9 +915,7 @@ rules:
     mandatory_escalation: true
     rationale: RULE-085 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
     when:
-      all_of:
-        - signal: reckless_driving_safety_risk_terms
-        - signal: rule_085_evidence
+      signal: reckless_driving_safety_risk_terms
     then:
       escalation: SUPERVISOR
       department: SAFETY
@@ -1121,9 +1111,7 @@ rules:
     mandatory_escalation: true
     rationale: RULE-100 makes this escalation mandatory. The floor may be raised above SUPERVISOR, never lowered below it.
     when:
-      all_of:
-        - signal: executive_sla_breach_terms
-        - signal: rule_100_evidence
+      signal: executive_sla_breach_terms
     then:
       escalation: SUPERVISOR
       department: MGMT_ESCALATIONS

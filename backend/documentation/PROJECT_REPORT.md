@@ -5,7 +5,8 @@
 | | |
 |---|---|
 | **Project** | SupportNova |
-| **Team** | `<TEAM NAME>` |
+| **Team** | MSG-Titans4 |
+| **Team Members** | Zaki Haider (Team Leader), Muhammad Mudasir, Hamza Akram, Abdul Sami |
 | **Event** | TechWiz 7 (Aptech) — Generative AI PowerPlay |
 | **Theme** | ResponseX Intelligence: Customer Complaint Resolution Intelligence |
 | **Fictional organisation** | RaftarXpress Logistics (Pvt) Ltd (synthetic data only) |
@@ -13,6 +14,8 @@
 | **Web application** | https://support-nova.vercel.app |
 | **Backend API** | https://supportnova.onrender.com |
 | **Interactive API documentation** | https://supportnova.onrender.com/api/docs |
+| **Technical blog** | https://medium.com/@syedzakihaider2006/msg-titans4-supportnova-responsex-intelligence-b21118286769 |
+| **Project documentation** | https://1drv.ms/w/c/98824f5623bec2b9/IQDDZHJBWeNjQp6c1-QWch1uAb7evlxBNWFmlQiH1yV3lDQ?e=4N0N6B |
 | **Source repository** | https://github.com/TheBossMan110/SupportNova |
 
 Seeded demonstration accounts, one per role, are listed in `backend/README.md` (section 3). Every path cited in this report is relative to the repository root unless it begins with a package name inside `backend/` (for example `python_validation/rule_engine.py` means `backend/python_validation/rule_engine.py`).

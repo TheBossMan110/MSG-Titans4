@@ -175,6 +175,26 @@ topics:
     - { t: "taking too long",         m: PHRASE }
     - { t: "no movement",             m: PHRASE }
     - { t: "linehaul",                m: WORD }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "not delivered",           m: PHRASE }
+    - { t: "not yet delivered",       m: PHRASE }
+    - { t: "still not received",      m: PHRASE }
+    - { t: "not received yet",        m: PHRASE }
+    - { t: "late delivery",           m: PHRASE }
+    - { t: "delivery is late",        m: PHRASE }
+    - { t: "expected delivery",       m: PHRASE }
+    - { t: "estimated delivery",      m: PHRASE }
+    - { t: "days late",               m: PHRASE }
+    - { t: "hours late",              m: PHRASE }
+    - { t: "waiting for my parcel",   m: PHRASE }
+    - { t: "waiting for delivery",    m: PHRASE }
+    - { t: "held up",                 m: PHRASE }
+    - { t: "stalled",                 m: WORD }
+    - { t: "transit time",            m: PHRASE }
+    - { t: "delivery time",           m: PHRASE }
+    - { t: "not dispatched",          m: PHRASE }
+    - { t: "not shipped",             m: PHRASE }
+    - { t: "eta",                     m: WORD }
 
   MISSED_DELIVERY_ATTEMPT:
     - { t: "missed delivery",         m: PHRASE }
@@ -190,6 +210,28 @@ topics:
     - { t: "reattempt",               m: WORD }
     - { t: "redelivery",              m: WORD }
     - { t: "failed attempt",          m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "no delivery attempt",     m: PHRASE }
+    - { t: "no attempt",              m: PHRASE }
+    - { t: "fake attempt",            m: PHRASE }
+    - { t: "false attempt",           m: PHRASE }
+    - { t: "marked as attempted",     m: PHRASE }
+    - { t: "marked attempted",        m: PHRASE }
+    - { t: "consignee not available", m: PHRASE }
+    - { t: "customer not available",  m: PHRASE }
+    - { t: "premises closed",         m: PHRASE }
+    - { t: "door locked",             m: PHRASE }
+    - { t: "house locked",            m: PHRASE }
+    - { t: "rider did not come",      m: PHRASE }
+    - { t: "rider never came",        m: PHRASE }
+    - { t: "never rang",              m: PHRASE }
+    - { t: "did not ring",            m: PHRASE }
+    - { t: "didn't call",             m: PHRASE }
+    - { t: "without calling",         m: PHRASE }
+    - { t: "rescheduled",             m: WORD }
+    - { t: "second attempt",          m: PHRASE }
+    - { t: "third attempt",           m: PHRASE }
+    - { t: "re-attempt",              m: PHRASE }
 
   PACKAGE_LEFT_UNATTENDED:
     - { t: "left outside",            m: PHRASE }
@@ -204,6 +246,29 @@ topics:
     - { t: "on the street",           m: PHRASE }
     - { t: "with a neighbour",        m: PHRASE }
     - { t: "with the guard",          m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "left it at",              m: PHRASE }
+    - { t: "left the parcel",         m: PHRASE }
+    - { t: "left the package",        m: PHRASE }
+    - { t: "left my parcel",          m: PHRASE }
+    - { t: "threw",                   m: WORD }
+    - { t: "thrown",                  m: WORD }
+    - { t: "over the gate",           m: PHRASE }
+    - { t: "over the wall",           m: PHRASE }
+    - { t: "dumped",                  m: WORD }
+    - { t: "on the driveway",         m: PHRASE }
+    - { t: "at the gate",             m: PHRASE }
+    - { t: "doorstep",                m: WORD }
+    - { t: "porch",                   m: WORD }
+    - { t: "left with the guard",     m: PHRASE }
+    - { t: "security guard",          m: PHRASE }
+    - { t: "handed to the guard",     m: PHRASE }
+    - { t: "left with my neighbour",  m: PHRASE }
+    - { t: "left with a neighbor",    m: PHRASE }
+    - { t: "without otp",             m: PHRASE }
+    - { t: "no otp",                  m: PHRASE }
+    - { t: "without verification",    m: PHRASE }
+    - { t: "unattended",              m: WORD }
 
   WRONG_ROUTE_DISPATCH:
     - { t: "wrong city",              m: PHRASE }
@@ -217,6 +282,23 @@ topics:
     - { t: "wrong province",          m: PHRASE }
     - { t: "wrong route",             m: PHRASE }
     - { t: "routing error",           m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "delivered to the wrong",  m: PHRASE }
+    - { t: "delivered to wrong",      m: PHRASE }
+    - { t: "wrong house",             m: PHRASE }
+    - { t: "wrong person",            m: PHRASE }
+    - { t: "misdelivered",            m: WORD }
+    - { t: "mis-delivered",           m: PHRASE }
+    - { t: "wrong location",          m: PHRASE }
+    - { t: "another city",            m: PHRASE }
+    - { t: "different city",          m: PHRASE }
+    - { t: "wrong area",              m: PHRASE }
+    - { t: "wrong destination",       m: PHRASE }
+    - { t: "incorrect address",       m: PHRASE }
+    - { t: "incorrect city",          m: PHRASE }
+    - { t: "missorted",               m: WORD }
+    - { t: "mis-sorted",              m: PHRASE }
+    - { t: "wrong sorting",           m: PHRASE }
 
   # ---- LOST_SHIPMENT ----
   LOST_PARCEL:
@@ -231,6 +313,21 @@ topics:
     - { t: "declared lost",           m: PHRASE }
     - { t: "write off",               m: PHRASE }
     - { t: "whole parcel",            m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "lost in transit",         m: PHRASE }
+    - { t: "parcel is lost",          m: PHRASE }
+    - { t: "package is lost",         m: PHRASE }
+    - { t: "cannot be found",         m: PHRASE }
+    - { t: "can't be found",          m: PHRASE }
+    - { t: "not found",               m: PHRASE }
+    - { t: "went missing",            m: PHRASE }
+    - { t: "gone missing",            m: PHRASE }
+    - { t: "never delivered",         m: PHRASE }
+    - { t: "never arrived",           m: PHRASE }
+    - { t: "misplaced",               m: WORD }
+    - { t: "cannot locate",           m: PHRASE }
+    - { t: "can't locate",            m: PHRASE }
+    - { t: "not traceable",           m: PHRASE }
 
   PARTIAL_SHIPMENT_MISSING:
     - { t: "partial",                 m: WORD }
@@ -244,6 +341,21 @@ topics:
     - { t: "incomplete",              m: WORD }
     - { t: "pieces",                  m: WORD }
     - { t: "out of \\d+ (boxes|items|cartons)", m: REGEX }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "missing item",            m: PHRASE }
+    - { t: "item missing",            m: PHRASE }
+    - { t: "box missing",             m: PHRASE }
+    - { t: "boxes missing",           m: PHRASE }
+    - { t: "carton missing",          m: PHRASE }
+    - { t: "cartons",                 m: WORD }
+    - { t: "only one of",             m: PHRASE }
+    - { t: "received only",           m: PHRASE }
+    - { t: "shortage",                m: WORD }
+    - { t: "less quantity",           m: PHRASE }
+    - { t: "missing piece",           m: PHRASE }
+    - { t: "missing pieces",          m: PHRASE }
+    - { t: "multi-piece",             m: PHRASE }
+    - { t: "multi piece",             m: PHRASE }
 
   # ---- PRODUCT_DEFECT ----
   DAMAGED_PARCEL:
@@ -259,6 +371,22 @@ topics:
     - { t: "spoiled",                 m: WORD }
     - { t: "shattered",               m: WORD }
     - { t: "in pieces",               m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "damage",                  m: WORD }
+    - { t: "breakage",                m: WORD }
+    - { t: "broke",                   m: WORD }
+    - { t: "dent",                    m: WORD }
+    - { t: "dents",                   m: WORD }
+    - { t: "scratched",               m: WORD }
+    - { t: "scratches",               m: WORD }
+    - { t: "water damage",            m: PHRASE }
+    - { t: "melted",                  m: WORD }
+    - { t: "rotten",                  m: WORD }
+    - { t: "destroyed",               m: WORD }
+    - { t: "ruined",                  m: WORD }
+    - { t: "bent",                    m: WORD }
+    - { t: "fragile",                 m: WORD }
+    - { t: "glassware",               m: WORD }
 
   WRONG_ITEM_DELIVERED:
     - { t: "wrong item",              m: PHRASE }
@@ -270,6 +398,19 @@ topics:
     - { t: "incorrect item",          m: PHRASE }
     - { t: "mixed up",                m: PHRASE }
     - { t: "swapped",                 m: WORD }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "wrong parcel",            m: PHRASE }
+    - { t: "wrong package",           m: PHRASE }
+    - { t: "wrong size",              m: PHRASE }
+    - { t: "wrong colour",            m: PHRASE }
+    - { t: "wrong color",             m: PHRASE }
+    - { t: "wrong model",             m: PHRASE }
+    - { t: "not my parcel",           m: PHRASE }
+    - { t: "not my order",            m: PHRASE }
+    - { t: "different product",       m: PHRASE }
+    - { t: "did not order",           m: PHRASE }
+    - { t: "didn't order",            m: PHRASE }
+    - { t: "wrong sku",               m: PHRASE }
 
   TAMPERED_PACKAGING:
     - { t: "tampered",                m: WORD }
@@ -283,6 +424,22 @@ topics:
     - { t: "pilfered",                m: WORD }
     - { t: "stolen from",             m: PHRASE }
     - { t: "contents removed",        m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "tampered with",           m: PHRASE }
+    - { t: "box was opened",          m: PHRASE }
+    - { t: "package was opened",      m: PHRASE }
+    - { t: "parcel was opened",       m: PHRASE }
+    - { t: "cut open",                m: PHRASE }
+    - { t: "slit",                    m: WORD }
+    - { t: "slashed",                 m: WORD }
+    - { t: "seal was broken",         m: PHRASE }
+    - { t: "security tape",           m: PHRASE }
+    - { t: "tape removed",            m: PHRASE }
+    - { t: "re-taped",                m: PHRASE }
+    - { t: "retaped",                 m: WORD }
+    - { t: "empty box",               m: PHRASE }
+    - { t: "replaced with",           m: PHRASE }
+    - { t: "items stolen",            m: PHRASE }
 
   # ---- BILLING ----
   COD_AMOUNT_MISMATCH:
@@ -296,6 +453,18 @@ topics:
     - { t: "overcharged",             m: WORD }
     - { t: "did not give change",     m: PHRASE }
     - { t: "no change",               m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "cod amount",              m: PHRASE }
+    - { t: "cod charges",             m: PHRASE }
+    - { t: "cash collected",          m: PHRASE }
+    - { t: "collected extra",         m: PHRASE }
+    - { t: "paid extra",              m: PHRASE }
+    - { t: "extra amount",            m: PHRASE }
+    - { t: "exact change",            m: PHRASE }
+    - { t: "return my change",        m: PHRASE }
+    - { t: "balance amount",          m: PHRASE }
+    - { t: "receipt",                 m: WORD }
+    - { t: "voucher",                 m: WORD }
 
   DUPLICATE_CHARGE:
     - { t: "charged twice",           m: PHRASE }
@@ -308,6 +477,16 @@ topics:
     - { t: "same invoice twice",      m: PHRASE }
     - { t: "billed again",            m: PHRASE }
     - { t: "deducted twice",          m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "charged two times",       m: PHRASE }
+    - { t: "deducted two times",      m: PHRASE }
+    - { t: "paid twice",              m: PHRASE }
+    - { t: "double payment",          m: PHRASE }
+    - { t: "double deduction",        m: PHRASE }
+    - { t: "two transactions",        m: PHRASE }
+    - { t: "repeated charge",         m: PHRASE }
+    - { t: "multiple charges",        m: PHRASE }
+    - { t: "charged again",           m: PHRASE }
 
   INCORRECT_CHARGE:
     - { t: "incorrect charge",        m: PHRASE }
@@ -323,6 +502,22 @@ topics:
     - { t: "invoice is wrong",        m: PHRASE }
     - { t: "demurrage",               m: WORD }
     - { t: "detention charge",        m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "overcharge",              m: WORD }
+    - { t: "overcharging",            m: WORD }
+    - { t: "extra charges",           m: PHRASE }
+    - { t: "hidden charges",          m: PHRASE }
+    - { t: "wrong bill",              m: PHRASE }
+    - { t: "billing error",           m: PHRASE }
+    - { t: "incorrect invoice",       m: PHRASE }
+    - { t: "incorrect amount",        m: PHRASE }
+    - { t: "wrong weight",            m: PHRASE }
+    - { t: "weight difference",       m: PHRASE }
+    - { t: "dimensional weight",      m: PHRASE }
+    - { t: "dead weight",             m: PHRASE }
+    - { t: "storage fee",             m: PHRASE }
+    - { t: "handling charges",        m: PHRASE }
+    - { t: "penalty",                 m: WORD }
 
   COD_REMITTANCE_DELAY:
     - { t: "remittance",              m: WORD }
@@ -335,6 +530,19 @@ topics:
     - { t: "merchant payment",        m: PHRASE }
     - { t: "still not credited",      m: PHRASE }
     - { t: "not credited",            m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "cod remittance",          m: PHRASE }
+    - { t: "remittance delayed",      m: PHRASE }
+    - { t: "payment not received",    m: PHRASE }
+    - { t: "pending payment",         m: PHRASE }
+    - { t: "payments pending",        m: PHRASE }
+    - { t: "not transferred",         m: PHRASE }
+    - { t: "bank transfer",           m: PHRASE }
+    - { t: "merchant payout",         m: PHRASE }
+    - { t: "payment cycle",           m: PHRASE }
+    - { t: "reconciliation",          m: WORD }
+    - { t: "withheld",                m: WORD }
+    - { t: "withholding",             m: WORD }
 
   # ---- REFUND ----
   REFUND_NOT_PROCESSED:
@@ -347,6 +555,17 @@ topics:
     - { t: "reimburse",               m: WORD }
     - { t: "reimbursement",           m: WORD }
     - { t: "never processed",         m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "refund not received",     m: PHRASE }
+    - { t: "refund not processed",    m: PHRASE }
+    - { t: "want a refund",           m: PHRASE }
+    - { t: "want my refund",          m: PHRASE }
+    - { t: "refund request",          m: PHRASE }
+    - { t: "request a refund",        m: PHRASE }
+    - { t: "return my money",         m: PHRASE }
+    - { t: "chargeback",              m: WORD }
+    - { t: "order cancelled",         m: PHRASE }
+    - { t: "cancelled order",         m: PHRASE }
 
   REFUND_DELAY:
     - { t: "refund is taking",        m: PHRASE }
@@ -356,6 +575,13 @@ topics:
     - { t: "promised a refund",       m: PHRASE }
     - { t: "weeks for the refund",    m: PHRASE }
     - { t: "refund pending",          m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "refund delayed",          m: PHRASE }
+    - { t: "refund status",           m: PHRASE }
+    - { t: "still no refund",         m: PHRASE }
+    - { t: "refund has not arrived",  m: PHRASE }
+    - { t: "days for the refund",     m: PHRASE }
+    - { t: "waiting for refund",      m: PHRASE }
 
   RTO_PROCESSING_DELAY:
     - { t: "rto",                     m: WORD }
@@ -366,6 +592,17 @@ topics:
     - { t: "sent back",               m: PHRASE }
     - { t: "not returned to me",      m: PHRASE }
     - { t: "return is stuck",         m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "return to sender",        m: PHRASE }
+    - { t: "return request",          m: PHRASE }
+    - { t: "return parcel",           m: PHRASE }
+    - { t: "return pickup",           m: PHRASE }
+    - { t: "reverse logistics",       m: PHRASE }
+    - { t: "not collected",           m: PHRASE }
+    - { t: "collect the return",      m: PHRASE }
+    - { t: "returned item",           m: PHRASE }
+    - { t: "return status",           m: PHRASE }
+    - { t: "returned parcel",         m: PHRASE }
 
   # ---- ACCOUNT ----
   ACCOUNT_LOCKED:
@@ -379,6 +616,24 @@ topics:
     - { t: "suspended",               m: WORD }
     - { t: "disabled",                m: WORD }
     - { t: "access denied",           m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "account blocked",         m: PHRASE }
+    - { t: "account is blocked",      m: PHRASE }
+    - { t: "locked",                  m: WORD }
+    - { t: "can't access my account", m: PHRASE }
+    - { t: "cannot access my account", m: PHRASE }
+    - { t: "login issue",             m: PHRASE }
+    - { t: "login problem",           m: PHRASE }
+    - { t: "unable to login",         m: PHRASE }
+    - { t: "not able to login",       m: PHRASE }
+    - { t: "can't login",             m: PHRASE }
+    - { t: "cannot login",            m: PHRASE }
+    - { t: "cannot log into",         m: PHRASE }
+    - { t: "can't log into",          m: PHRASE }
+    - { t: "forgot password",         m: PHRASE }
+    - { t: "reset my password",       m: PHRASE }
+    - { t: "otp not received",        m: PHRASE }
+    - { t: "verification code",       m: PHRASE }
 
   UNAUTHORIZED_ACCOUNT_ACCESS:
     - { t: "unauthorized",            m: WORD }
@@ -392,6 +647,19 @@ topics:
     - { t: "compromised",             m: WORD }
     - { t: "phishing",                m: WORD }
     - { t: "credentials",             m: WORD }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "unrecognized login",      m: PHRASE }
+    - { t: "unrecognised login",      m: PHRASE }
+    - { t: "unknown login",           m: PHRASE }
+    - { t: "login alert",             m: PHRASE }
+    - { t: "new device",              m: PHRASE }
+    - { t: "unknown device",          m: PHRASE }
+    - { t: "someone accessed",        m: PHRASE }
+    - { t: "someone logged into",     m: PHRASE }
+    - { t: "account takeover",        m: PHRASE }
+    - { t: "changed my password",     m: PHRASE }
+    - { t: "suspicious activity",     m: PHRASE }
+    - { t: "login from",              m: PHRASE }
 
   MERCHANT_PROFILE_UPDATE:
     - { t: "update my profile",       m: PHRASE }
@@ -402,6 +670,20 @@ topics:
     - { t: "pickup address",          m: PHRASE }
     - { t: "profile update",          m: PHRASE }
     - { t: "contact details",         m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "registration details",    m: PHRASE }
+    - { t: "company name",            m: PHRASE }
+    - { t: "business name",           m: PHRASE }
+    - { t: "ntn",                     m: WORD }
+    - { t: "strn",                    m: WORD }
+    - { t: "bank account details",    m: PHRASE }
+    - { t: "iban",                    m: WORD }
+    - { t: "update address",          m: PHRASE }
+    - { t: "change address",          m: PHRASE }
+    - { t: "warehouse address",       m: PHRASE }
+    - { t: "update phone",            m: PHRASE }
+    - { t: "change phone",            m: PHRASE }
+    - { t: "kyc",                     m: WORD }
 
   # ---- TECHNICAL_SUPPORT ----
   TRACKING_NOT_UPDATING:
@@ -414,6 +696,19 @@ topics:
     - { t: "tracking number",         m: PHRASE }
     - { t: "shows nothing",           m: PHRASE }
     - { t: "stuck on",                m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "tracking not updated",    m: PHRASE }
+    - { t: "tracking stuck",          m: PHRASE }
+    - { t: "no tracking",             m: PHRASE }
+    - { t: "tracking shows",          m: PHRASE }
+    - { t: "tracking status",         m: PHRASE }
+    - { t: "no scan",                 m: PHRASE }
+    - { t: "not scanned",             m: PHRASE }
+    - { t: "last scan",               m: PHRASE }
+    - { t: "tracking id",             m: PHRASE }
+    - { t: "tracking link",           m: PHRASE }
+    - { t: "status not updated",      m: PHRASE }
+    - { t: "status shows",            m: PHRASE }
 
   APP_CRASH:
     - { t: "app crash",               m: PHRASE }
@@ -426,6 +721,20 @@ topics:
     - { t: "error message",           m: PHRASE }
     - { t: "website is down",         m: PHRASE }
     - { t: "portal",                  m: WORD }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "app",                     m: WORD }
+    - { t: "mobile app",              m: PHRASE }
+    - { t: "crash",                   m: WORD }
+    - { t: "crashed",                 m: WORD }
+    - { t: "hangs",                   m: WORD }
+    - { t: "not loading",             m: PHRASE }
+    - { t: "won't load",              m: PHRASE }
+    - { t: "blank screen",            m: PHRASE }
+    - { t: "bug",                     m: WORD }
+    - { t: "glitch",                  m: WORD }
+    - { t: "website",                 m: WORD }
+    - { t: "not responding",          m: PHRASE }
+    - { t: "site is down",            m: PHRASE }
 
   API_WEBHOOK_FAILURE:
     - { t: "api",                     m: WORD }
@@ -438,6 +747,19 @@ topics:
     - { t: "500 error",               m: PHRASE }
     - { t: "manifest upload",         m: PHRASE }
     - { t: "csv upload",              m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "api key",                 m: PHRASE }
+    - { t: "api error",               m: PHRASE }
+    - { t: "callback",                m: WORD }
+    - { t: "shopify",                 m: WORD }
+    - { t: "woocommerce",             m: WORD }
+    - { t: "plugin",                  m: WORD }
+    - { t: "json",                    m: WORD }
+    - { t: "status code",             m: PHRASE }
+    - { t: "airway bill",             m: PHRASE }
+    - { t: "awb",                     m: WORD }
+    - { t: "bulk upload",             m: PHRASE }
+    - { t: "booking api",             m: PHRASE }
 
   # ---- STAFF_BEHAVIOR ----
   RUDE_RIDER_DRIVER_BEHAVIOR:
@@ -452,6 +774,28 @@ topics:
     - { t: "misbehaved",              m: WORD }
     - { t: "unprofessional",          m: WORD }
     - { t: "argued",                  m: WORD }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "rude behaviour",          m: PHRASE }
+    - { t: "rude behavior",           m: PHRASE }
+    - { t: "misbehave",               m: WORD }
+    - { t: "misbehaviour",            m: WORD }
+    - { t: "harsh",                   m: WORD }
+    - { t: "abused",                  m: WORD }
+    - { t: "abusing",                 m: WORD }
+    - { t: "insulted",                m: WORD }
+    - { t: "insulting",               m: WORD }
+    - { t: "yelled",                  m: WORD }
+    - { t: "yelling",                 m: WORD }
+    - { t: "screamed",                m: WORD }
+    - { t: "bad attitude",            m: PHRASE }
+    - { t: "impolite",                m: WORD }
+    - { t: "arrogant",                m: WORD }
+    - { t: "harassed",                m: WORD }
+    - { t: "harassment",              m: WORD }
+    - { t: "threatening",             m: WORD }
+    - { t: "verbal abuse",            m: PHRASE }
+    - { t: "bad language",            m: PHRASE }
+    - { t: "vulgar",                  m: WORD }
 
   RIDER_DEMANDING_CASH_TIP:
     - { t: "asked for a tip",         m: PHRASE }
@@ -463,6 +807,17 @@ topics:
     - { t: "would not give me",       m: PHRASE }
     - { t: "asked for more money",    m: PHRASE }
     - { t: "gratuity",                m: WORD }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "tip",                     m: WORD }
+    - { t: "tips",                    m: WORD }
+    - { t: "demanded money",          m: PHRASE }
+    - { t: "extra payment",           m: PHRASE }
+    - { t: "keep the change",         m: PHRASE }
+    - { t: "chai pani",               m: PHRASE }
+    - { t: "baksheesh",               m: WORD }
+    - { t: "demanded extra",          m: PHRASE }
+    - { t: "asked for extra",         m: PHRASE }
+    - { t: "refused to deliver unless", m: PHRASE }
 
   # ---- WARRANTY ----
   WARRANTY_CLAIM_DENIED:
@@ -474,6 +829,16 @@ topics:
     - { t: "no compensation",         m: PHRASE }
     - { t: "declined",                m: WORD }
     - { t: "claim",                   m: WORD }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "compensation denied",     m: PHRASE }
+    - { t: "claim refused",           m: PHRASE }
+    - { t: "not covered",             m: PHRASE }
+    - { t: "denied compensation",     m: PHRASE }
+    - { t: "not liable",              m: PHRASE }
+    - { t: "liability",               m: WORD }
+    - { t: "improper packaging",      m: PHRASE }
+    - { t: "damage claim",            m: PHRASE }
+    - { t: "claim form",              m: PHRASE }
 
   INSURANCE_PAYOUT_DELAY:
     - { t: "insurance",               m: WORD }
@@ -484,6 +849,15 @@ topics:
     - { t: "waiting for the claim",   m: PHRASE }
     - { t: "declared value",          m: PHRASE }
     - { t: "cargo insurance",         m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "insurance claim",         m: PHRASE }
+    - { t: "claim settlement",        m: PHRASE }
+    - { t: "settlement delay",        m: PHRASE }
+    - { t: "claim payment",           m: PHRASE }
+    - { t: "claim approved",          m: PHRASE }
+    - { t: "payout pending",          m: PHRASE }
+    - { t: "underwriter",             m: WORD }
+    - { t: "surveyor",                m: WORD }
 
   # ---- PRIVACY ----
   DATA_PRIVACY_BREACH:
@@ -497,6 +871,21 @@ topics:
     - { t: "leaked",                  m: WORD }
     - { t: "another customer's",      m: PHRASE }
     - { t: "phone number was given",  m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "personal information",    m: PHRASE }
+    - { t: "personal details",        m: PHRASE }
+    - { t: "data leak",               m: PHRASE }
+    - { t: "exposed",                 m: WORD }
+    - { t: "shared my number",        m: PHRASE }
+    - { t: "misused my number",       m: PHRASE }
+    - { t: "used my number",          m: PHRASE }
+    - { t: "unsolicited messages",    m: PHRASE }
+    - { t: "personal messages",       m: PHRASE }
+    - { t: "inappropriate messages",  m: PHRASE }
+    - { t: "stalking",                m: WORD }
+    - { t: "customer data",           m: PHRASE }
+    - { t: "database",                m: WORD }
+    - { t: "cnic",                    m: WORD }
 
   UNSOLICITED_MARKETING_SMS:
     - { t: "marketing",               m: WORD }
@@ -507,6 +896,15 @@ topics:
     - { t: "did not sign up",         m: PHRASE }
     - { t: "keep texting",            m: PHRASE }
     - { t: "sms",                     m: WORD }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "promotions",              m: WORD }
+    - { t: "promotional messages",    m: PHRASE }
+    - { t: "advertisement",           m: WORD }
+    - { t: "marketing messages",      m: PHRASE }
+    - { t: "opt out",                 m: PHRASE }
+    - { t: "opt-out",                 m: PHRASE }
+    - { t: "do not contact",          m: PHRASE }
+    - { t: "stop messages",           m: PHRASE }
 
   # ---- SAFETY ----
   RECKLESS_DRIVING_SAFETY_RISK:
@@ -522,6 +920,22 @@ topics:
     - { t: "hit my car",              m: PHRASE }
     - { t: "accident",                m: WORD }
     - { t: "collision",               m: WORD }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "collided",                m: WORD }
+    - { t: "crashed into",            m: PHRASE }
+    - { t: "ran over",                m: PHRASE }
+    - { t: "overspeeding",            m: WORD }
+    - { t: "over speeding",           m: PHRASE }
+    - { t: "rash driving",            m: PHRASE }
+    - { t: "careless driving",        m: PHRASE }
+    - { t: "wheelie",                 m: WORD }
+    - { t: "school zone",             m: PHRASE }
+    - { t: "pedestrian",              m: WORD }
+    - { t: "injured",                 m: WORD }
+    - { t: "hit and run",             m: PHRASE }
+    - { t: "road accident",           m: PHRASE }
+    - { t: "near miss",               m: PHRASE }
+    - { t: "overloaded",              m: WORD }
 
   HAZARDOUS_MATERIAL_MISHANDLING:
     - { t: "undeclared",              m: WORD }
@@ -535,6 +949,20 @@ topics:
     - { t: "fumes",                   m: WORD }
     - { t: "spill",                   m: WORD }
     - { t: "leaking",                 m: WORD }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "hazardous",               m: WORD }
+    - { t: "dangerous goods",         m: PHRASE }
+    - { t: "flammable",               m: WORD }
+    - { t: "explosive",               m: WORD }
+    - { t: "toxic",                   m: WORD }
+    - { t: "gas cylinder",            m: PHRASE }
+    - { t: "lithium",                 m: WORD }
+    - { t: "corrosive",               m: WORD }
+    - { t: "caught fire",             m: PHRASE }
+    - { t: "fire broke out",          m: PHRASE }
+    - { t: "burning smell",           m: PHRASE }
+    - { t: "odour",                   m: WORD }
+    - { t: "odor",                    m: WORD }
 
   # ---- CUSTOMS ----
   MISSING_CUSTOMS_DOCUMENTS:
@@ -547,6 +975,16 @@ topics:
     - { t: "export documents",        m: PHRASE }
     - { t: "hs code",                 m: PHRASE }
     - { t: "held at customs",         m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "documents missing",       m: PHRASE }
+    - { t: "missing documents",       m: PHRASE }
+    - { t: "missing paperwork",       m: PHRASE }
+    - { t: "invoice missing",         m: PHRASE }
+    - { t: "goods declaration",       m: PHRASE }
+    - { t: "customs duty",            m: PHRASE }
+    - { t: "permit",                  m: WORD }
+    - { t: "certificate",             m: WORD }
+    - { t: "documentation",           m: WORD }
 
   REGULATORY_IMPOUNDMENT_HOLD:
     - { t: "impounded",               m: WORD }
@@ -557,6 +995,18 @@ topics:
     - { t: "regulatory hold",         m: PHRASE }
     - { t: "quarantine",              m: WORD }
     - { t: "inspection",              m: WORD }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "held by customs",         m: PHRASE }
+    - { t: "customs hold",            m: PHRASE }
+    - { t: "checkpost",               m: WORD }
+    - { t: "check post",              m: PHRASE }
+    - { t: "police",                  m: WORD }
+    - { t: "excise",                  m: WORD }
+    - { t: "confiscated",             m: WORD }
+    - { t: "seizure",                 m: WORD }
+    - { t: "raid",                    m: WORD }
+    - { t: "held at the border",      m: PHRASE }
+    - { t: "detained at",             m: PHRASE }
 
   # ---- SERVICE_QUALITY ----
   SUBSCRIPTION_CONTRACT_RENEWAL:
@@ -568,6 +1018,16 @@ topics:
     - { t: "cancel my contract",      m: PHRASE }
     - { t: "rate revision",           m: PHRASE }
     - { t: "agreement expires",       m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "contract renewal",        m: PHRASE }
+    - { t: "annual contract",         m: PHRASE }
+    - { t: "rate agreement",          m: PHRASE }
+    - { t: "pricing agreement",       m: PHRASE }
+    - { t: "termination",             m: WORD }
+    - { t: "new rates",               m: PHRASE }
+    - { t: "tariff revision",         m: PHRASE }
+    - { t: "volume discount",         m: PHRASE }
+    - { t: "rate review",             m: PHRASE }
 
   EXECUTIVE_SLA_BREACH:
     # No emotional phrasing here. "Unacceptable service" was in this list and
@@ -587,3 +1047,14 @@ topics:
     - { t: "escalate to management",  m: PHRASE }
     - { t: "senior management",       m: PHRASE }
     - { t: "board level",             m: PHRASE }
+    # everyday vocabulary for this sub-type, written from its meaning (2026-09-28)
+    - { t: "service level",           m: PHRASE }
+    - { t: "guaranteed delivery",     m: PHRASE }
+    - { t: "guaranteed overnight",    m: PHRASE }
+    - { t: "next day guarantee",      m: PHRASE }
+    - { t: "vip",                     m: WORD }
+    - { t: "premium service",         m: PHRASE }
+    - { t: "key account",             m: PHRASE }
+    - { t: "missed commitment",       m: PHRASE }
+    - { t: "committed timeline",      m: PHRASE }
+    - { t: "express service",         m: PHRASE }

@@ -141,9 +141,14 @@ def refresh(payload: RefreshRequest, request: Request, db: DbSession) -> TokenRe
     )
 
 
-@router.post("/logout", response_model=MessageResponse, summary="Revoke a refresh token")
+@router.post("/logout", response_model=MessageResponse, summary="Sign out this session")
 def logout(payload: RefreshRequest, request: Request, db: DbSession, user: CurrentUser):
-    auth_service.revoke_refresh_token(db, raw_refresh=payload.refresh_token)
+    # The access token this request carries stops working now, not when it
+    # expires; get_current_user put its session id on request.state.
+    auth_service.revoke_refresh_token(
+        db, raw_refresh=payload.refresh_token,
+        session_id=getattr(request.state, "session_id", None),
+    )
     record_audit(
         db, actor=user, entity_type="auth", entity_id=str(user.id),
         action="LOGOUT", request=request,

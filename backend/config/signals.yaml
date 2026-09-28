@@ -36,6 +36,25 @@ lexicon:
       - { t: taking too long, m: PHRASE }
       - { t: no movement, m: PHRASE }
       - { t: linehaul, m: WORD }
+      - { t: not delivered, m: PHRASE }
+      - { t: not yet delivered, m: PHRASE }
+      - { t: still not received, m: PHRASE }
+      - { t: not received yet, m: PHRASE }
+      - { t: late delivery, m: PHRASE }
+      - { t: delivery is late, m: PHRASE }
+      - { t: expected delivery, m: PHRASE }
+      - { t: estimated delivery, m: PHRASE }
+      - { t: days late, m: PHRASE }
+      - { t: hours late, m: PHRASE }
+      - { t: waiting for my parcel, m: PHRASE }
+      - { t: waiting for delivery, m: PHRASE }
+      - { t: held up, m: PHRASE }
+      - { t: stalled, m: WORD }
+      - { t: transit time, m: PHRASE }
+      - { t: delivery time, m: PHRASE }
+      - { t: not dispatched, m: PHRASE }
+      - { t: not shipped, m: PHRASE }
+      - { t: eta, m: WORD }
 
   missed_delivery_attempt_terms:
     description: "MISSED_DELIVERY_ATTEMPT. Authored topic terms."
@@ -55,6 +74,27 @@ lexicon:
       - { t: reattempt, m: WORD }
       - { t: redelivery, m: WORD }
       - { t: failed attempt, m: PHRASE }
+      - { t: no delivery attempt, m: PHRASE }
+      - { t: no attempt, m: PHRASE }
+      - { t: fake attempt, m: PHRASE }
+      - { t: false attempt, m: PHRASE }
+      - { t: marked as attempted, m: PHRASE }
+      - { t: marked attempted, m: PHRASE }
+      - { t: consignee not available, m: PHRASE }
+      - { t: customer not available, m: PHRASE }
+      - { t: premises closed, m: PHRASE }
+      - { t: door locked, m: PHRASE }
+      - { t: house locked, m: PHRASE }
+      - { t: rider did not come, m: PHRASE }
+      - { t: rider never came, m: PHRASE }
+      - { t: never rang, m: PHRASE }
+      - { t: did not ring, m: PHRASE }
+      - { t: didn't call, m: PHRASE }
+      - { t: without calling, m: PHRASE }
+      - { t: rescheduled, m: WORD }
+      - { t: second attempt, m: PHRASE }
+      - { t: third attempt, m: PHRASE }
+      - { t: re-attempt, m: PHRASE }
 
   package_left_unattended_terms:
     description: "PACKAGE_LEFT_UNATTENDED. Authored topic terms."
@@ -73,6 +113,28 @@ lexicon:
       - { t: on the street, m: PHRASE }
       - { t: with a neighbour, m: PHRASE }
       - { t: with the guard, m: PHRASE }
+      - { t: left it at, m: PHRASE }
+      - { t: left the parcel, m: PHRASE }
+      - { t: left the package, m: PHRASE }
+      - { t: left my parcel, m: PHRASE }
+      - { t: threw, m: WORD }
+      - { t: thrown, m: WORD }
+      - { t: over the gate, m: PHRASE }
+      - { t: over the wall, m: PHRASE }
+      - { t: dumped, m: WORD }
+      - { t: on the driveway, m: PHRASE }
+      - { t: at the gate, m: PHRASE }
+      - { t: doorstep, m: WORD }
+      - { t: porch, m: WORD }
+      - { t: left with the guard, m: PHRASE }
+      - { t: security guard, m: PHRASE }
+      - { t: handed to the guard, m: PHRASE }
+      - { t: left with my neighbour, m: PHRASE }
+      - { t: left with a neighbor, m: PHRASE }
+      - { t: without otp, m: PHRASE }
+      - { t: no otp, m: PHRASE }
+      - { t: without verification, m: PHRASE }
+      - { t: unattended, m: WORD }
 
   wrong_route_dispatch_terms:
     description: "WRONG_ROUTE_DISPATCH. Authored topic terms."
@@ -90,6 +152,22 @@ lexicon:
       - { t: wrong province, m: PHRASE }
       - { t: wrong route, m: PHRASE }
       - { t: routing error, m: PHRASE }
+      - { t: delivered to the wrong, m: PHRASE }
+      - { t: delivered to wrong, m: PHRASE }
+      - { t: wrong house, m: PHRASE }
+      - { t: wrong person, m: PHRASE }
+      - { t: misdelivered, m: WORD }
+      - { t: mis-delivered, m: PHRASE }
+      - { t: wrong location, m: PHRASE }
+      - { t: another city, m: PHRASE }
+      - { t: different city, m: PHRASE }
+      - { t: wrong area, m: PHRASE }
+      - { t: wrong destination, m: PHRASE }
+      - { t: incorrect address, m: PHRASE }
+      - { t: incorrect city, m: PHRASE }
+      - { t: missorted, m: WORD }
+      - { t: mis-sorted, m: PHRASE }
+      - { t: wrong sorting, m: PHRASE }
 
   lost_parcel_terms:
     description: "LOST_PARCEL. Authored topic terms."
@@ -107,6 +185,20 @@ lexicon:
       - { t: declared lost, m: PHRASE }
       - { t: write off, m: PHRASE }
       - { t: whole parcel, m: PHRASE }
+      - { t: lost in transit, m: PHRASE }
+      - { t: parcel is lost, m: PHRASE }
+      - { t: package is lost, m: PHRASE }
+      - { t: cannot be found, m: PHRASE }
+      - { t: can't be found, m: PHRASE }
+      - { t: not found, m: PHRASE }
+      - { t: went missing, m: PHRASE }
+      - { t: gone missing, m: PHRASE }
+      - { t: never delivered, m: PHRASE }
+      - { t: never arrived, m: PHRASE }
+      - { t: misplaced, m: WORD }
+      - { t: cannot locate, m: PHRASE }
+      - { t: can't locate, m: PHRASE }
+      - { t: not traceable, m: PHRASE }
 
   partial_shipment_missing_terms:
     description: "PARTIAL_SHIPMENT_MISSING. Authored topic terms."
@@ -124,6 +216,20 @@ lexicon:
       - { t: incomplete, m: WORD }
       - { t: pieces, m: WORD }
       - { t: "out of \\d+ (boxes|items|cartons)", m: REGEX }
+      - { t: missing item, m: PHRASE }
+      - { t: item missing, m: PHRASE }
+      - { t: box missing, m: PHRASE }
+      - { t: boxes missing, m: PHRASE }
+      - { t: carton missing, m: PHRASE }
+      - { t: cartons, m: WORD }
+      - { t: only one of, m: PHRASE }
+      - { t: received only, m: PHRASE }
+      - { t: shortage, m: WORD }
+      - { t: less quantity, m: PHRASE }
+      - { t: missing piece, m: PHRASE }
+      - { t: missing pieces, m: PHRASE }
+      - { t: multi-piece, m: PHRASE }
+      - { t: multi piece, m: PHRASE }
 
   damaged_parcel_terms:
     description: "DAMAGED_PARCEL. Authored topic terms."
@@ -142,6 +248,21 @@ lexicon:
       - { t: spoiled, m: WORD }
       - { t: shattered, m: WORD }
       - { t: in pieces, m: PHRASE }
+      - { t: damage, m: WORD }
+      - { t: breakage, m: WORD }
+      - { t: broke, m: WORD }
+      - { t: dent, m: WORD }
+      - { t: dents, m: WORD }
+      - { t: scratched, m: WORD }
+      - { t: scratches, m: WORD }
+      - { t: water damage, m: PHRASE }
+      - { t: melted, m: WORD }
+      - { t: rotten, m: WORD }
+      - { t: destroyed, m: WORD }
+      - { t: ruined, m: WORD }
+      - { t: bent, m: WORD }
+      - { t: fragile, m: WORD }
+      - { t: glassware, m: WORD }
 
   wrong_item_delivered_terms:
     description: "WRONG_ITEM_DELIVERED. Authored topic terms."
@@ -157,6 +278,18 @@ lexicon:
       - { t: incorrect item, m: PHRASE }
       - { t: mixed up, m: PHRASE }
       - { t: swapped, m: WORD }
+      - { t: wrong parcel, m: PHRASE }
+      - { t: wrong package, m: PHRASE }
+      - { t: wrong size, m: PHRASE }
+      - { t: wrong colour, m: PHRASE }
+      - { t: wrong color, m: PHRASE }
+      - { t: wrong model, m: PHRASE }
+      - { t: not my parcel, m: PHRASE }
+      - { t: not my order, m: PHRASE }
+      - { t: different product, m: PHRASE }
+      - { t: did not order, m: PHRASE }
+      - { t: didn't order, m: PHRASE }
+      - { t: wrong sku, m: PHRASE }
 
   tampered_packaging_terms:
     description: "TAMPERED_PACKAGING. Authored topic terms."
@@ -174,6 +307,21 @@ lexicon:
       - { t: pilfered, m: WORD }
       - { t: stolen from, m: PHRASE }
       - { t: contents removed, m: PHRASE }
+      - { t: tampered with, m: PHRASE }
+      - { t: box was opened, m: PHRASE }
+      - { t: package was opened, m: PHRASE }
+      - { t: parcel was opened, m: PHRASE }
+      - { t: cut open, m: PHRASE }
+      - { t: slit, m: WORD }
+      - { t: slashed, m: WORD }
+      - { t: seal was broken, m: PHRASE }
+      - { t: security tape, m: PHRASE }
+      - { t: tape removed, m: PHRASE }
+      - { t: re-taped, m: PHRASE }
+      - { t: retaped, m: WORD }
+      - { t: empty box, m: PHRASE }
+      - { t: replaced with, m: PHRASE }
+      - { t: items stolen, m: PHRASE }
 
   cod_amount_mismatch_terms:
     description: "COD_AMOUNT_MISMATCH. Authored topic terms."
@@ -190,6 +338,17 @@ lexicon:
       - { t: overcharged, m: WORD }
       - { t: did not give change, m: PHRASE }
       - { t: no change, m: PHRASE }
+      - { t: cod amount, m: PHRASE }
+      - { t: cod charges, m: PHRASE }
+      - { t: cash collected, m: PHRASE }
+      - { t: collected extra, m: PHRASE }
+      - { t: paid extra, m: PHRASE }
+      - { t: extra amount, m: PHRASE }
+      - { t: exact change, m: PHRASE }
+      - { t: return my change, m: PHRASE }
+      - { t: balance amount, m: PHRASE }
+      - { t: receipt, m: WORD }
+      - { t: voucher, m: WORD }
 
   duplicate_charge_terms:
     description: "DUPLICATE_CHARGE. Authored topic terms."
@@ -206,6 +365,15 @@ lexicon:
       - { t: same invoice twice, m: PHRASE }
       - { t: billed again, m: PHRASE }
       - { t: deducted twice, m: PHRASE }
+      - { t: charged two times, m: PHRASE }
+      - { t: deducted two times, m: PHRASE }
+      - { t: paid twice, m: PHRASE }
+      - { t: double payment, m: PHRASE }
+      - { t: double deduction, m: PHRASE }
+      - { t: two transactions, m: PHRASE }
+      - { t: repeated charge, m: PHRASE }
+      - { t: multiple charges, m: PHRASE }
+      - { t: charged again, m: PHRASE }
 
   incorrect_charge_terms:
     description: "INCORRECT_CHARGE. Authored topic terms."
@@ -225,6 +393,21 @@ lexicon:
       - { t: invoice is wrong, m: PHRASE }
       - { t: demurrage, m: WORD }
       - { t: detention charge, m: PHRASE }
+      - { t: overcharge, m: WORD }
+      - { t: overcharging, m: WORD }
+      - { t: extra charges, m: PHRASE }
+      - { t: hidden charges, m: PHRASE }
+      - { t: wrong bill, m: PHRASE }
+      - { t: billing error, m: PHRASE }
+      - { t: incorrect invoice, m: PHRASE }
+      - { t: incorrect amount, m: PHRASE }
+      - { t: wrong weight, m: PHRASE }
+      - { t: weight difference, m: PHRASE }
+      - { t: dimensional weight, m: PHRASE }
+      - { t: dead weight, m: PHRASE }
+      - { t: storage fee, m: PHRASE }
+      - { t: handling charges, m: PHRASE }
+      - { t: penalty, m: WORD }
 
   cod_remittance_delay_terms:
     description: "COD_REMITTANCE_DELAY. Authored topic terms."
@@ -241,6 +424,18 @@ lexicon:
       - { t: merchant payment, m: PHRASE }
       - { t: still not credited, m: PHRASE }
       - { t: not credited, m: PHRASE }
+      - { t: cod remittance, m: PHRASE }
+      - { t: remittance delayed, m: PHRASE }
+      - { t: payment not received, m: PHRASE }
+      - { t: pending payment, m: PHRASE }
+      - { t: payments pending, m: PHRASE }
+      - { t: not transferred, m: PHRASE }
+      - { t: bank transfer, m: PHRASE }
+      - { t: merchant payout, m: PHRASE }
+      - { t: payment cycle, m: PHRASE }
+      - { t: reconciliation, m: WORD }
+      - { t: withheld, m: WORD }
+      - { t: withholding, m: WORD }
 
   refund_not_processed_terms:
     description: "REFUND_NOT_PROCESSED. Authored topic terms."
@@ -256,6 +451,16 @@ lexicon:
       - { t: reimburse, m: WORD }
       - { t: reimbursement, m: WORD }
       - { t: never processed, m: PHRASE }
+      - { t: refund not received, m: PHRASE }
+      - { t: refund not processed, m: PHRASE }
+      - { t: want a refund, m: PHRASE }
+      - { t: want my refund, m: PHRASE }
+      - { t: refund request, m: PHRASE }
+      - { t: request a refund, m: PHRASE }
+      - { t: return my money, m: PHRASE }
+      - { t: chargeback, m: WORD }
+      - { t: order cancelled, m: PHRASE }
+      - { t: cancelled order, m: PHRASE }
 
   refund_delay_terms:
     description: "REFUND_DELAY. Authored topic terms."
@@ -269,6 +474,12 @@ lexicon:
       - { t: promised a refund, m: PHRASE }
       - { t: weeks for the refund, m: PHRASE }
       - { t: refund pending, m: PHRASE }
+      - { t: refund delayed, m: PHRASE }
+      - { t: refund status, m: PHRASE }
+      - { t: still no refund, m: PHRASE }
+      - { t: refund has not arrived, m: PHRASE }
+      - { t: days for the refund, m: PHRASE }
+      - { t: waiting for refund, m: PHRASE }
 
   rto_processing_delay_terms:
     description: "RTO_PROCESSING_DELAY. Authored topic terms."
@@ -283,6 +494,16 @@ lexicon:
       - { t: sent back, m: PHRASE }
       - { t: not returned to me, m: PHRASE }
       - { t: return is stuck, m: PHRASE }
+      - { t: return to sender, m: PHRASE }
+      - { t: return request, m: PHRASE }
+      - { t: return parcel, m: PHRASE }
+      - { t: return pickup, m: PHRASE }
+      - { t: reverse logistics, m: PHRASE }
+      - { t: not collected, m: PHRASE }
+      - { t: collect the return, m: PHRASE }
+      - { t: returned item, m: PHRASE }
+      - { t: return status, m: PHRASE }
+      - { t: returned parcel, m: PHRASE }
 
   account_locked_terms:
     description: "ACCOUNT_LOCKED. Authored topic terms."
@@ -299,6 +520,23 @@ lexicon:
       - { t: suspended, m: WORD }
       - { t: disabled, m: WORD }
       - { t: access denied, m: PHRASE }
+      - { t: account blocked, m: PHRASE }
+      - { t: account is blocked, m: PHRASE }
+      - { t: locked, m: WORD }
+      - { t: can't access my account, m: PHRASE }
+      - { t: cannot access my account, m: PHRASE }
+      - { t: login issue, m: PHRASE }
+      - { t: login problem, m: PHRASE }
+      - { t: unable to login, m: PHRASE }
+      - { t: not able to login, m: PHRASE }
+      - { t: can't login, m: PHRASE }
+      - { t: cannot login, m: PHRASE }
+      - { t: cannot log into, m: PHRASE }
+      - { t: can't log into, m: PHRASE }
+      - { t: forgot password, m: PHRASE }
+      - { t: reset my password, m: PHRASE }
+      - { t: otp not received, m: PHRASE }
+      - { t: verification code, m: PHRASE }
 
   unauthorized_account_access_terms:
     description: "UNAUTHORIZED_ACCOUNT_ACCESS. Authored topic terms."
@@ -316,6 +554,18 @@ lexicon:
       - { t: compromised, m: WORD }
       - { t: phishing, m: WORD }
       - { t: credentials, m: WORD }
+      - { t: unrecognized login, m: PHRASE }
+      - { t: unrecognised login, m: PHRASE }
+      - { t: unknown login, m: PHRASE }
+      - { t: login alert, m: PHRASE }
+      - { t: new device, m: PHRASE }
+      - { t: unknown device, m: PHRASE }
+      - { t: someone accessed, m: PHRASE }
+      - { t: someone logged into, m: PHRASE }
+      - { t: account takeover, m: PHRASE }
+      - { t: changed my password, m: PHRASE }
+      - { t: suspicious activity, m: PHRASE }
+      - { t: login from, m: PHRASE }
 
   merchant_profile_update_terms:
     description: "MERCHANT_PROFILE_UPDATE. Authored topic terms."
@@ -330,6 +580,19 @@ lexicon:
       - { t: pickup address, m: PHRASE }
       - { t: profile update, m: PHRASE }
       - { t: contact details, m: PHRASE }
+      - { t: registration details, m: PHRASE }
+      - { t: company name, m: PHRASE }
+      - { t: business name, m: PHRASE }
+      - { t: ntn, m: WORD }
+      - { t: strn, m: WORD }
+      - { t: bank account details, m: PHRASE }
+      - { t: iban, m: WORD }
+      - { t: update address, m: PHRASE }
+      - { t: change address, m: PHRASE }
+      - { t: warehouse address, m: PHRASE }
+      - { t: update phone, m: PHRASE }
+      - { t: change phone, m: PHRASE }
+      - { t: kyc, m: WORD }
 
   tracking_not_updating_terms:
     description: "TRACKING_NOT_UPDATING. Authored topic terms."
@@ -345,6 +608,18 @@ lexicon:
       - { t: tracking number, m: PHRASE }
       - { t: shows nothing, m: PHRASE }
       - { t: stuck on, m: PHRASE }
+      - { t: tracking not updated, m: PHRASE }
+      - { t: tracking stuck, m: PHRASE }
+      - { t: no tracking, m: PHRASE }
+      - { t: tracking shows, m: PHRASE }
+      - { t: tracking status, m: PHRASE }
+      - { t: no scan, m: PHRASE }
+      - { t: not scanned, m: PHRASE }
+      - { t: last scan, m: PHRASE }
+      - { t: tracking id, m: PHRASE }
+      - { t: tracking link, m: PHRASE }
+      - { t: status not updated, m: PHRASE }
+      - { t: status shows, m: PHRASE }
 
   app_crash_terms:
     description: "APP_CRASH. Authored topic terms."
@@ -361,6 +636,19 @@ lexicon:
       - { t: error message, m: PHRASE }
       - { t: website is down, m: PHRASE }
       - { t: portal, m: WORD }
+      - { t: app, m: WORD }
+      - { t: mobile app, m: PHRASE }
+      - { t: crash, m: WORD }
+      - { t: crashed, m: WORD }
+      - { t: hangs, m: WORD }
+      - { t: not loading, m: PHRASE }
+      - { t: won't load, m: PHRASE }
+      - { t: blank screen, m: PHRASE }
+      - { t: bug, m: WORD }
+      - { t: glitch, m: WORD }
+      - { t: website, m: WORD }
+      - { t: not responding, m: PHRASE }
+      - { t: site is down, m: PHRASE }
 
   api_webhook_failure_terms:
     description: "API_WEBHOOK_FAILURE. Authored topic terms."
@@ -377,6 +665,18 @@ lexicon:
       - { t: 500 error, m: PHRASE }
       - { t: manifest upload, m: PHRASE }
       - { t: csv upload, m: PHRASE }
+      - { t: api key, m: PHRASE }
+      - { t: api error, m: PHRASE }
+      - { t: callback, m: WORD }
+      - { t: shopify, m: WORD }
+      - { t: woocommerce, m: WORD }
+      - { t: plugin, m: WORD }
+      - { t: json, m: WORD }
+      - { t: status code, m: PHRASE }
+      - { t: airway bill, m: PHRASE }
+      - { t: awb, m: WORD }
+      - { t: bulk upload, m: PHRASE }
+      - { t: booking api, m: PHRASE }
 
   rude_rider_driver_behavior_terms:
     description: "RUDE_RIDER_DRIVER_BEHAVIOR. Authored topic terms."
@@ -394,6 +694,27 @@ lexicon:
       - { t: misbehaved, m: WORD }
       - { t: unprofessional, m: WORD }
       - { t: argued, m: WORD }
+      - { t: rude behaviour, m: PHRASE }
+      - { t: rude behavior, m: PHRASE }
+      - { t: misbehave, m: WORD }
+      - { t: misbehaviour, m: WORD }
+      - { t: harsh, m: WORD }
+      - { t: abused, m: WORD }
+      - { t: abusing, m: WORD }
+      - { t: insulted, m: WORD }
+      - { t: insulting, m: WORD }
+      - { t: yelled, m: WORD }
+      - { t: yelling, m: WORD }
+      - { t: screamed, m: WORD }
+      - { t: bad attitude, m: PHRASE }
+      - { t: impolite, m: WORD }
+      - { t: arrogant, m: WORD }
+      - { t: harassed, m: WORD }
+      - { t: harassment, m: WORD }
+      - { t: threatening, m: WORD }
+      - { t: verbal abuse, m: PHRASE }
+      - { t: bad language, m: PHRASE }
+      - { t: vulgar, m: WORD }
 
   rider_demanding_cash_tip_terms:
     description: "RIDER_DEMANDING_CASH_TIP. Authored topic terms."
@@ -409,6 +730,16 @@ lexicon:
       - { t: would not give me, m: PHRASE }
       - { t: asked for more money, m: PHRASE }
       - { t: gratuity, m: WORD }
+      - { t: tip, m: WORD }
+      - { t: tips, m: WORD }
+      - { t: demanded money, m: PHRASE }
+      - { t: extra payment, m: PHRASE }
+      - { t: keep the change, m: PHRASE }
+      - { t: chai pani, m: PHRASE }
+      - { t: baksheesh, m: WORD }
+      - { t: demanded extra, m: PHRASE }
+      - { t: asked for extra, m: PHRASE }
+      - { t: refused to deliver unless, m: PHRASE }
 
   warranty_claim_denied_terms:
     description: "WARRANTY_CLAIM_DENIED. Authored topic terms."
@@ -423,6 +754,15 @@ lexicon:
       - { t: no compensation, m: PHRASE }
       - { t: declined, m: WORD }
       - { t: claim, m: WORD }
+      - { t: compensation denied, m: PHRASE }
+      - { t: claim refused, m: PHRASE }
+      - { t: not covered, m: PHRASE }
+      - { t: denied compensation, m: PHRASE }
+      - { t: not liable, m: PHRASE }
+      - { t: liability, m: WORD }
+      - { t: improper packaging, m: PHRASE }
+      - { t: damage claim, m: PHRASE }
+      - { t: claim form, m: PHRASE }
 
   insurance_payout_delay_terms:
     description: "INSURANCE_PAYOUT_DELAY. Authored topic terms."
@@ -437,6 +777,14 @@ lexicon:
       - { t: waiting for the claim, m: PHRASE }
       - { t: declared value, m: PHRASE }
       - { t: cargo insurance, m: PHRASE }
+      - { t: insurance claim, m: PHRASE }
+      - { t: claim settlement, m: PHRASE }
+      - { t: settlement delay, m: PHRASE }
+      - { t: claim payment, m: PHRASE }
+      - { t: claim approved, m: PHRASE }
+      - { t: payout pending, m: PHRASE }
+      - { t: underwriter, m: WORD }
+      - { t: surveyor, m: WORD }
 
   data_privacy_breach_terms:
     description: "DATA_PRIVACY_BREACH. Authored topic terms."
@@ -453,6 +801,20 @@ lexicon:
       - { t: leaked, m: WORD }
       - { t: another customer's, m: PHRASE }
       - { t: phone number was given, m: PHRASE }
+      - { t: personal information, m: PHRASE }
+      - { t: personal details, m: PHRASE }
+      - { t: data leak, m: PHRASE }
+      - { t: exposed, m: WORD }
+      - { t: shared my number, m: PHRASE }
+      - { t: misused my number, m: PHRASE }
+      - { t: used my number, m: PHRASE }
+      - { t: unsolicited messages, m: PHRASE }
+      - { t: personal messages, m: PHRASE }
+      - { t: inappropriate messages, m: PHRASE }
+      - { t: stalking, m: WORD }
+      - { t: customer data, m: PHRASE }
+      - { t: database, m: WORD }
+      - { t: cnic, m: WORD }
 
   unsolicited_marketing_sms_terms:
     description: "UNSOLICITED_MARKETING_SMS. Authored topic terms."
@@ -467,6 +829,14 @@ lexicon:
       - { t: did not sign up, m: PHRASE }
       - { t: keep texting, m: PHRASE }
       - { t: sms, m: WORD }
+      - { t: promotions, m: WORD }
+      - { t: promotional messages, m: PHRASE }
+      - { t: advertisement, m: WORD }
+      - { t: marketing messages, m: PHRASE }
+      - { t: opt out, m: PHRASE }
+      - { t: opt-out, m: PHRASE }
+      - { t: do not contact, m: PHRASE }
+      - { t: stop messages, m: PHRASE }
 
   reckless_driving_safety_risk_terms:
     description: "RECKLESS_DRIVING_SAFETY_RISK. Authored topic terms."
@@ -485,6 +855,21 @@ lexicon:
       - { t: hit my car, m: PHRASE }
       - { t: accident, m: WORD }
       - { t: collision, m: WORD }
+      - { t: collided, m: WORD }
+      - { t: crashed into, m: PHRASE }
+      - { t: ran over, m: PHRASE }
+      - { t: overspeeding, m: WORD }
+      - { t: over speeding, m: PHRASE }
+      - { t: rash driving, m: PHRASE }
+      - { t: careless driving, m: PHRASE }
+      - { t: wheelie, m: WORD }
+      - { t: school zone, m: PHRASE }
+      - { t: pedestrian, m: WORD }
+      - { t: injured, m: WORD }
+      - { t: hit and run, m: PHRASE }
+      - { t: road accident, m: PHRASE }
+      - { t: near miss, m: PHRASE }
+      - { t: overloaded, m: WORD }
 
   hazardous_material_mishandling_terms:
     description: "HAZARDOUS_MATERIAL_MISHANDLING. Authored topic terms."
@@ -502,6 +887,19 @@ lexicon:
       - { t: fumes, m: WORD }
       - { t: spill, m: WORD }
       - { t: leaking, m: WORD }
+      - { t: hazardous, m: WORD }
+      - { t: dangerous goods, m: PHRASE }
+      - { t: flammable, m: WORD }
+      - { t: explosive, m: WORD }
+      - { t: toxic, m: WORD }
+      - { t: gas cylinder, m: PHRASE }
+      - { t: lithium, m: WORD }
+      - { t: corrosive, m: WORD }
+      - { t: caught fire, m: PHRASE }
+      - { t: fire broke out, m: PHRASE }
+      - { t: burning smell, m: PHRASE }
+      - { t: odour, m: WORD }
+      - { t: odor, m: WORD }
 
   missing_customs_documents_terms:
     description: "MISSING_CUSTOMS_DOCUMENTS. Authored topic terms."
@@ -517,6 +915,15 @@ lexicon:
       - { t: export documents, m: PHRASE }
       - { t: hs code, m: PHRASE }
       - { t: held at customs, m: PHRASE }
+      - { t: documents missing, m: PHRASE }
+      - { t: missing documents, m: PHRASE }
+      - { t: missing paperwork, m: PHRASE }
+      - { t: invoice missing, m: PHRASE }
+      - { t: goods declaration, m: PHRASE }
+      - { t: customs duty, m: PHRASE }
+      - { t: permit, m: WORD }
+      - { t: certificate, m: WORD }
+      - { t: documentation, m: WORD }
 
   regulatory_impoundment_hold_terms:
     description: "REGULATORY_IMPOUNDMENT_HOLD. Authored topic terms."
@@ -531,6 +938,17 @@ lexicon:
       - { t: regulatory hold, m: PHRASE }
       - { t: quarantine, m: WORD }
       - { t: inspection, m: WORD }
+      - { t: held by customs, m: PHRASE }
+      - { t: customs hold, m: PHRASE }
+      - { t: checkpost, m: WORD }
+      - { t: check post, m: PHRASE }
+      - { t: police, m: WORD }
+      - { t: excise, m: WORD }
+      - { t: confiscated, m: WORD }
+      - { t: seizure, m: WORD }
+      - { t: raid, m: WORD }
+      - { t: held at the border, m: PHRASE }
+      - { t: detained at, m: PHRASE }
 
   subscription_contract_renewal_terms:
     description: "SUBSCRIPTION_CONTRACT_RENEWAL. Authored topic terms."
@@ -545,6 +963,15 @@ lexicon:
       - { t: cancel my contract, m: PHRASE }
       - { t: rate revision, m: PHRASE }
       - { t: agreement expires, m: PHRASE }
+      - { t: contract renewal, m: PHRASE }
+      - { t: annual contract, m: PHRASE }
+      - { t: rate agreement, m: PHRASE }
+      - { t: pricing agreement, m: PHRASE }
+      - { t: termination, m: WORD }
+      - { t: new rates, m: PHRASE }
+      - { t: tariff revision, m: PHRASE }
+      - { t: volume discount, m: PHRASE }
+      - { t: rate review, m: PHRASE }
 
   executive_sla_breach_terms:
     description: "EXECUTIVE_SLA_BREACH. Authored topic terms."
@@ -561,6 +988,16 @@ lexicon:
       - { t: escalate to management, m: PHRASE }
       - { t: senior management, m: PHRASE }
       - { t: board level, m: PHRASE }
+      - { t: service level, m: PHRASE }
+      - { t: guaranteed delivery, m: PHRASE }
+      - { t: guaranteed overnight, m: PHRASE }
+      - { t: next day guarantee, m: PHRASE }
+      - { t: vip, m: WORD }
+      - { t: premium service, m: PHRASE }
+      - { t: key account, m: PHRASE }
+      - { t: missed commitment, m: PHRASE }
+      - { t: committed timeline, m: PHRASE }
+      - { t: express service, m: PHRASE }
 
   rule_001_evidence:
     description: "Separates RULE-001 from the other rules in DELAYED_DELIVERY: Standard domestic transit delay under 24 hours without perishable contents"
@@ -2291,46 +2728,6 @@ injection_patterns:
 # -- promise patterns ----------------------------------------------------
 # Also unchanged: a promise of a refund is the same commitment whoever
 # makes it, and requires_eligibility still names a real EligibilityType.
-
-# -- promise patterns ----------------------------------------------------
-# Also unchanged: a promise of a refund is the same commitment whoever
-# makes it, and requires_eligibility still names a real EligibilityType.
-
-# -- promise patterns ----------------------------------------------------
-# Also unchanged: a promise of a refund is the same commitment whoever
-# makes it, and requires_eligibility still names a real EligibilityType.
-
-# -- promise patterns ----------------------------------------------------
-# Also unchanged: a promise of a refund is the same commitment whoever
-# makes it, and requires_eligibility still names a real EligibilityType.
-
-# -- promise patterns ----------------------------------------------------
-# Also unchanged: a promise of a refund is the same commitment whoever
-# makes it, and requires_eligibility still names a real EligibilityType.
-
-# -- promise patterns ----------------------------------------------------
-# Also unchanged: a promise of a refund is the same commitment whoever
-# makes it, and requires_eligibility still names a real EligibilityType.
-
-# -- promise patterns ----------------------------------------------------
-# Also unchanged: a promise of a refund is the same commitment whoever
-# makes it, and requires_eligibility still names a real EligibilityType.
-
-# -- promise patterns ----------------------------------------------------
-# Also unchanged: a promise of a refund is the same commitment whoever
-# makes it, and requires_eligibility still names a real EligibilityType.
-
-# -- promise patterns ----------------------------------------------------
-# Also unchanged: a promise of a refund is the same commitment whoever
-# makes it, and requires_eligibility still names a real EligibilityType.
-
-# -- promise patterns ----------------------------------------------------
-# Also unchanged: a promise of a refund is the same commitment whoever
-# makes it, and requires_eligibility still names a real EligibilityType.
-
-# -- promise patterns ----------------------------------------------------
-# Also unchanged: a promise of a refund is the same commitment whoever
-# makes it, and requires_eligibility still names a real EligibilityType.
 promise_patterns:
   - promise_type: REFUND
     requires_eligibility: REFUND
@@ -2369,36 +2766,6 @@ promise_patterns:
 
 # ── 4. Deterministic entity patterns (SRS Step 16) ────────────────────────
 # Python's own extraction pass, compared against the model's extraction.
-
-# -- entity patterns -----------------------------------------------------
-# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
-
-# -- entity patterns -----------------------------------------------------
-# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
-
-# -- entity patterns -----------------------------------------------------
-# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
-
-# -- entity patterns -----------------------------------------------------
-# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
-
-# -- entity patterns -----------------------------------------------------
-# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
-
-# -- entity patterns -----------------------------------------------------
-# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
-
-# -- entity patterns -----------------------------------------------------
-# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
-
-# -- entity patterns -----------------------------------------------------
-# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
-
-# -- entity patterns -----------------------------------------------------
-# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
-
-# -- entity patterns -----------------------------------------------------
-# RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.
 
 # -- entity patterns -----------------------------------------------------
 # RaftarXpress references: CN- tracking, FWD- freight, MER- merchant.

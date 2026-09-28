@@ -46,6 +46,10 @@ METADATA_ORDER = [
     ("effective_date", "Effective Date"),
     ("expiry_date", "Expiry Date"),
     ("owner", "Document Owner"),
+    # Rendered so the file itself says it is a draft. Without it DOC-025 v0.9
+    # reached ingest with only its dates, and a passed effective date made an
+    # unapproved draft ACTIVE.
+    ("status", "Status"),
 ]
 
 

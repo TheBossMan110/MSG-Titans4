@@ -42,6 +42,7 @@ from src.core.logging import get_logger
 from src.core.refcache import reference_data
 from src.db.models import (
     AppConfig,
+    AuditLog,
     Category,
     Department,
     EscalationLevel,
@@ -122,11 +123,26 @@ def template_path(name: str, version: str) -> Path:
     return settings.prompt_dir / name / f"{version}.j2"
 
 
+def template_checksum(data: bytes) -> str:
+    """
+    SHA-256 of a template's text with its line endings normalised to LF.
+
+    The checksum identifies the prompt, not the checkout. Git on Windows with
+    ``core.autocrlf`` writes the same committed template with CRLF endings, and
+    hashing raw bytes then gave the benchmark machine a different checksum from
+    the registry's for byte-for-byte the same prompt -- so runs recorded a
+    checksum nothing matched, and the admin page showed an untouched v1.1 as
+    edited without a version bump. ``.gitattributes`` now pins ``*.j2`` to LF;
+    this makes the checksum agree even on a checkout made before it did.
+    """
+    return hashlib.sha256(data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")).hexdigest()
+
+
 def checksum_of(name: str, version: str) -> str:
     path = template_path(name, version)
     if not path.exists():
         raise PromptError(f"Prompt template not found: {name} {version}")
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return template_checksum(path.read_bytes())
 
 
 @reference_data("active_prompt_version")
@@ -389,19 +405,40 @@ def sync_registry(db: Session) -> dict[str, Any]:
 
         db.flush()
 
-        # Newest version becomes active when nothing has been pinned.
-        has_active = db.execute(
+        # The newest version becomes active unless an administrator pinned
+        # another. "Something is active" used to count as a pin, but the
+        # registry could not tell a pin from the version an earlier seed had
+        # simply picked as newest at the time -- so a registry first seeded
+        # before v1.1 existed, or left on v1.0 by a switch nobody meant to
+        # keep, stayed there through every later seed. A pin is an audited act
+        # (PATCH /api/admin/prompts/{name}), so the audit trail is what says
+        # whether the active version was chosen or merely left behind.
+        active = db.execute(
             select(PromptVersion).where(
                 PromptVersion.name == name, PromptVersion.is_active.is_(True)
             )
         ).scalars().first()
-        if has_active is None:
+        stale = active is not None and active.version != versions[0] and not _pinned(
+            db, name, active.version
+        )
+        if active is None or stale:
             newest = db.execute(
                 select(PromptVersion).where(
                     PromptVersion.name == name, PromptVersion.version == versions[0]
                 )
             ).scalars().first()
             if newest is not None:
+                if active is not None:
+                    # Demote first: ux_prompt_one_active is a partial unique
+                    # index, and two active rows in one flush violate it on
+                    # PostgreSQL (see :func:`activate`).
+                    active.is_active = False
+                    db.flush()
+                    log.info(
+                        "prompt_version_promoted",
+                        name=name, was=active.version, now=newest.version,
+                        reason="the active version was not pinned by an administrator",
+                    )
                 newest.is_active = True
         db.flush()
 
@@ -409,13 +446,35 @@ def sync_registry(db: Session) -> dict[str, Any]:
     return {"discovered": discovered, "changed": changed}
 
 
+# The audit action ``PATCH /api/admin/prompts/{name}`` records. Shared with the
+# endpoint so the registry's notion of "pinned" cannot drift from what the
+# endpoint writes.
+PROMPT_ACTIVATED = "PROMPT_ACTIVATED"
+
+
+def _pinned(db: Session, name: str, version: str) -> bool:
+    """Whether an administrator's most recent switch of ``name`` chose ``version``."""
+    latest = db.execute(
+        select(AuditLog)
+        .where(
+            AuditLog.entity_type == "prompt_version",
+            AuditLog.entity_id == name,
+            AuditLog.action == PROMPT_ACTIVATED,
+        )
+        .order_by(AuditLog.id.desc())
+        .limit(1)
+    ).scalars().first()
+    return latest is not None and (latest.after or {}).get("version") == version
+
+
 def activate(db: Session, name: str, version: str) -> PromptVersion:
     """
     Make ``version`` the active template for ``name``.
 
-    Deliberately not done by :func:`sync_registry`: dropping a new file into
-    the repository must not silently redirect production traffic away from a
-    version an administrator pinned. Promotion is an explicit act, exposed at
+    :func:`sync_registry` never moves a version an administrator pinned:
+    dropping a new file into the repository must not silently redirect
+    production traffic away from it. It only replaces an active version that
+    nobody chose. Promotion is otherwise an explicit act, exposed at
     ``PATCH /api/admin/prompts/{name}`` so it needs no deploy.
 
     The deactivate-flush-activate order is not cosmetic. ``ux_prompt_one_active``

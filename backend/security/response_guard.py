@@ -119,6 +119,139 @@ def _is_hedged(text: str, start: int) -> bool:
     return bool(_CONDITIONAL_FRAME.search(lead_in))
 
 
+# A promise pattern matches a phrase, not a commitment. "Full refunds are not
+# provided once delivery is complete" contains "full refund" and says the
+# opposite of promising one; production step CMP-000292 was marked PROHIBITED
+# for exactly that sentence. A negation only counts when it sits in the same
+# clause as the phrase AND governs the act of granting it, which is why every
+# test below asks for a granting word as well as a "not":
+#
+#   "we cannot offer a full refund"           -- negated, before the phrase
+#   "full refunds are not provided"           -- negated, after the phrase
+#   "your full refund won't be delayed"       -- still a promise
+#   "don't worry, your full refund is issued" -- still a promise (new clause)
+#
+# Erring the other way would be the expensive mistake: a negation the check
+# wrongly believes in lets a real commitment through, so anything it cannot
+# read with confidence stays a promise.
+_CLAUSE_BREAK = re.compile(
+    r"[.;:!?,()\[\]\n]|\s[-–—]+\s|[–—]"
+    r"|\b(?:and|but|or|however|although|though|whereas|while|unless|except|yet"
+    r"|because|since|so|if|when|whenever|once|after|before|until|as|that|which"
+    r"|who|where)\b",
+    re.IGNORECASE,
+)
+_WORD = re.compile(r"[A-Za-z]+(?:['’][A-Za-z]+)?")
+
+# Words that negate what follows them.
+_NEGATORS = frozenset(
+    {"not", "never", "cannot", "cant", "no", "nor", "neither", "unable", "none"}
+)
+# Words that negate and carry the granting sense in the same breath.
+_SELF_NEGATING = frozenset({"ineligible", "unavailable"})
+# What turns a negator into an idiom that negates nothing about the promise:
+# "not only a full refund", "don't worry", "no later than", "at no cost".
+_IDIOM_AFTER_NEGATOR = frozenset(
+    {"only", "worry", "hesitate", "later", "doubt", "question", "questions",
+     "problem", "cost", "charge", "extra"}
+)
+_AUXILIARIES = frozenset(
+    {"is", "are", "was", "were", "will", "would", "shall", "should", "can",
+     "could", "may", "might", "must", "has", "have", "had", "does", "do", "did"}
+)
+_FILLERS = frozenset({"be", "been", "being", "longer", "currently", "normally", "usually"})
+# The act a promise is made of: offering, issuing, granting, being eligible.
+_GRANTS = re.compile(
+    r"^(?:offer|provid|issu|process|grant|giv|approv|arrang|guarant|promis|mak"
+    r"|made|pay|paid|credit|authori[sz]|honou?r|accept|consider|refund|replac"
+    r"|waiv|compensat|eligib|entitl|qualif|possib|availab|abl|permit|allow|appl)",
+    re.IGNORECASE,
+)
+
+# How far either side of the phrase a governing negation may sit.
+_NEGATION_WINDOW = 8
+
+
+def _words(fragment: str) -> list[str]:
+    return [w.lower().replace("’", "'") for w in _WORD.findall(fragment)]
+
+
+def _is_negator(words: list[str], index: int) -> bool:
+    word = words[index]
+    if word not in _NEGATORS and not word.endswith("n't"):
+        return False
+    following = words[index + 1] if index + 1 < len(words) else ""
+    if following in _IDIOM_AFTER_NEGATOR:
+        return False
+    # "not to worry" reassures; it negates nothing about the promise.
+    return not (following == "to" and words[index + 2 : index + 3] == ["worry"])
+
+
+def _negated_before(lead: list[str]) -> bool:
+    """
+    "cannot offer a", "not eligible for a", "no" -- a negation leading into it.
+
+    Directly in front of the phrase ("we cannot guarantee a refund", "no full
+    refund") the negator governs it outright. Further back it must reach the
+    phrase through a granting word, so "don't worry about your full refund"
+    is still read as the promise it is.
+    """
+    for index in range(len(lead)):
+        if lead[index] in _SELF_NEGATING:
+            return True
+        if not _is_negator(lead, index):
+            continue
+        between = lead[index + 1 :]
+        if len(between) <= 1 or any(_GRANTS.match(word) for word in between):
+            return True
+    return False
+
+
+def _negated_after(trail: list[str]) -> bool:
+    """
+    "are not provided", "cannot be issued", "is no longer offered".
+
+    Only a negated *granting* predicate counts. "Your full refund won't be
+    delayed" negates the delay, not the refund, and remains a promise.
+    """
+    for index, word in enumerate(trail):
+        previous = trail[index - 1] if index else ""
+        if word in _SELF_NEGATING and previous in _AUXILIARIES:
+            return True
+
+        negates = word == "cannot" or word.endswith("n't") or (
+            word in ("not", "never", "no") and previous in _AUXILIARIES
+        )
+        if not negates:
+            continue
+        predicate = [w for w in trail[index + 1 :] if w not in _FILLERS and not w.endswith("ly")]
+        if any(_GRANTS.match(w) for w in predicate[:3]):
+            return True
+    return False
+
+
+def is_negated(text: str, start: int, end: int) -> bool:
+    """
+    Whether the phrase at ``text[start:end]`` is negated within its clause.
+
+    Public because the resolution validator asks it of a proposed step and the
+    guard of a reply; one reading of "not" is what keeps the two agreeing on
+    what counts as a promise.
+    """
+    if not text or start < 0 or end > len(text) or start >= end:
+        return False
+
+    clause_start = 0
+    for match in _CLAUSE_BREAK.finditer(text, 0, start):
+        clause_start = match.end()
+    following = _CLAUSE_BREAK.search(text, end)
+    clause_end = following.start() if following else len(text)
+
+    lead = _words(text[clause_start:start])[-_NEGATION_WINDOW:]
+    trail = _words(text[end:clause_end])[:_NEGATION_WINDOW]
+    return _negated_before(lead) or _negated_after(trail)
+
+
 # Claims about policy that a citation must back up.
 _POLICY_CLAIM = re.compile(
     r"\b(?:"
@@ -250,9 +383,19 @@ def load_promise_patterns(db: Session) -> list[tuple[str, str, str | None]]:
 
 
 def detect_promises(
-    text: str, patterns: list[tuple[str, str, str | None]]
+    text: str,
+    patterns: list[tuple[str, str, str | None]],
+    *,
+    exclude_negated: bool = False,
 ) -> list[dict[str, Any]]:
-    """Every promise-shaped phrase in the reply, with its span."""
+    """
+    Every promise-shaped phrase in the reply, with its span.
+
+    ``exclude_negated`` drops a phrase its own clause denies ("full refunds
+    are not provided"), see :func:`is_negated`. The reply guard and the
+    resolution validator ask for that; the chat manipulation guard does not,
+    because it replaces any reply that so much as discusses an outcome.
+    """
     found: list[dict[str, Any]] = []
     if not text:
         return found
@@ -262,6 +405,8 @@ def detect_promises(
         if compiled is None:
             continue
         for match in compiled.finditer(text):
+            if exclude_negated and is_negated(text, match.start(), match.end()):
+                continue
             found.append(
                 {
                     "promise_type": promise_type,
@@ -568,7 +713,10 @@ def scan_response(
     report = GuardReport()
 
     # ── 1. promises ──
-    promises = detect_promises(text, patterns)
+    # A phrase its own clause negates ("we cannot offer a full refund") is the
+    # guard's desired outcome, not a violation of it; blocking it would fire on
+    # exactly the replies the correction instruction asks the model to write.
+    promises = detect_promises(text, patterns, exclude_negated=True)
     report.promises_found = promises
 
     for promise in promises:

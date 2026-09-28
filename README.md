@@ -1,6 +1,8 @@
 # SupportNova
 
-**TechWiz 7 (Aptech) · Generative AI PowerPlay · Theme: Customer Complaint Resolution Intelligence**
+**TechWiz 7 (Aptech) · Generative AI PowerPlay · Theme: Customer Complaint Resolution Intelligence**  
+**Team:** MSG-Titans4  
+**Team Members:** Zaki Haider (Team Leader), Muhammad Mudasir, Hamza Akram, Abdul Sami  
 Fictional company: **RaftarXpress Logistics (Pvt) Ltd**, a Pakistani last-mile courier. All data is synthetic.
 
 SupportNova turns a customer complaint into a routed, prioritised, escalated and policy-grounded
@@ -23,8 +25,9 @@ customer, and every decision is stored as its own row so that no number on scree
 | API documentation (Swagger) | https://supportnova.onrender.com/api/docs |
 | API health check | https://supportnova.onrender.com/api/health |
 | Complaint mailbox | `supportnova110@gmail.com` (email a complaint; the reply comes from the same address) |
-| Blog | `<add link>` |
-| Demonstration video (.mp4) | `<add link>` |
+| Blog (Medium) | https://medium.com/@syedzakihaider2006/msg-titans4-supportnova-responsex-intelligence-b21118286769 |
+| Project documentation | https://1drv.ms/w/c/98824f5623bec2b9/IQDDZHJBWeNjQp6c1-QWch1uAb7evlxBNWFmlQiH1yV3lDQ?e=4N0N6B |
+| Demonstration video (.mp4) | Shared with the submission |
 
 > **Cold start.** The backend runs on Render's free plan, which sleeps after 15 minutes without traffic.
 > The first request after a sleep can take about **50 seconds**. Open the health link above first and wait
@@ -660,20 +663,21 @@ An alternative, always-on deployment on an Oracle Cloud free VM is written up st
 
 ## Blog and demonstration video
 
-* Blog: `<add link>` (the text is also in [backend/documentation/TECHNICAL_BLOG.md](backend/documentation/TECHNICAL_BLOG.md))
-* Demonstration video (.mp4): `<add link>`
+* Blog: https://medium.com/@syedzakihaider2006/msg-titans4-supportnova-responsex-intelligence-b21118286769
+* Project documentation: https://1drv.ms/w/c/98824f5623bec2b9/IQDDZHJBWeNjQp6c1-QWch1uAb7evlxBNWFmlQiH1yV3lDQ?e=4N0N6B
+* Demonstration video (.mp4): shared with the submission
 
-## Team
+## Team: MSG-Titans4
 
 Detailed contributions are recorded in
 [backend/documentation/TEAM_CONTRIBUTION.md](backend/documentation/TEAM_CONTRIBUTION.md).
 
-| Name | Student ID | Role and contribution |
-|---|---|---|
-| `<add name>` | `<add id>` | `<add role>` |
-| `<add name>` | `<add id>` | `<add role>` |
-| `<add name>` | `<add id>` | `<add role>` |
-| `<add name>` | `<add id>` | `<add role>` |
+| Member | Role and contribution |
+|---|---|
+| **Zaki Haider** (Team Leader) | Architecture, Backend Foundation, Dual-Pipeline Verification, Progress & Security, Deployment |
+| **Muhammad Mudasir** | Frontend Rebuild, 5-Role RBAC & UI Views, Dashboard & Rate Limiting |
+| **Hamza Akram** | Complaint Workflow & SLAs, Dataset Planning, RaftarXpress Dataset Tuning |
+| **Abdul Sami** | Knowledge Base & Vector Retrieval, Jailbreak & Injection Defense, Documentation Compliance |
 
 ## Licence and AI usage
 

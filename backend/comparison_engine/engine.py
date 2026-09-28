@@ -26,7 +26,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from comparison_engine.decision import VerificationResult, decide, decided_at
+from comparison_engine.decision import ReviewReason, VerificationResult, decide, decided_at
 from comparison_engine.diff import FieldComparison, compare_all
 from comparison_engine.ladders import load_ladders
 from genai_pipeline.intelligence import IntelligenceResult, analyse_complaint
@@ -311,6 +311,29 @@ def reconcile(
     if validation.outcome and getattr(validation.outcome, "rule_errors", None):
         extra_reasons.append("RULE_CONFLICT")
 
+    genai_run_id = (
+        intelligence.run_ids[-1] if intelligence and intelligence.run_ids else None
+    )
+    if persist_rows:
+        citation_validator.persist(
+            db, complaint.id, citation_report,
+            genai_run_id=genai_run_id,
+            validation_run_id=validation.validation_run_id,
+        )
+        # Two policies this complaint rests on may disagree. Run after the
+        # references are stored, because the check reads them back: it
+        # compares what the complaint actually ended up citing, not what
+        # retrieval happened to offer.
+        #
+        # And run before the decision, because a contradiction is a reason for
+        # a person to look. Precedence already picked the governing policy, but
+        # a complaint resting on two policies that disagree is exactly the case
+        # SRS 1.8 #10 wants a human to see; recorded only on the references, it
+        # never reached the review queue, which reads the decision's reasons.
+        conflicts = policy_conflict.check(db, complaint.id)
+        if conflicts.detected:
+            extra_reasons.append(ReviewReason.POLICY_CONTRADICTION)
+
     result = decide(
         comparisons,
         outcome,
@@ -330,24 +353,11 @@ def reconcile(
     decision_id: uuid.UUID | None = None
     comparison_ids: list[uuid.UUID] = []
     if persist_rows:
-        genai_run_id = (
-            intelligence.run_ids[-1] if intelligence and intelligence.run_ids else None
-        )
         decision_id, comparison_ids = persist(
             db, complaint, result,
             genai_run_id=genai_run_id,
             validation_run_id=validation.validation_run_id,
         )
-        citation_validator.persist(
-            db, complaint.id, citation_report,
-            genai_run_id=genai_run_id,
-            validation_run_id=validation.validation_run_id,
-        )
-        # Two policies this complaint rests on may disagree. Run after the
-        # references are stored, because the check reads them back: it
-        # compares what the complaint actually ended up citing, not what
-        # retrieval happened to offer.
-        policy_conflict.check(db, complaint.id)
 
     return ReconciliationResult(
         complaint_id=complaint.id,

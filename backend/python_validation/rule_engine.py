@@ -37,6 +37,7 @@ Two outcomes are deliberately *not* defaults:
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -63,6 +64,13 @@ SCALAR_FIELDS: dict[str, bool] = {
 }
 
 URGENCY_RANK = {"LOW": 0, "MEDIUM": 1, "HIGH": 2, "CRITICAL": 3}
+
+# The fields that say what a complaint is ABOUT, as opposed to how severe it is.
+CLASSIFICATION_FIELDS = frozenset({"category_code", "subcategory_code", "department_code", "support_department_code"})
+
+# RULE-005, RES-005, ESC-005 and ELG-005-REFU are one authored case. Cross-cutting
+# rules (ESC-SAF-0001, LEG-0001, ...) belong to no case.
+_CASE_REF = re.compile(r"^(?:RULE|RES|ESC|ELG)-(\d{3})(?:$|-)")
 
 
 @dataclass(slots=True)
@@ -345,6 +353,79 @@ def _union_policy_refs(candidates: list[tuple[LoadedRule, RuleHitRecord]]) -> li
 # ══════════════════════════════════════════════════════════════
 # the engine
 # ══════════════════════════════════════════════════════════════
+def _case_of(rule_ref: str) -> str | None:
+    match = _CASE_REF.match(rule_ref or "")
+    return match.group(1) if match else None
+
+
+def _family(rule: LoadedRule) -> str:
+    """The unit that wins or loses classification: an authored case, or a stand-alone rule."""
+    case = _case_of(rule.rule_ref)
+    return f"case:{case}" if case else f"rule:{rule.rule_ref}"
+
+
+def _evidence(pairs: list[tuple[LoadedRule, RuleHitRecord]]) -> tuple[int, float]:
+    """How much of the complaint speaks to these rules: distinct terms matched, then their weight."""
+    terms: dict[tuple[str, str], float] = {}
+    for _, hit in pairs:
+        for span in hit.matched_spans:
+            key = (str(span.get("signal")), str(span.get("term") or span.get("text") or "").lower())
+            try:
+                weight = float(span.get("weight") or 1.0)
+            except (TypeError, ValueError):
+                weight = 1.0
+            terms[key] = max(terms.get(key, 0.0), weight)
+    return len(terms), round(sum(terms.values()), 4)
+
+
+def _secondary_cases(
+    contributing: list[tuple[LoadedRule, RuleHitRecord]],
+    conflicts: list[FieldConflict],
+) -> set[str]:
+    """
+    The authored cases that lost the question "what is this complaint about?".
+
+    Precedence is right for choosing between cases of ONE subcategory: the
+    fake-attempt case outranks the routine missed-attempt case because it is
+    the more specific finding. Across subcategories it only says which case
+    would be more serious, not which one the customer is describing, so a
+    passing mention of a severe topic used to take the classification away
+    from the complaint's actual subject. Across subcategories the one with the
+    most evidence in the text wins; precedence breaks a tie, and a genuine tie
+    is recorded as a conflict so a person looks at it.
+
+    Only the classification fields follow the winner. Urgency, priority and
+    escalation are still resolved over every rule that fired, so a secondary
+    issue can raise severity -- a mandatory floor is never lost this way.
+    """
+    groups: dict[str, list[tuple[LoadedRule, RuleHitRecord]]] = {}
+    for pair in contributing:
+        rule = pair[0]
+        subcategory = rule.outcome_field("subcategory_code")
+        if rule.rule_type == "CLASSIFICATION" and subcategory:
+            groups.setdefault(str(subcategory).upper(), []).append(pair)
+    if len(groups) < 2:
+        return set()
+
+    ranked = sorted(
+        groups.items(),
+        key=lambda item: (_evidence(item[1]), max(r.precedence for r, _ in item[1]), item[0]),
+        reverse=True,
+    )
+    (winner, winning), (_, runner_up) = ranked[0], ranked[1]
+    if _evidence(winning) == _evidence(runner_up):
+        conflicts.append(
+            FieldConflict(
+                field_name="subcategory_code",
+                values=sorted(groups),
+                rule_refs=sorted(rule.rule_ref for pairs in groups.values() for rule, _ in pairs),
+                precedence=max(r.precedence for r, _ in winning),
+                resolved_to=winner,
+            )
+        )
+    return {_family(rule) for _, pairs in ranked[1:] for rule, _ in pairs}
+
+
 def evaluate_rules(
     rules: list[LoadedRule],
     signals: SignalSet,
@@ -436,21 +517,33 @@ def evaluate_rules(
     # noise - "manual classification required" has no business appearing on a
     # complaint eight rules just classified. The hit is still recorded, so the
     # trace stays complete; only its outcome is withdrawn.
+    #
+    # One exception: a substantive rule can fire without saying what the
+    # complaint is about (a cross-cutting safety floor, a legal-threat rule).
+    # Then a category-level fallback still names the category, and the
+    # complaint is still marked unmatched below, so a person confirms it.
     substantive = [pair for pair in matched if not pair[0].is_catch_all]
     if substantive:
-        for rule, hit in matched:
-            if rule.is_catch_all:
+        classified = any(rule.outcome_field("category_code") for rule, _ in substantive)
+        contributing = []
+        for pair in matched:
+            rule, hit = pair
+            if not rule.is_catch_all or (not classified and rule.outcome_field("category_code")):
+                contributing.append(pair)
+            else:
                 hit.applied = False
-        contributing = substantive
     else:
         contributing = matched
+
+    secondary = _secondary_cases(contributing, outcome.conflicts)
+    primary_only = [pair for pair in contributing if _family(pair[0]) not in secondary]
 
     for field_name in SCALAR_FIELDS:
         setattr(
             outcome,
             field_name,
             _resolve_scalar(
-                field_name, contributing,
+                field_name, primary_only if field_name in CLASSIFICATION_FIELDS else contributing,
                 escalation_ranks=escalation_ranks,
                 priority_ranks=priority_ranks,
                 conflicts=outcome.conflicts,
@@ -476,6 +569,11 @@ def evaluate_rules(
             rules=[rule.rule_ref for rule, _ in contributing],
             signals=sorted(signals.for_rules()),
         )
+    elif all(rule.is_catch_all for rule, _ in primary_only if rule.outcome_field("category_code")):
+        # Recognised at category level only ("where is my parcel"): the
+        # category's routine case is the best answer the rules can give, and
+        # a person still confirms it.
+        outcome.unmatched = True
 
     _apply_escalation_floor(outcome, contributing, escalation_ranks)
 

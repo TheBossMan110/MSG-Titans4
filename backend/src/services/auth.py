@@ -421,12 +421,30 @@ def refresh_tokens(
     return user, access, new_raw
 
 
-def revoke_refresh_token(db: Session, *, raw_refresh: str) -> None:
+def revoke_refresh_token(
+    db: Session, *, raw_refresh: str, session_id: str | None = None
+) -> None:
+    """
+    Sign a session out: its refresh token, and its access token at once.
+
+    Revoking the refresh token only stops renewal. The access token already
+    issued would otherwise go on working until it expired -- up to
+    ``ACCESS_TOKEN_MINUTES`` after the person pressed "Sign out", on a shared
+    computer as much as anywhere. So the caller's session (the access token's
+    ``sid``) is refused from now on, exactly as signing out another device is
+    in :func:`revoke_sessions`.
+    """
+    from src.core.deps import mark_session_revoked
+
     stored = db.execute(
         select(RefreshToken).where(RefreshToken.token_hash == sha256(raw_refresh))
     ).scalars().first()
     if stored and stored.revoked_at is None:
         stored.revoked_at = datetime.now(UTC)
+    if stored is not None:
+        mark_session_revoked(str(stored.id))
+    if session_id:
+        mark_session_revoked(session_id)
 
 
 def access_token_ttl_seconds() -> int:

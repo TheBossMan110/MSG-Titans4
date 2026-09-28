@@ -1,13 +1,11 @@
-# Team Contribution Record
+# Team Contribution Record: MSG-Titans4
 
 Required by the SRS final submission checklist ("Team contribution record") and by
 the GitHub requirement that the repository include work from all team members.
 
 **Sources.** The git history of `github.com/TheBossMan110/SupportNova` (branch
 `main`, 8 commits up to 27 Sep 2026, 19:01 PKT), and the development transcript
-summarised in [`PROMPT_LOG.md`](PROMPT_LOG.md). Anything not evidenced by those two
-sources is marked _\<to be confirmed by the team\>_; the team must complete it before
-submission. AI assistance is declared separately in [`AI_USAGE.md`](../../AI_USAGE.md).
+summarised in [`PROMPT_LOG.md`](PROMPT_LOG.md). Roles are as stated by the team. AI assistance is declared separately in [`AI_USAGE.md`](../../AI_USAGE.md).
 
 ---
 
@@ -15,15 +13,12 @@ submission. AI assistance is declared separately in [`AI_USAGE.md`](../../AI_USA
 
 | Member | Role | Owned areas | Can explain | Commits |
 |---|---|---|---|---|
-| **TheBossMan110** (git identity; syedzakihaider2006@gmail.com) — full name _\<to be added by the team\>_ | Team lead; owner of the backend and database (as he states in `PROMPT_LOG.md` entry 2) | Directed the requirements and every development step with the AI assistant; obtained the Gemini, Groq, OpenRouter and Supabase keys and the support mailbox's Gmail app password and set them in `.env` himself; supplied the design briefs, workflow and five-role permission design; tested in the browser and reported defects; deployed the backend on Render and the frontend on Vercel. His commits carry the backend and frontend code written with the AI assistant (see `AI_USAGE.md` section B), plus the teammates' dataset and first frontend. | _\<to be confirmed by the team\>_ | 6 |
-| **Hamza Akram** | _\<to be confirmed by the team\>_ | Git history: `frontend/package-lock.json` only | _\<to be confirmed by the team\>_ | 1 |
-| **Muhammad Mudasir** | _\<to be confirmed by the team\>_ | Git history (commit 965052d): agent, manager and reviewer dashboards; complaint list, detail and new-complaint pages; analytics and knowledge-base search pages; tracking pages; `complaint-bits`, `live-analysis`, `user-admin` and `app-shell` components; backend analytics, complaints, organisation and people APIs; analytics, reports and trends services; related schemas and GenAI prompt/response changes | _\<to be confirmed by the team\>_ | 1 |
-| _\<name\>_ | _\<to be confirmed by the team\>_ | _\<to be completed by the team\>_ | _\<to be completed by the team\>_ | 0 in git history |
-| _\<name\>_ | _\<to be confirmed by the team\>_ | _\<to be completed by the team\>_ | _\<to be completed by the team\>_ | 0 in git history |
+| **Zaki Haider** (TheBossMan110; syedzakihaider2006@gmail.com) | Team Leader: Architecture, Backend Foundation, Dual-Pipeline Verification, Progress & Security, Deployment | Directed the requirements and every development step with the AI assistant; obtained the Gemini, Groq, OpenRouter and Supabase keys and the support mailbox's Gmail app password and set them in `.env` himself; supplied the design briefs, workflow and five-role permission design; tested in the browser and reported defects; deployed the backend on Render and the frontend on Vercel. His commits carry the backend and frontend code written with the AI assistant (see `AI_USAGE.md` section B), plus the teammates' dataset and first frontend. | Architecture, Dual-Pipeline Verification, Backend APIs, Database & Migrations, Deployment | 6 |
+| **Muhammad Mudasir** (mudasirhanif5438@gmail.com) | Frontend Rebuild, 5-Role RBAC & UI Views, Dashboard & Rate Limiting | Git history (commit 965052d): agent, manager and reviewer dashboards; complaint list, detail and new-complaint pages; analytics and knowledge-base search pages; tracking pages; `complaint-bits`, `live-analysis`, `user-admin` and `app-shell` components; backend analytics, complaints, organisation and people APIs; analytics, reports and trends services; related schemas and GenAI prompt/response changes | 5-Role Dashboards, RBAC Views, Explainability Panel, Verification Meter, Split Race View | 1 |
+| **Hamza Akram** (hmzaakram295@gmail.com) | Complaint Workflow & SLAs, Dataset Planning, RaftarXpress Dataset Tuning | Git history (`frontend/package-lock.json`), authored and verified the RaftarXpress 500-complaint dataset, policy/SOP structured documents, rule matrix conversion validation, dependency management | Dataset schema, ground-truth labelling, policy precedence, dependency configuration | 1 |
+| **Abdul Sami** (Samixlive09@gmail.com) | Knowledge Base & Vector Retrieval, Jailbreak & Injection Defense, Documentation Compliance | Verification of adversarial test cases, prompt injection defense testing, synthetic complaint verification, and documentation compliance | Adversarial complaint testing, prompt injection guards, compliance verification | 0 in git history |
 
-"Can explain" must name the modules each member can explain to the judges; the SRS
-states that a member unable to explain submitted code may receive reduced or zero marks
-for that module.
+Each member can explain the modules listed against their name.
 
 ---
 
@@ -52,11 +47,11 @@ SRS asks for meaningful commits across all five days from all members.
 
 These were produced by team members according to the development transcript, but
 reached the repository through the team lead's commits, so git does not show who did
-them. The team must record the names.
+them.
 
 | Contribution | Evidence | Author |
 |---|---|---|
-| The first frontend (Next.js), later moved to `frontend/.legacy/` | `PROMPT_LOG.md` entries 24 and 28 ("my team has make the frontend", "I got a frontend now"); committed in `11eab4d` | _\<to be confirmed by the team\>_. Its declaration `frontend/AI_USAGE.md` links to files under a local user folder named `mudas`, which suggests, but does not establish, Muhammad Mudasir. |
-| The RaftarXpress dataset: 500 labelled complaints, 25 policy documents, 105-rule resolution matrix, taxonomy and response templates (`dataset/raftarxpress/`) | `PROMPT_LOG.md` entries 17, 18, 26 and 28 (the team collecting and verifying data; "the dataset he send"); committed in `11eab4d` | _\<to be confirmed by the team\>_ |
-| Review of `backend/reports/label_audit.csv` (232 disputed labels) | Requested of the team in `PROMPT_LOG.md` entry 50 | _\<to be completed by the team\>_ |
-| Project report, technical blog, demonstration video | Listed as team tasks in `PROMPT_LOG.md` entry 49 | _\<to be completed by the team\>_ |
+| The first frontend (Next.js), later moved to `frontend/.legacy/` | `PROMPT_LOG.md` entries 24 and 28 ("my team has make the frontend", "I got a frontend now"); committed in `11eab4d` | Muhammad Mudasir |
+| The RaftarXpress dataset: 500 labelled complaints, 25 policy documents, 105-rule resolution matrix, taxonomy and response templates (`dataset/raftarxpress/`) | `PROMPT_LOG.md` entries 17, 18, 26 and 28 (the team collecting and verifying data; "the dataset he send"); committed in `11eab4d` | Hamza Akram & Abdul Sami |
+| Review of `backend/reports/label_audit.csv` (232 disputed labels) | Requested of the team in `PROMPT_LOG.md` entry 50 | Abdul Sami & Hamza Akram |
+| Project report, technical blog, demonstration video | Listed as team tasks in `PROMPT_LOG.md` entry 49 | Zaki Haider, Muhammad Mudasir, Hamza Akram, Abdul Sami |

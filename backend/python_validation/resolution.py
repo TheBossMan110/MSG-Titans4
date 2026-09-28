@@ -132,27 +132,65 @@ class ResolutionReport:
 # ══════════════════════════════════════════════════════════════
 # classification
 # ══════════════════════════════════════════════════════════════
-def _cites_a_real_policy(db: Session, step: ResolutionStep) -> bool:
+# How the chunker joins a chunk key: ``DOC-003::2::c1`` is document, section,
+# chunk (see document_processing/chunker.py).
+_CHUNK_KEY_SEPARATOR = "::"
+
+# What a model wraps a reference in when it copies one out of the prompt. The
+# policy extracts are headed ``[DOC-003::2::c1] DOC-003 v2.1 ...``, so the
+# brackets come back with the key more often than not.
+_REFERENCE_WRAPPING = "[](){}<>\"'` "
+
+
+def _chunk_exists(db: Session, chunk_key: str) -> bool:
+    return db.execute(
+        select(Chunk.id).where(Chunk.chunk_key == chunk_key).limit(1)
+    ).first() is not None
+
+
+def _cites_a_real_policy(db: Session, step: ResolutionStep) -> str | None:
     """
-    Whether this step's citation resolves to a chunk that exists.
+    The reference this step's citation resolves to, or ``None``.
 
     A policy reference that resolves is the difference between a step an agent
     can defend and one they cannot.
+
+    The GenAI schema gives a step only ``policy_ref``, and the model fills it
+    the way the prompt showed it references: with a chunk key
+    (``DOC-003::2::c1``), often still in its brackets. Comparing that with
+    ``chunks.doc_ref`` alone left every such step UNSUPPORTED -- 392 of them in
+    the production data -- although the chunk it names exists. So a reference
+    is tried, in order, as
+
+    1. a chunk key that exists, exactly as written;
+    2. the document named before the first ``::`` of a chunk-key-shaped
+       reference, which is as traceable as naming that document outright;
+    3. a document reference, with the step's section when it gives one.
+
+    A reference that names no real chunk and no real document still resolves to
+    nothing: an invented citation is never made to look supported.
     """
     if step.chunk_key:
-        found = db.execute(
-            select(Chunk).where(Chunk.chunk_key == step.chunk_key)
-        ).scalars().first()
-        if found is not None:
-            return True
+        key = step.chunk_key.strip(_REFERENCE_WRAPPING)
+        if key and _chunk_exists(db, key):
+            return key
 
-    if not step.policy_ref:
-        return False
+    reference = (step.policy_ref or "").strip(_REFERENCE_WRAPPING)
+    if not reference:
+        return None
 
-    query = select(Chunk).where(Chunk.doc_ref == step.policy_ref.strip().upper())
+    if _CHUNK_KEY_SEPARATOR in reference:
+        if _chunk_exists(db, reference):
+            return reference
+        reference = reference.split(_CHUNK_KEY_SEPARATOR, 1)[0].strip(_REFERENCE_WRAPPING)
+        if not reference:
+            return None
+
+    doc_ref = reference.upper()
+    query = select(Chunk.id).where(Chunk.doc_ref == doc_ref)
     if step.section_ref:
         query = query.where(Chunk.section_ref == str(step.section_ref).strip())
-    return db.execute(query).scalars().first() is not None
+    return doc_ref if db.execute(query.limit(1)).first() is not None else None
 
 
 def classify(
@@ -208,7 +246,11 @@ def classify(
             continue
 
         # ── a generated step ──
-        promises = detect_promises(step.text, patterns)
+        # Negated phrases are not promises: "full refunds are not provided
+        # once delivery is complete" states the policy rather than offering
+        # the refund, and calling it PROHIBITED tells an agent not to say the
+        # one thing they should.
+        promises = detect_promises(step.text, patterns, exclude_negated=True)
         offending = next(
             (
                 promise
@@ -227,9 +269,9 @@ def classify(
                 "decision authorises. An agent must not carry this out."
             )
             promise_type = offending["promise_type"]
-        elif _cites_a_real_policy(db, step):
+        elif (traced := _cites_a_real_policy(db, step)) is not None:
             status = ResolutionStepStatus.SUPPORTED
-            reason = f"Traceable to {step.policy_ref or step.chunk_key}."
+            reason = f"Traceable to {traced}."
             promise_type = None
         else:
             status = ResolutionStepStatus.UNSUPPORTED

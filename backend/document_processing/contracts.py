@@ -55,6 +55,9 @@ class DocumentMetadata:
     effective_date: date | None = None
     expiry_date: date | None = None
     owner: str | None = None
+    # The lifecycle the document declares for itself ("Status: DRAFT"), as
+    # written. Optional like everything else; see versioning.initial_status.
+    status: str | None = None
     raw: dict[str, str] = field(default_factory=dict)
 
     # Fields that must be present for a version to be publishable as-is.
@@ -79,6 +82,7 @@ class DocumentMetadata:
             "effective_date": self.effective_date.isoformat() if self.effective_date else None,
             "expiry_date": self.expiry_date.isoformat() if self.expiry_date else None,
             "owner": self.owner,
+            "status": self.status,
             "raw": self.raw,
         }
 

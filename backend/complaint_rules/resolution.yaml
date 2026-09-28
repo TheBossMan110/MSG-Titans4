@@ -24,9 +24,7 @@ rules:
     precedence: 60
     rationale: RULE-001 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: delayed_delivery_terms
-        - signal: rule_001_evidence
+      signal: delayed_delivery_terms
     then:
       required_actions:
         - Check hub GPS scan history
@@ -84,9 +82,7 @@ rules:
     precedence: 60
     rationale: RULE-004 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: missed_delivery_attempt_terms
-        - signal: rule_004_evidence
+      signal: missed_delivery_attempt_terms
     then:
       required_actions:
         - Verify rider GPS proximity at attempt timestamp
@@ -144,9 +140,7 @@ rules:
     precedence: 60
     rationale: RULE-007 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: package_left_unattended_terms
-        - signal: rule_007_evidence
+      signal: package_left_unattended_terms
     then:
       required_actions:
         - Confirm digital delivery receipt note
@@ -202,9 +196,7 @@ rules:
     precedence: 60
     rationale: RULE-010 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: wrong_route_dispatch_terms
-        - signal: rule_010_evidence
+      signal: wrong_route_dispatch_terms
     then:
       required_actions:
         - Re-manifest parcel for immediate intra-city transfer shuttle
@@ -281,9 +273,7 @@ rules:
     precedence: 60
     rationale: RULE-014 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: lost_parcel_terms
-        - signal: rule_014_evidence
+      signal: lost_parcel_terms
     then:
       required_actions:
         - Verify insurance premium payment in booking ledger
@@ -341,9 +331,7 @@ rules:
     precedence: 60
     rationale: RULE-017 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: partial_shipment_missing_terms
-        - signal: rule_017_evidence
+      signal: partial_shipment_missing_terms
     then:
       required_actions:
         - Photograph damaged master carton and record net weight loss
@@ -380,9 +368,7 @@ rules:
     precedence: 60
     rationale: RULE-019 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: damaged_parcel_terms
-        - signal: rule_019_evidence
+      signal: damaged_parcel_terms
     then:
       required_actions:
         - Inspect customer unboxing photographic evidence
@@ -459,9 +445,7 @@ rules:
     precedence: 60
     rationale: RULE-023 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: wrong_item_delivered_terms
-        - signal: rule_023_evidence
+      signal: wrong_item_delivered_terms
     then:
       required_actions:
         - Verify booked SKU description against shipping manifest
@@ -499,9 +483,7 @@ rules:
     precedence: 60
     rationale: RULE-025 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: tampered_packaging_terms
-        - signal: rule_025_evidence
+      signal: tampered_packaging_terms
     then:
       required_actions:
         - Log security tape breach in hub quality audit log
@@ -577,9 +559,7 @@ rules:
     precedence: 60
     rationale: RULE-029 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: cod_amount_mismatch_terms
-        - signal: rule_029_evidence
+      signal: cod_amount_mismatch_terms
     then:
       required_actions:
         - Verify merchant account credentials and booking ownership
@@ -617,9 +597,7 @@ rules:
     precedence: 60
     rationale: RULE-031 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: duplicate_charge_terms
-        - signal: rule_031_evidence
+      signal: duplicate_charge_terms
     then:
       required_actions:
         - Verify payment gateway transaction logs against CN number
@@ -675,9 +653,7 @@ rules:
     precedence: 60
     rationale: RULE-034 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: incorrect_charge_terms
-        - signal: rule_034_evidence
+      signal: incorrect_charge_terms
     then:
       required_actions:
         - Retrieve automated hub laser dimension scan photos
@@ -732,9 +708,7 @@ rules:
     precedence: 60
     rationale: RULE-037 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: cod_remittance_delay_terms
-        - signal: rule_037_evidence
+      signal: cod_remittance_delay_terms
     then:
       required_actions:
         - Verify merchant bank IBFT queue status
@@ -790,9 +764,7 @@ rules:
     precedence: 60
     rationale: RULE-040 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: refund_not_processed_terms
-        - signal: rule_040_evidence
+      signal: refund_not_processed_terms
     then:
       required_actions:
         - Verify CN delivery status and original payment mode
@@ -850,9 +822,7 @@ rules:
     precedence: 60
     rationale: RULE-043 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: refund_delay_terms
-        - signal: rule_043_evidence
+      signal: refund_delay_terms
     then:
       required_actions:
         - Check IBFT batch stage in Finance portal
@@ -907,9 +877,7 @@ rules:
     precedence: 60
     rationale: RULE-046 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: rto_processing_delay_terms
-        - signal: rule_046_evidence
+      signal: rto_processing_delay_terms
     then:
       required_actions:
         - Confirm parcel is safely tagged in hub RTO retention bay
@@ -964,9 +932,7 @@ rules:
     precedence: 60
     rationale: RULE-049 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: account_locked_terms
-        - signal: rule_049_evidence
+      signal: account_locked_terms
     then:
       required_actions:
         - Verify registered mobile number and CNIC details
@@ -1022,9 +988,7 @@ rules:
     precedence: 60
     rationale: RULE-052 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: unauthorized_account_access_terms
-        - signal: rule_052_evidence
+      signal: unauthorized_account_access_terms
     then:
       required_actions:
         - Terminate all active session tokens immediately
@@ -1080,9 +1044,7 @@ rules:
     precedence: 60
     rationale: RULE-055 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: merchant_profile_update_terms
-        - signal: rule_055_evidence
+      signal: merchant_profile_update_terms
     then:
       required_actions:
         - Verify request originated from registered merchant email
@@ -1138,9 +1100,7 @@ rules:
     precedence: 60
     rationale: RULE-058 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: tracking_not_updating_terms
-        - signal: rule_058_evidence
+      signal: tracking_not_updating_terms
     then:
       required_actions:
         - Verify linehaul truck departure and estimated hub arrival time
@@ -1195,9 +1155,7 @@ rules:
     precedence: 60
     rationale: RULE-061 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: app_crash_terms
-        - signal: rule_061_evidence
+      signal: app_crash_terms
     then:
       required_actions:
         - Collect device model, OS version, and app build number
@@ -1252,9 +1210,7 @@ rules:
     precedence: 60
     rationale: RULE-064 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: api_webhook_failure_terms
-        - signal: rule_064_evidence
+      signal: api_webhook_failure_terms
     then:
       required_actions:
         - Inspect Redis queue worker throughput and consumer lag
@@ -1309,9 +1265,7 @@ rules:
     precedence: 60
     rationale: RULE-067 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: rude_rider_driver_behavior_terms
-        - signal: rule_067_evidence
+      signal: rude_rider_driver_behavior_terms
     then:
       required_actions:
         - Call customer to convey formal company apology
@@ -1368,9 +1322,7 @@ rules:
     precedence: 60
     rationale: RULE-070 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: rider_demanding_cash_tip_terms
-        - signal: rule_070_evidence
+      signal: rider_demanding_cash_tip_terms
     then:
       required_actions:
         - Interview rider and reiterate strict zero-solicitation policy
@@ -1426,9 +1378,7 @@ rules:
     precedence: 60
     rationale: RULE-073 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: warranty_claim_denied_terms
-        - signal: rule_073_evidence
+      signal: warranty_claim_denied_terms
     then:
       required_actions:
         - Share packaging audit report showing lack of internal cushioning/bubble-wrap
@@ -1484,9 +1434,7 @@ rules:
     precedence: 60
     rationale: RULE-076 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: insurance_payout_delay_terms
-        - signal: rule_076_evidence
+      signal: insurance_payout_delay_terms
     then:
       required_actions:
         - Verify insurance underwriter approval reference number
@@ -1540,9 +1488,7 @@ rules:
     precedence: 60
     rationale: RULE-079 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: data_privacy_breach_terms
-        - signal: rule_079_evidence
+      signal: data_privacy_breach_terms
     then:
       required_actions:
         - Investigate courier phone records and application call logs
@@ -1599,9 +1545,7 @@ rules:
     precedence: 60
     rationale: RULE-082 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: unsolicited_marketing_sms_terms
-        - signal: rule_082_evidence
+      signal: unsolicited_marketing_sms_terms
     then:
       required_actions:
         - Add phone number to nationwide Do-Not-Call / Do-Not-SMS suppression list
@@ -1655,9 +1599,7 @@ rules:
     precedence: 60
     rationale: RULE-085 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: reckless_driving_safety_risk_terms
-        - signal: rule_085_evidence
+      signal: reckless_driving_safety_risk_terms
     then:
       required_actions:
         - Retrieve vehicle GPS telematics and speed-monitoring logs
@@ -1714,9 +1656,7 @@ rules:
     precedence: 60
     rationale: RULE-088 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: hazardous_material_mishandling_terms
-        - signal: rule_088_evidence
+      signal: hazardous_material_mishandling_terms
     then:
       required_actions:
         - Isolate parcel in ventilated hub containment bay
@@ -1773,9 +1713,7 @@ rules:
     precedence: 60
     rationale: RULE-091 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: missing_customs_documents_terms
-        - signal: rule_091_evidence
+      signal: missing_customs_documents_terms
     then:
       required_actions:
         - Print digital invoice copy from SupportNova booking database
@@ -1831,9 +1769,7 @@ rules:
     precedence: 60
     rationale: RULE-094 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: regulatory_impoundment_hold_terms
-        - signal: rule_094_evidence
+      signal: regulatory_impoundment_hold_terms
     then:
       required_actions:
         - Log excise inspection timestamp in transit ledger
@@ -1888,9 +1824,7 @@ rules:
     precedence: 60
     rationale: RULE-097 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: subscription_contract_renewal_terms
-        - signal: rule_097_evidence
+      signal: subscription_contract_renewal_terms
     then:
       required_actions:
         - Generate annual shipping volume and revenue summary report
@@ -1945,9 +1879,7 @@ rules:
     precedence: 60
     rationale: RULE-100 states what this case requires and forbids. A required step stays outstanding until a person confirms it.
     when:
-      all_of:
-        - signal: executive_sla_breach_terms
-        - signal: rule_100_evidence
+      signal: executive_sla_breach_terms
     then:
       required_actions:
         - Dispatch senior express rider for immediate priority delivery

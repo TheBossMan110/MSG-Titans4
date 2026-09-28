@@ -25,6 +25,7 @@ the order is documented data rather than an if-chain.
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, date, datetime
 
 from sqlalchemy import select
@@ -63,6 +64,14 @@ def _today() -> date:
 # ══════════════════════════════════════════════════════════════
 # Status
 # ══════════════════════════════════════════════════════════════
+_DECLARED_DRAFT = re.compile(r"^\s*draft\b", re.IGNORECASE)
+
+
+def declares_draft(status: str | None) -> bool:
+    """Whether a document's own status field says it is a draft ("DRAFT", "Draft v0.9")."""
+    return bool(status and _DECLARED_DRAFT.match(status))
+
+
 def initial_status(
     *,
     metadata_complete: bool,
@@ -70,6 +79,7 @@ def initial_status(
     expiry_date: date | None,
     parse_failed: bool,
     on: date | None = None,
+    declared_status: str | None = None,
 ) -> DocStatus:
     """
     Decide the status a freshly ingested version should take.
@@ -78,11 +88,20 @@ def initial_status(
     needed to place it on a timeline, goes to METADATA_REVIEW rather than being
     rejected.  That is what lets an unrecognised hidden-pack document be
     ingested and reviewed instead of turning the evaluator away.
+
+    A document that declares itself a draft stays one, whatever its dates say.
+    DOC-025 v0.9 is marked DRAFT with an effective date of 2026-01-01; once
+    that date had passed, the dates alone made it ACTIVE, and an unapproved
+    policy became retrievable as policy. Only DRAFT is read from the field:
+    it is the one declared status that withholds a document, and every other
+    lifecycle is already decided from the dates or by an administrator.
     """
     today = on or _today()
 
     if parse_failed or not metadata_complete:
         return DocStatus.METADATA_REVIEW
+    if declares_draft(declared_status):
+        return DocStatus.DRAFT  # not in force until somebody activates it
     if expiry_date and expiry_date < today:
         return DocStatus.EXPIRED
     if effective_date and effective_date > today:

@@ -164,6 +164,30 @@ class TestSessions:
         # This device carries on.
         assert client.get("/api/auth/me", headers=_bearer(mine["access_token"])).status_code == 200
 
+    def test_signing_out_stops_this_access_token_at_once(self, client):
+        """
+        Revoking only the refresh token left the access token working until it
+        expired -- "Sign out" on a shared computer did not sign anyone out.
+        """
+        email, _ = _register(client)
+        mine = _login(client, email).json()
+        other = _login(client, email).json()
+        assert client.get("/api/auth/me", headers=_bearer(mine["access_token"])).status_code == 200
+
+        done = client.post(
+            "/api/auth/logout",
+            json={"refresh_token": mine["refresh_token"]},
+            headers=_bearer(mine["access_token"]),
+        )
+        assert done.status_code == 200, done.text
+
+        refused = client.get("/api/auth/me", headers=_bearer(mine["access_token"]))
+        assert refused.status_code == 401
+        assert refused.json()["error"]["code"] == "SESSION_REVOKED"
+        assert client.post("/api/auth/refresh", json={"refresh_token": mine["refresh_token"]}).status_code == 401
+        # Only this session: the same account elsewhere carries on.
+        assert client.get("/api/auth/me", headers=_bearer(other["access_token"])).status_code == 200
+
     def test_a_refreshed_session_keeps_its_device_and_start(self, client):
         email, _ = _register(client)
         first = _login(client, email, ua="Mozilla/5.0 (X11; Linux x86_64) Firefox/131.0").json()

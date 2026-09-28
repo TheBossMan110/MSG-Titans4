@@ -324,12 +324,14 @@ In the application a document's family key is its document id
 (`document_processing/metadata.py`), so the legacy and current versions above
 are held as separate documents rather than as two versions of one. On upload
 the status is set from the metadata and dates (`knowledge_base/versioning.py`):
-incomplete metadata goes to `METADATA_REVIEW`, a file whose expiry date has
-passed is filed as `EXPIRED`, one whose effective date is in the future as
-`DRAFT`, otherwise `ACTIVE`. The rendered files carry no
-lifecycle field, so check `DOC-025`'s status after upload: its effective date
-has passed. Uploading a newer version under the **same** document id with
-"Activate on success" supersedes the previous one.
+incomplete metadata goes to `METADATA_REVIEW`, a file that declares
+`Status: DRAFT` is filed as `DRAFT`, one whose expiry date has passed as
+`EXPIRED`, one whose effective date is in the future as `DRAFT`, otherwise
+`ACTIVE`. `DOC-025_v0.9.pdf` declares `Status: DRAFT` in its front matter, so
+it is ingested as `DRAFT` although its effective date has passed, and stays
+out of retrieval until an administrator activates it. Uploading a newer
+version under the **same** document id with "Activate on success" supersedes
+the previous one.
 
 ### 2.5 Conflict cases
 

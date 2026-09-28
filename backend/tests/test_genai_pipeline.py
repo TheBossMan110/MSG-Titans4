@@ -237,6 +237,90 @@ class TestPromptRegistry:
         with pytest.raises(prompts.PromptError):
             prompts.activate(db, "complaint_intelligence", "v99.9")
 
+    def test_the_checksum_does_not_depend_on_line_endings(self, tmp_path, monkeypatch):
+        """
+        The benchmark machine checked the v1.1 templates out with CRLF, so its
+        runs recorded a checksum the registry (LF) did not hold, for the same
+        prompt text -- and the registry reported an untouched file as edited.
+        """
+        import hashlib
+
+        from src.core.config import settings
+
+        text = "You classify complaints.\n{{ fenced_complaint }}\nReply with JSON.\n"
+        folder = tmp_path / "line_endings"
+        folder.mkdir()
+        (folder / "v1.0.j2").write_bytes(text.encode())
+        (folder / "v1.1.j2").write_bytes(text.replace("\n", "\r\n").encode())
+        (folder / "v1.2.j2").write_bytes(text.replace("\n", "\r").encode())
+        monkeypatch.setattr(settings, "prompt_dir", tmp_path)
+
+        expected = hashlib.sha256(text.encode()).hexdigest()
+        for version in ("v1.0", "v1.1", "v1.2"):
+            assert prompts.checksum_of("line_endings", version) == expected, version
+
+        # An edit is still an edit.
+        (folder / "v1.1.j2").write_bytes(text.replace("JSON", "prose").encode())
+        assert prompts.checksum_of("line_endings", "v1.1") != expected
+
+    def test_seeding_promotes_the_newest_over_a_version_nobody_pinned(self, db):
+        """
+        An active version an earlier seed merely picked -- or one left behind
+        by a switch nobody recorded -- is not a pin, and must not hold the
+        newest template back forever.
+        """
+        prompts.sync_registry(db)
+        db.flush()
+        versions = prompts.available_versions("complaint_intelligence")
+        if len(versions) < 2:
+            pytest.skip("only one template version on disk")
+        newest, older = versions[0], versions[-1]
+
+        prompts.activate(db, "complaint_intelligence", older)  # no audit row
+        prompts.sync_registry(db)
+        db.flush()
+
+        assert prompts.active_version(db, "complaint_intelligence") == newest
+        active = [
+            r for r in db.execute(
+                select(PromptVersion).where(PromptVersion.name == "complaint_intelligence")
+            ).scalars() if r.is_active
+        ]
+        assert [r.version for r in active] == [newest]
+        db.rollback()
+
+    def test_seeding_keeps_a_version_an_administrator_pinned(self, db):
+        """
+        Dropping a new template into the repository must not silently move
+        traffic off a version an administrator chose, on the record.
+        """
+        from src.db.models import AuditLog
+
+        prompts.sync_registry(db)
+        db.flush()
+        versions = prompts.available_versions("complaint_intelligence")
+        if len(versions) < 2:
+            pytest.skip("only one template version on disk")
+        newest, older = versions[0], versions[-1]
+
+        prompts.activate(db, "complaint_intelligence", older)
+        # What PATCH /api/admin/prompts/{name} records.
+        db.add(
+            AuditLog(
+                entity_type="prompt_version",
+                entity_id="complaint_intelligence",
+                action=prompts.PROMPT_ACTIVATED,
+                before={"version": newest},
+                after={"version": older},
+            )
+        )
+        db.flush()
+
+        prompts.sync_registry(db)
+        db.flush()
+        assert prompts.active_version(db, "complaint_intelligence") == older
+        db.rollback()
+
 
 # ══════════════════════════════════════════════════════════════
 # provider-facing schema

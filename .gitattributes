@@ -1,0 +1,8 @@
+# Prompt templates are checksummed into the prompt registry. Pinned to LF so a
+# Windows checkout (core.autocrlf) writes the same bytes the registry recorded.
+*.j2 text eol=lf
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.png binary
+*.ico binary

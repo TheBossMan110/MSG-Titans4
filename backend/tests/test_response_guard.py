@@ -125,6 +125,45 @@ class TestDetection:
         )
         assert detect_promises(text, patterns) == []
 
+    @pytest.mark.parametrize(
+        "text",
+        [
+            # CMP-000292, word for word: negated after the phrase.
+            "Inform the customer that full refunds for inconvenience are not "
+            "provided when delivery is successfully completed.",
+            "A full refund cannot be issued without the original packaging.",
+            "Full refunds are no longer offered on sale items.",
+            # ...and before it.
+            "We cannot offer a full refund for this order.",
+            "The customer is not eligible for a full refund.",
+            "We are unable to provide a full refund.",
+            "We can't guarantee a refund at this stage.",
+            "We cannot make an exception to the policy.",
+        ],
+    )
+    def test_a_negated_promise_is_not_a_promise(self, text, patterns):
+        assert detect_promises(text, patterns), "the phrase itself must still be found"
+        assert detect_promises(text, patterns, exclude_negated=True) == []
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "Your full refund has been approved.",
+            # The negation belongs to something else in each of these.
+            "Your full refund won't be delayed.",
+            "Don't worry, your full refund will be processed today.",
+            "Please don't worry about your full refund.",
+            "You will not lose your full refund.",
+            "Because the item was not delivered a full refund will be issued.",
+            "We will issue a full refund if the item cannot be repaired.",
+            "We are not only offering a full refund but also a voucher.",
+            "Your full refund will be processed no later than Friday.",
+        ],
+    )
+    def test_a_genuine_promise_survives_negation_handling(self, text, patterns):
+        """Erring towards "negated" would let a real commitment through."""
+        assert detect_promises(text, patterns, exclude_negated=True)
+
     def test_spans_point_at_the_matched_phrase(self, patterns):
         text = "Hello. Your full refund will be processed. Thanks."
         promise = detect_promises(text, patterns)[0]
@@ -261,6 +300,23 @@ class TestUnsupportedPromise:
             eligibility=eligibility("ELIGIBLE", kind="REPLACEMENT"), patterns=patterns,
         )
         assert report.status == GuardStatus.BLOCKED
+
+    def test_a_negated_promise_is_not_blocked(self, db, patterns):
+        """
+        Declining is what the guard wants a reply to do when eligibility is
+        unconfirmed. Blocking "we cannot offer a full refund" would reject
+        exactly the reply the correction instruction asks the model to write.
+        """
+        report = scan_response(
+            db,
+            "We cannot offer a full refund because the parcel was delivered on time.",
+            eligibility=eligibility("REQUIRES_VERIFICATION"),
+            patterns=patterns,
+        )
+        assert not [
+            f for f in report.findings if f.flag_type == ResponseFlagType.UNSUPPORTED_PROMISE
+        ]
+        assert report.promises_found == []
 
     def test_an_outright_promise_blocks(self, db, patterns):
         report = scan_response(

@@ -81,6 +81,41 @@ def agent(db):
     ).scalars().one()
 
 
+def _bare_complaint(db) -> Complaint:
+    """
+    A complaint with no pipeline output of its own.
+
+    For tests that plant their own steps: running intake would add the rule
+    matrix's obligations beside them, and those have nothing to do with how a
+    single generated step is classified.
+    """
+    import uuid
+
+    from src.db.enums import Channel, ComplaintStatus
+
+    complaint = Complaint(
+        public_ref=f"CMP-R{uuid.uuid4().hex[:6].upper()}",
+        title="Resolution step fixture",
+        description_raw="Fixture complaint for resolution step classification.",
+        description_clean="Fixture complaint for resolution step classification.",
+        channel=Channel.EMAIL, status=ComplaintStatus.NEW, dataset_tag="TEST",
+    )
+    db.add(complaint)
+    db.flush()
+    return complaint
+
+
+def _generated_step(complaint, ordinal: int, text: str, **fields) -> ResolutionStep:
+    return ResolutionStep(
+        complaint_id=complaint.id,
+        ordinal=ordinal,
+        text=text,
+        source=ResolutionStepSource.GENAI,
+        status=ResolutionStepStatus.SUPPORTED,
+        **fields,
+    )
+
+
 def _file(db, description=SAFETY, **overrides):
     payload = {
         "title": "Complaint",
@@ -254,6 +289,97 @@ class TestResolutionValidation:
         db.commit()
         assert report.unsupported
         assert "not traceable" in report.unsupported[0].reason
+
+    def test_a_step_citing_a_chunk_key_that_exists_is_supported(
+        self, db, clean, a_cited_document
+    ):
+        """
+        The model writes a chunk key into ``policy_ref`` -- the prompt shows it
+        references that way, brackets and all. Compared only with
+        ``chunks.doc_ref``, 392 production steps citing a real chunk were
+        reported UNSUPPORTED.
+        """
+        doc_ref, chunk = a_cited_document
+        complaint = _bare_complaint(db)
+        text = "Check the consignment record against the cited procedure."
+        db.add_all([
+            _generated_step(complaint, 60, text, policy_ref=chunk.chunk_key),
+            _generated_step(complaint, 61, text, policy_ref=f"[{chunk.chunk_key}]"),
+            # A real document with a chunk index the model got wrong: as
+            # traceable as naming the document, which is what it resolves to.
+            _generated_step(complaint, 62, text, policy_ref=f"{doc_ref}::{chunk.section_ref}::c99"),
+            _generated_step(complaint, 63, text, policy_ref=doc_ref),
+        ])
+        db.commit()
+
+        report = resolution.classify(db, complaint.id)
+        db.commit()
+        verdicts = {v.ordinal: v for v in report.verdicts}
+
+        assert all(
+            verdicts[o].status == ResolutionStepStatus.SUPPORTED for o in (60, 61, 62, 63)
+        ), {o: v.status for o, v in verdicts.items()}
+        assert verdicts[60].reason == f"Traceable to {chunk.chunk_key}."
+        assert verdicts[61].reason == f"Traceable to {chunk.chunk_key}."
+        assert verdicts[62].reason == f"Traceable to {doc_ref}."
+        assert not report.unsupported
+
+    def test_a_fabricated_reference_is_still_unsupported(self, db, clean, ingested_kb):
+        """Accepting chunk keys must not make an invented one look supported."""
+        complaint = _bare_complaint(db)
+        text = "Check the consignment record against the cited procedure."
+        db.add_all([
+            _generated_step(complaint, 70, text, policy_ref="FAKE-POL-99::3::c1"),
+            _generated_step(complaint, 71, text, policy_ref="[INVENTED-9::1::c1]"),
+            _generated_step(complaint, 72, text, policy_ref="Approved policy extracts"),
+            _generated_step(complaint, 73, text, policy_ref="[]"),
+        ])
+        db.commit()
+
+        report = resolution.classify(db, complaint.id)
+        db.commit()
+        assert {v.ordinal for v in report.unsupported} == {70, 71, 72, 73}
+
+    def test_a_negated_promise_is_not_prohibited(self, db, clean):
+        """
+        CMP-000292. "Full refunds ... are not provided" states the policy; it
+        promises nothing, and PROHIBITED told the agent not to say it. The same
+        eligibility still prohibits a step that does promise the refund.
+        """
+        complaint = _bare_complaint(db)
+        db.add_all([
+            _generated_step(
+                complaint, 80,
+                "Inform the customer that full refunds for inconvenience are not "
+                "provided when delivery is successfully completed.",
+            ),
+            _generated_step(
+                complaint, 81, "Explain that we cannot offer a full refund for this order."
+            ),
+            _generated_step(
+                complaint, 82, "Tell the customer their full refund has been approved."
+            ),
+        ])
+        db.commit()
+
+        report = resolution.classify(
+            db,
+            complaint.id,
+            eligibility=[
+                {
+                    "eligibility_type": "REFUND",
+                    "python_outcome": "REQUIRES_VERIFICATION",
+                    "rule_ref": "ELG-0001",
+                }
+            ],
+        )
+        db.commit()
+        verdicts = {v.ordinal: v for v in report.verdicts}
+
+        assert verdicts[80].status != ResolutionStepStatus.PROHIBITED
+        assert verdicts[81].status != ResolutionStepStatus.PROHIBITED
+        assert verdicts[82].status == ResolutionStepStatus.PROHIBITED
+        assert verdicts[82].promise_type == "REFUND"
 
     def test_coverage_is_null_when_there_is_nothing_to_do(self, db, clean):
         """A complaint with no obligations is not 0% complete — it is not measured."""

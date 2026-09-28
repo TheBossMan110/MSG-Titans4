@@ -211,6 +211,9 @@ def ingest_document(
         effective_date=metadata.effective_date,
         expiry_date=metadata.expiry_date,
         parse_failed=False,
+        # The document's own "Status: DRAFT" outranks its dates: a draft is
+        # stored as one, kept out of retrieval, and waits for activate().
+        declared_status=metadata.status,
     )
 
     version = DocumentVersion(
@@ -380,6 +383,8 @@ def _summary_message(
         parts.append(f"Superseded v{superseded.version}.")
     if version.status == DocStatus.METADATA_REVIEW:
         parts.append("Metadata is incomplete; review required before activation.")
+    if version.status == DocStatus.DRAFT:
+        parts.append("Not in force: it is not used as policy until it is activated.")
     if total_chunks and embedded < total_chunks:
         parts.append(
             f"{total_chunks - embedded} chunk(s) stored without an embedding; "

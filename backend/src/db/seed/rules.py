@@ -249,7 +249,7 @@ def _apply_spec(
     rule.required_actions = list(then.get("required_actions") or [])
     rule.prohibited_actions = list(then.get("prohibited_actions") or [])
     rule.policy_refs = list(then.get("policy_refs") or [])
-    rule.follow_up_required = bool(then.get("follow_up", False))
+    rule.follow_up_required = bool(then.get("follow_up_required", then.get("follow_up", False)))
 
     rule.is_catch_all = bool(spec.get("catch_all", False))
     rule.eligibility = dict(eligibility) if eligibility else None

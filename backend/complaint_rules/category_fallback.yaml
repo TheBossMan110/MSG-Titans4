@@ -1,0 +1,189 @@
+# ========================================================================
+# RaftarXpress - CATEGORY FALLBACKS
+#
+# Hand-written. Loaded with the rest of complaint_rules/.
+#
+# The case rules recognise a complaint by its sub-type ("package left
+# unattended", "COD amount mismatch"). A short or vague complaint often names
+# only the general topic -- "where is my parcel", "I cannot log in" -- and
+# then no case rule fires, the complaint arrives with no category at all and
+# lands in the unclassified pile.
+#
+# Each rule below answers the question the case rules could not: the
+# category is clear, the sub-type is not, so the category's ROUTINE case
+# applies (its department, urgency and priority are copied from the
+# least-severe authored rule of that sub-type, named in `basis`).
+#
+# These are catch-alls: they never override a case rule, and a complaint
+# classified only by one of them is still marked unmatched, so a person
+# confirms the sub-type. Several may fire at once; the one with the most
+# evidence in the text wins, exactly as between case rules.
+#
+# Precedence 8 sits above the generic catch-all (RTE-0001, precedence 5) and
+# below every case rule (60+).
+# ========================================================================
+
+ruleset: category_fallback
+version: "1.0"
+
+rules:
+
+  - rule_ref: CFB-DELIVERY
+    name: "Delivery problem, sub-type not stated"
+    rule_type: CLASSIFICATION
+    precedence: 8
+    catch_all: true
+    rationale: "Basis RULE-001, the routine transit delay: a delivery complaint that names no specific failure is treated as a delay until a person says otherwise."
+    when:
+      any_of:
+        - signal: delivery_failure
+        - signal: delivery_delay
+        - signal: delivery_inquiry_terms
+    then:
+      category: DELIVERY
+      subcategory: DELAYED_DELIVERY
+      department: LOGISTICS_OPS
+      urgency: MEDIUM
+      priority: P2
+
+  - rule_ref: CFB-PRODUCT-DEFECT
+    name: "Goods arrived damaged or faulty, sub-type not stated"
+    rule_type: CLASSIFICATION
+    precedence: 8
+    catch_all: true
+    rationale: "Basis RULE-019, the routine damaged-parcel case."
+    when:
+      signal: product_defect_terms
+    then:
+      category: PRODUCT_DEFECT
+      subcategory: DAMAGED_PARCEL
+      department: WARRANTY_CLAIMS
+      urgency: LOW
+      priority: P3
+
+  - rule_ref: CFB-BILLING
+    name: "Disputed charge, sub-type not stated"
+    rule_type: CLASSIFICATION
+    precedence: 8
+    catch_all: true
+    rationale: "Basis RULE-034, the routine incorrect-charge case. Keyed on a DISPUTED charge only: the word 'payment' alone is not a billing complaint."
+    when:
+      signal: billing_error
+    then:
+      category: BILLING
+      subcategory: INCORRECT_CHARGE
+      department: BILLING
+      urgency: LOW
+      priority: P3
+
+  - rule_ref: CFB-REFUND
+    name: "Refund request, sub-type not stated"
+    rule_type: CLASSIFICATION
+    precedence: 8
+    catch_all: true
+    rationale: "Basis RULE-040, the routine refund-processing case."
+    when:
+      any_of:
+        - signal: refund_terms
+        - signal: refund_failure
+    then:
+      category: REFUND
+      subcategory: REFUND_NOT_PROCESSED
+      department: RETURNS_REFUNDS
+      support_department: BILLING
+      urgency: MEDIUM
+      priority: P2
+
+  - rule_ref: CFB-ACCOUNT
+    name: "Account problem, sub-type not stated"
+    rule_type: CLASSIFICATION
+    precedence: 8
+    catch_all: true
+    rationale: "Basis RULE-049, the routine locked-account case."
+    when:
+      signal: account_terms
+    then:
+      category: ACCOUNT
+      subcategory: ACCOUNT_LOCKED
+      department: CUSTOMER_RELATIONS
+      urgency: LOW
+      priority: P3
+
+  - rule_ref: CFB-TECHNICAL
+    name: "App or portal problem, sub-type not stated"
+    rule_type: CLASSIFICATION
+    precedence: 8
+    catch_all: true
+    rationale: "Basis RULE-061, the routine app-fault case."
+    when:
+      signal: technical_terms
+    then:
+      category: TECHNICAL_SUPPORT
+      subcategory: APP_CRASH
+      department: CUSTOMER_RELATIONS
+      urgency: LOW
+      priority: P3
+
+  - rule_ref: CFB-STAFF
+    name: "Staff conduct, sub-type not stated"
+    rule_type: CLASSIFICATION
+    precedence: 8
+    catch_all: true
+    rationale: "Basis RULE-067, the routine discourteous-rider case."
+    when:
+      signal: staff_conduct_terms
+    then:
+      category: STAFF_BEHAVIOR
+      subcategory: RUDE_RIDER_DRIVER_BEHAVIOR
+      department: LOGISTICS_OPS
+      support_department: CUSTOMER_RELATIONS
+      urgency: MEDIUM
+      priority: P2
+
+  - rule_ref: CFB-WARRANTY
+    name: "Warranty or claim, sub-type not stated"
+    rule_type: CLASSIFICATION
+    precedence: 8
+    catch_all: true
+    rationale: "Basis RULE-073, the routine claim-denial dispute."
+    when:
+      signal: warranty_terms
+    then:
+      category: WARRANTY
+      subcategory: WARRANTY_CLAIM_DENIED
+      department: WARRANTY_CLAIMS
+      urgency: MEDIUM
+      priority: P2
+
+  - rule_ref: CFB-SAFETY
+    name: "Safety incident, sub-type not stated"
+    rule_type: CLASSIFICATION
+    precedence: 8
+    catch_all: true
+    rationale: "Basis RULE-085, the routine road-safety report. Severity is not taken from here: the cross-cutting safety floors (ESC-SAF-*) still apply on top."
+    when:
+      any_of:
+        - signal: safety_lexicon_hit
+        - signal: injury_mention
+    then:
+      category: SAFETY
+      subcategory: RECKLESS_DRIVING_SAFETY_RISK
+      department: SAFETY
+      support_department: LOGISTICS_OPS
+      urgency: HIGH
+      priority: P1
+
+  - rule_ref: CFB-CUSTOMS
+    name: "Customs or regulatory hold, sub-type not stated"
+    rule_type: CLASSIFICATION
+    precedence: 8
+    catch_all: true
+    rationale: "Basis RULE-094, the routine regulatory inspection hold."
+    when:
+      signal: customs_terms
+    then:
+      category: CUSTOMS
+      subcategory: REGULATORY_IMPOUNDMENT_HOLD
+      department: COMPLIANCE
+      urgency: LOW
+      priority: P3

@@ -484,6 +484,21 @@ def persist_validation(
     return run
 
 
+def complaint_text(complaint: Complaint) -> str:
+    """
+    What the rules read: the title and the body.
+
+    A customer's subject line is often the clearest statement of the problem
+    ("Package stolen after courier left it at the gate"); reading only the body
+    threw that away.
+    """
+    body = complaint.description_clean or complaint.description_raw or ""
+    title = (complaint.title or "").strip()
+    if not title or body.lstrip().lower().startswith(title.lower()):
+        return body
+    return f"{title}\n{body}"
+
+
 def validate_complaint(
     db: Session, complaint: Complaint, *, persist: bool = True
 ) -> ValidationResult:
@@ -492,7 +507,7 @@ def validate_complaint(
 
     result = run_validation(
         db,
-        text=complaint.description_clean or complaint.description_raw or "",
+        text=complaint_text(complaint),
         complaint=complaint,
         knowledge_base_version=knowledge_base_version(db),
     )

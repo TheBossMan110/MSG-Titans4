@@ -56,6 +56,12 @@ _LABEL_PATTERNS: dict[str, list[str]] = {
         r"review\s*(?:date|by)", r"next\s*review",
     ],
     "owner": [r"owner", r"document\s*owner", r"approved\s*by", r"author"],
+    # A document's own word on where it stands: "Status: DRAFT". Its dates
+    # cannot say this -- a draft whose effective date has passed is still a
+    # draft until somebody approves it.
+    "status": [
+        r"(?:document|policy|lifecycle|approval)\s*status", r"status",
+    ],
 }
 
 _SEPARATOR = r"\s*[:\-–]\s*"
@@ -187,6 +193,7 @@ def extract_metadata(
     meta.department = meta.raw.get("department")
     meta.category = meta.raw.get("category")
     meta.owner = meta.raw.get("owner")
+    meta.status = meta.raw.get("status")
     meta.effective_date = parse_date(meta.raw.get("effective_date"))
     meta.expiry_date = parse_date(meta.raw.get("expiry_date"))
 

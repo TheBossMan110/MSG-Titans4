@@ -274,6 +274,112 @@ class TestFalsePositives:
         assert not report.detected
 
 
+# ══════════════════════════════════════════════════════════════
+# reaching a person
+# ══════════════════════════════════════════════════════════════
+class TestReviewQueue:
+    def _reconcile(self, db, complaint_id, refs):
+        """
+        Reconcile with both pipelines stubbed to agree on everything, citing
+        ``refs``. Agreement is deliberate: the contradiction must be enough on
+        its own to put the complaint in front of a person.
+        """
+        from dataclasses import dataclass, field
+
+        from comparison_engine import reconcile
+        from src.db.models import Complaint
+        from tests.test_comparison_engine import FakeIntelligence, FakeOutcome, FakeRef
+
+        @dataclass
+        class Run:
+            intelligence: object
+            ok: bool = True
+            failure_reason: str | None = None
+            retrieved_chunk_keys: list[str] = field(default_factory=list)
+            run_ids: list = field(default_factory=list)
+
+        @dataclass
+        class Validation:
+            outcome: object
+            validation_run_id: object = None
+            eligibility: list = field(default_factory=list)
+            ruleset_version: str = "test"
+
+        cited = [FakeRef(chunk_key=f"{ref}#1", doc_ref=ref, section_ref="1") for ref in refs]
+        return reconcile(
+            db,
+            db.get(Complaint, complaint_id),
+            intelligence=Run(
+                intelligence=FakeIntelligence(policy_refs=cited),
+                retrieved_chunk_keys=[ref.chunk_key for ref in cited],
+            ),
+            validation=Validation(outcome=FakeOutcome()),
+        )
+
+    @staticmethod
+    def _cleanup(db, complaint_id):
+        from sqlalchemy import delete
+
+        from src.db.models import (
+            Comparison,
+            ComplaintStatusHistory,
+            ReviewQueueItem,
+            VerificationDecision,
+        )
+
+        for model in (ReviewQueueItem, ComplaintStatusHistory, Comparison, VerificationDecision):
+            db.execute(delete(model).where(model.complaint_id == complaint_id))
+        db.commit()
+
+    def test_a_policy_contradiction_sends_the_complaint_to_review(
+        self, db, contradicting_corpus
+    ):
+        """
+        POLICY_CONTRADICTION existed as a review reason and nothing raised it:
+        the conflict was written onto the overruled reference and the queue,
+        which reads the decision's reasons, never heard of it.
+        """
+        from comparison_engine import ReviewReason
+        from src.db.enums import VerificationOutcome
+        from src.db.models import Complaint
+        from src.services import review
+
+        complaint_id, high, low = contradicting_corpus
+        try:
+            result = self._reconcile(db, complaint_id, [high, low])
+            db.commit()
+
+            assert ReviewReason.POLICY_CONTRADICTION in result.verification.review_reasons
+            assert result.outcome == VerificationOutcome.MANUAL_REVIEW_REQUIRED
+            # Still recorded on the references, as before.
+            assert policy_conflict.conflicts_for(db, complaint_id)
+
+            item = review.enqueue(db, db.get(Complaint, complaint_id))
+            db.commit()
+            assert item is not None
+            assert ReviewReason.POLICY_CONTRADICTION in item.reasons
+        finally:
+            self._cleanup(db, complaint_id)
+
+    def test_policies_that_agree_raise_no_contradiction(self, db, agreeing_corpus):
+        from comparison_engine import ReviewReason
+        from src.db.enums import VerificationOutcome
+        from src.db.models import ComplaintPolicyRef
+
+        complaint_id = agreeing_corpus
+        refs = sorted({
+            row.doc_ref for row in db.execute(
+                select(ComplaintPolicyRef).where(ComplaintPolicyRef.complaint_id == complaint_id)
+            ).scalars()
+        })
+        try:
+            result = self._reconcile(db, complaint_id, refs)
+            db.commit()
+            assert ReviewReason.POLICY_CONTRADICTION not in result.verification.review_reasons
+            assert result.outcome == VerificationOutcome.VERIFIED
+        finally:
+            self._cleanup(db, complaint_id)
+
 
 
 # ══════════════════════════════════════════════════════════════

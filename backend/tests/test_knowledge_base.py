@@ -194,6 +194,75 @@ def test_initial_status_rules():
         metadata_complete=False, effective_date=None, expiry_date=None, **common,
     ) == DocStatus.METADATA_REVIEW
 
+    # A document's own "Status: DRAFT" outranks a passed effective date.
+    assert versioning.initial_status(
+        metadata_complete=True, effective_date=date(2026, 1, 1),
+        expiry_date=None, declared_status="DRAFT", **common,
+    ) == DocStatus.DRAFT, "a declared draft must not become active on its dates"
+    assert versioning.initial_status(
+        metadata_complete=True, effective_date=date(2026, 1, 1),
+        expiry_date=None, declared_status="Draft - for consultation", **common,
+    ) == DocStatus.DRAFT
+    assert versioning.initial_status(
+        metadata_complete=True, effective_date=date(2026, 1, 1),
+        expiry_date=None, declared_status="ACTIVE", **common,
+    ) == DocStatus.ACTIVE
+
+
+def _declared_draft(ref: str, phrase: str) -> bytes:
+    return (
+        f"Document ID: {ref}\nTitle: {ref} dangerous goods handling\nVersion: 0.9\n"
+        f"Effective Date: 2026-01-01\nStatus: DRAFT\nDocument Type: Policy\n\n"
+        f"1. Scope\n\n{phrase} before any consignment leaves the hub.\n"
+    ).encode()
+
+
+def test_a_document_that_declares_itself_a_draft_is_stored_as_draft(db):
+    """
+    DOC-025 v0.9 says DRAFT and has an effective date that has passed. Its
+    dates alone made it ACTIVE, and an unapproved policy was retrievable as
+    policy. It must wait as a DRAFT until somebody activates it.
+    """
+    import uuid
+
+    from knowledge_base import ingest
+
+    ref = f"DRF-{uuid.uuid4().hex[:6].upper()}"
+    phrase = "Quarantine every zirconium canister in the bonded cage"
+    result = ingest_document(db, _declared_draft(ref, phrase), f"{ref}_v0.9.txt")
+    db.flush()
+
+    assert result.accepted, result.message
+    assert result.status == DocStatus.DRAFT
+    assert result.document_version.metadata_json["status"] == "DRAFT"
+    assert not any(c.doc_ref == ref for c in retrieve(db, phrase, top_k=10).chunks), (
+        "a draft must not be retrievable as policy"
+    )
+
+    ingest.activate(db, result.document_version.id)
+    db.flush()
+    assert result.document_version.status == DocStatus.ACTIVE
+    assert any(c.doc_ref == ref for c in retrieve(db, phrase, top_k=10).chunks)
+
+
+def test_the_corpus_draft_is_ingested_as_draft(db, sample_documents_dir):
+    """The real DOC-025 v0.9 file, as rendered into the dataset."""
+    try:
+        path = sample_documents_dir("DOC-025_v0.9.pdf")
+    except FileNotFoundError:
+        pytest.skip("DOC-025 is not part of the configured corpus")
+
+    existing = db.execute(
+        select(DocumentVersion).where(DocumentVersion.doc_ref == "DOC-025")
+    ).scalars().first()
+    if existing is not None:
+        pytest.skip("DOC-025 is already in this database")
+
+    result = ingest_document(db, path.read_bytes(), path.name)
+    db.flush()
+    assert result.accepted, result.message
+    assert result.status == DocStatus.DRAFT
+
 
 @pytest.mark.unit
 def test_precedence_order_is_configuration_not_code(db):

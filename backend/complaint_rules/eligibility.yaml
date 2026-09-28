@@ -22,9 +22,7 @@ rules:
     precedence: 60
     rationale: RULE-001 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: delayed_delivery_terms
-        - signal: rule_001_evidence
+      signal: delayed_delivery_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -39,9 +37,7 @@ rules:
     precedence: 60
     rationale: RULE-001 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: delayed_delivery_terms
-        - signal: rule_001_evidence
+      signal: delayed_delivery_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -56,9 +52,7 @@ rules:
     precedence: 60
     rationale: RULE-001 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: delayed_delivery_terms
-        - signal: rule_001_evidence
+      signal: delayed_delivery_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -175,9 +169,7 @@ rules:
     precedence: 60
     rationale: RULE-004 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: missed_delivery_attempt_terms
-        - signal: rule_004_evidence
+      signal: missed_delivery_attempt_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -192,9 +184,7 @@ rules:
     precedence: 60
     rationale: RULE-004 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: missed_delivery_attempt_terms
-        - signal: rule_004_evidence
+      signal: missed_delivery_attempt_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -209,9 +199,7 @@ rules:
     precedence: 60
     rationale: RULE-004 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: missed_delivery_attempt_terms
-        - signal: rule_004_evidence
+      signal: missed_delivery_attempt_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -328,9 +316,7 @@ rules:
     precedence: 60
     rationale: RULE-007 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: package_left_unattended_terms
-        - signal: rule_007_evidence
+      signal: package_left_unattended_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -345,9 +331,7 @@ rules:
     precedence: 60
     rationale: RULE-007 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: package_left_unattended_terms
-        - signal: rule_007_evidence
+      signal: package_left_unattended_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -362,9 +346,7 @@ rules:
     precedence: 60
     rationale: RULE-007 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: package_left_unattended_terms
-        - signal: rule_007_evidence
+      signal: package_left_unattended_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -481,9 +463,7 @@ rules:
     precedence: 60
     rationale: RULE-010 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: wrong_route_dispatch_terms
-        - signal: rule_010_evidence
+      signal: wrong_route_dispatch_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -498,9 +478,7 @@ rules:
     precedence: 60
     rationale: RULE-010 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: wrong_route_dispatch_terms
-        - signal: rule_010_evidence
+      signal: wrong_route_dispatch_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -515,9 +493,7 @@ rules:
     precedence: 60
     rationale: RULE-010 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: wrong_route_dispatch_terms
-        - signal: rule_010_evidence
+      signal: wrong_route_dispatch_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -685,9 +661,7 @@ rules:
     precedence: 60
     rationale: RULE-014 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: lost_parcel_terms
-        - signal: rule_014_evidence
+      signal: lost_parcel_terms
     eligibility:
       type: REFUND
       outcome: ELIGIBLE
@@ -702,9 +676,7 @@ rules:
     precedence: 60
     rationale: RULE-014 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: lost_parcel_terms
-        - signal: rule_014_evidence
+      signal: lost_parcel_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -719,9 +691,7 @@ rules:
     precedence: 60
     rationale: RULE-014 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: lost_parcel_terms
-        - signal: rule_014_evidence
+      signal: lost_parcel_terms
     eligibility:
       type: COMPENSATION
       outcome: ELIGIBLE
@@ -838,9 +808,7 @@ rules:
     precedence: 60
     rationale: RULE-017 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: partial_shipment_missing_terms
-        - signal: rule_017_evidence
+      signal: partial_shipment_missing_terms
     eligibility:
       type: REFUND
       outcome: ELIGIBLE
@@ -855,9 +823,7 @@ rules:
     precedence: 60
     rationale: RULE-017 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: partial_shipment_missing_terms
-        - signal: rule_017_evidence
+      signal: partial_shipment_missing_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -872,9 +838,7 @@ rules:
     precedence: 60
     rationale: RULE-017 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: partial_shipment_missing_terms
-        - signal: rule_017_evidence
+      signal: partial_shipment_missing_terms
     eligibility:
       type: COMPENSATION
       outcome: ELIGIBLE
@@ -940,9 +904,7 @@ rules:
     precedence: 60
     rationale: RULE-019 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: damaged_parcel_terms
-        - signal: rule_019_evidence
+      signal: damaged_parcel_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -957,9 +919,7 @@ rules:
     precedence: 60
     rationale: RULE-019 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: damaged_parcel_terms
-        - signal: rule_019_evidence
+      signal: damaged_parcel_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -974,9 +934,7 @@ rules:
     precedence: 60
     rationale: RULE-019 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: damaged_parcel_terms
-        - signal: rule_019_evidence
+      signal: damaged_parcel_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -1144,9 +1102,7 @@ rules:
     precedence: 60
     rationale: RULE-023 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: wrong_item_delivered_terms
-        - signal: rule_023_evidence
+      signal: wrong_item_delivered_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -1161,9 +1117,7 @@ rules:
     precedence: 60
     rationale: RULE-023 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: wrong_item_delivered_terms
-        - signal: rule_023_evidence
+      signal: wrong_item_delivered_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -1178,9 +1132,7 @@ rules:
     precedence: 60
     rationale: RULE-023 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: wrong_item_delivered_terms
-        - signal: rule_023_evidence
+      signal: wrong_item_delivered_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -1246,9 +1198,7 @@ rules:
     precedence: 60
     rationale: RULE-025 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: tampered_packaging_terms
-        - signal: rule_025_evidence
+      signal: tampered_packaging_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -1263,9 +1213,7 @@ rules:
     precedence: 60
     rationale: RULE-025 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: tampered_packaging_terms
-        - signal: rule_025_evidence
+      signal: tampered_packaging_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -1280,9 +1228,7 @@ rules:
     precedence: 60
     rationale: RULE-025 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: tampered_packaging_terms
-        - signal: rule_025_evidence
+      signal: tampered_packaging_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -1450,9 +1396,7 @@ rules:
     precedence: 60
     rationale: RULE-029 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: cod_amount_mismatch_terms
-        - signal: rule_029_evidence
+      signal: cod_amount_mismatch_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -1467,9 +1411,7 @@ rules:
     precedence: 60
     rationale: RULE-029 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: cod_amount_mismatch_terms
-        - signal: rule_029_evidence
+      signal: cod_amount_mismatch_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -1484,9 +1426,7 @@ rules:
     precedence: 60
     rationale: RULE-029 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: cod_amount_mismatch_terms
-        - signal: rule_029_evidence
+      signal: cod_amount_mismatch_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -1552,9 +1492,7 @@ rules:
     precedence: 60
     rationale: RULE-031 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: duplicate_charge_terms
-        - signal: rule_031_evidence
+      signal: duplicate_charge_terms
     eligibility:
       type: REFUND
       outcome: ELIGIBLE
@@ -1569,9 +1507,7 @@ rules:
     precedence: 60
     rationale: RULE-031 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: duplicate_charge_terms
-        - signal: rule_031_evidence
+      signal: duplicate_charge_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -1586,9 +1522,7 @@ rules:
     precedence: 60
     rationale: RULE-031 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: duplicate_charge_terms
-        - signal: rule_031_evidence
+      signal: duplicate_charge_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -1705,9 +1639,7 @@ rules:
     precedence: 60
     rationale: RULE-034 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: incorrect_charge_terms
-        - signal: rule_034_evidence
+      signal: incorrect_charge_terms
     eligibility:
       type: REFUND
       outcome: REQUIRES_VERIFICATION
@@ -1722,9 +1654,7 @@ rules:
     precedence: 60
     rationale: RULE-034 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: incorrect_charge_terms
-        - signal: rule_034_evidence
+      signal: incorrect_charge_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -1739,9 +1669,7 @@ rules:
     precedence: 60
     rationale: RULE-034 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: incorrect_charge_terms
-        - signal: rule_034_evidence
+      signal: incorrect_charge_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -1858,9 +1786,7 @@ rules:
     precedence: 60
     rationale: RULE-037 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: cod_remittance_delay_terms
-        - signal: rule_037_evidence
+      signal: cod_remittance_delay_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -1875,9 +1801,7 @@ rules:
     precedence: 60
     rationale: RULE-037 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: cod_remittance_delay_terms
-        - signal: rule_037_evidence
+      signal: cod_remittance_delay_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -1892,9 +1816,7 @@ rules:
     precedence: 60
     rationale: RULE-037 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: cod_remittance_delay_terms
-        - signal: rule_037_evidence
+      signal: cod_remittance_delay_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -2011,9 +1933,7 @@ rules:
     precedence: 60
     rationale: RULE-040 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: refund_not_processed_terms
-        - signal: rule_040_evidence
+      signal: refund_not_processed_terms
     eligibility:
       type: REFUND
       outcome: ELIGIBLE
@@ -2028,9 +1948,7 @@ rules:
     precedence: 60
     rationale: RULE-040 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: refund_not_processed_terms
-        - signal: rule_040_evidence
+      signal: refund_not_processed_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -2045,9 +1963,7 @@ rules:
     precedence: 60
     rationale: RULE-040 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: refund_not_processed_terms
-        - signal: rule_040_evidence
+      signal: refund_not_processed_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -2164,9 +2080,7 @@ rules:
     precedence: 60
     rationale: RULE-043 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: refund_delay_terms
-        - signal: rule_043_evidence
+      signal: refund_delay_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -2181,9 +2095,7 @@ rules:
     precedence: 60
     rationale: RULE-043 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: refund_delay_terms
-        - signal: rule_043_evidence
+      signal: refund_delay_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -2198,9 +2110,7 @@ rules:
     precedence: 60
     rationale: RULE-043 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: refund_delay_terms
-        - signal: rule_043_evidence
+      signal: refund_delay_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -2317,9 +2227,7 @@ rules:
     precedence: 60
     rationale: RULE-046 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: rto_processing_delay_terms
-        - signal: rule_046_evidence
+      signal: rto_processing_delay_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -2334,9 +2242,7 @@ rules:
     precedence: 60
     rationale: RULE-046 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: rto_processing_delay_terms
-        - signal: rule_046_evidence
+      signal: rto_processing_delay_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -2351,9 +2257,7 @@ rules:
     precedence: 60
     rationale: RULE-046 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: rto_processing_delay_terms
-        - signal: rule_046_evidence
+      signal: rto_processing_delay_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -2470,9 +2374,7 @@ rules:
     precedence: 60
     rationale: RULE-049 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: account_locked_terms
-        - signal: rule_049_evidence
+      signal: account_locked_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -2487,9 +2389,7 @@ rules:
     precedence: 60
     rationale: RULE-049 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: account_locked_terms
-        - signal: rule_049_evidence
+      signal: account_locked_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -2504,9 +2404,7 @@ rules:
     precedence: 60
     rationale: RULE-049 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: account_locked_terms
-        - signal: rule_049_evidence
+      signal: account_locked_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -2623,9 +2521,7 @@ rules:
     precedence: 60
     rationale: RULE-052 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: unauthorized_account_access_terms
-        - signal: rule_052_evidence
+      signal: unauthorized_account_access_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -2640,9 +2536,7 @@ rules:
     precedence: 60
     rationale: RULE-052 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: unauthorized_account_access_terms
-        - signal: rule_052_evidence
+      signal: unauthorized_account_access_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -2657,9 +2551,7 @@ rules:
     precedence: 60
     rationale: RULE-052 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: unauthorized_account_access_terms
-        - signal: rule_052_evidence
+      signal: unauthorized_account_access_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -2776,9 +2668,7 @@ rules:
     precedence: 60
     rationale: RULE-055 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: merchant_profile_update_terms
-        - signal: rule_055_evidence
+      signal: merchant_profile_update_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -2793,9 +2683,7 @@ rules:
     precedence: 60
     rationale: RULE-055 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: merchant_profile_update_terms
-        - signal: rule_055_evidence
+      signal: merchant_profile_update_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -2810,9 +2698,7 @@ rules:
     precedence: 60
     rationale: RULE-055 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: merchant_profile_update_terms
-        - signal: rule_055_evidence
+      signal: merchant_profile_update_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -2929,9 +2815,7 @@ rules:
     precedence: 60
     rationale: RULE-058 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: tracking_not_updating_terms
-        - signal: rule_058_evidence
+      signal: tracking_not_updating_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -2946,9 +2830,7 @@ rules:
     precedence: 60
     rationale: RULE-058 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: tracking_not_updating_terms
-        - signal: rule_058_evidence
+      signal: tracking_not_updating_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -2963,9 +2845,7 @@ rules:
     precedence: 60
     rationale: RULE-058 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: tracking_not_updating_terms
-        - signal: rule_058_evidence
+      signal: tracking_not_updating_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -3082,9 +2962,7 @@ rules:
     precedence: 60
     rationale: RULE-061 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: app_crash_terms
-        - signal: rule_061_evidence
+      signal: app_crash_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -3099,9 +2977,7 @@ rules:
     precedence: 60
     rationale: RULE-061 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: app_crash_terms
-        - signal: rule_061_evidence
+      signal: app_crash_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -3116,9 +2992,7 @@ rules:
     precedence: 60
     rationale: RULE-061 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: app_crash_terms
-        - signal: rule_061_evidence
+      signal: app_crash_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -3235,9 +3109,7 @@ rules:
     precedence: 60
     rationale: RULE-064 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: api_webhook_failure_terms
-        - signal: rule_064_evidence
+      signal: api_webhook_failure_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -3252,9 +3124,7 @@ rules:
     precedence: 60
     rationale: RULE-064 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: api_webhook_failure_terms
-        - signal: rule_064_evidence
+      signal: api_webhook_failure_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -3269,9 +3139,7 @@ rules:
     precedence: 60
     rationale: RULE-064 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: api_webhook_failure_terms
-        - signal: rule_064_evidence
+      signal: api_webhook_failure_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -3388,9 +3256,7 @@ rules:
     precedence: 60
     rationale: RULE-067 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: rude_rider_driver_behavior_terms
-        - signal: rule_067_evidence
+      signal: rude_rider_driver_behavior_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -3405,9 +3271,7 @@ rules:
     precedence: 60
     rationale: RULE-067 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: rude_rider_driver_behavior_terms
-        - signal: rule_067_evidence
+      signal: rude_rider_driver_behavior_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -3422,9 +3286,7 @@ rules:
     precedence: 60
     rationale: RULE-067 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: rude_rider_driver_behavior_terms
-        - signal: rule_067_evidence
+      signal: rude_rider_driver_behavior_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -3541,9 +3403,7 @@ rules:
     precedence: 60
     rationale: RULE-070 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: rider_demanding_cash_tip_terms
-        - signal: rule_070_evidence
+      signal: rider_demanding_cash_tip_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -3558,9 +3418,7 @@ rules:
     precedence: 60
     rationale: RULE-070 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: rider_demanding_cash_tip_terms
-        - signal: rule_070_evidence
+      signal: rider_demanding_cash_tip_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -3575,9 +3433,7 @@ rules:
     precedence: 60
     rationale: RULE-070 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: rider_demanding_cash_tip_terms
-        - signal: rule_070_evidence
+      signal: rider_demanding_cash_tip_terms
     eligibility:
       type: COMPENSATION
       outcome: REQUIRES_VERIFICATION
@@ -3694,9 +3550,7 @@ rules:
     precedence: 60
     rationale: RULE-073 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: warranty_claim_denied_terms
-        - signal: rule_073_evidence
+      signal: warranty_claim_denied_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -3711,9 +3565,7 @@ rules:
     precedence: 60
     rationale: RULE-073 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: warranty_claim_denied_terms
-        - signal: rule_073_evidence
+      signal: warranty_claim_denied_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -3728,9 +3580,7 @@ rules:
     precedence: 60
     rationale: RULE-073 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: warranty_claim_denied_terms
-        - signal: rule_073_evidence
+      signal: warranty_claim_denied_terms
     eligibility:
       type: COMPENSATION
       outcome: REQUIRES_VERIFICATION
@@ -3847,9 +3697,7 @@ rules:
     precedence: 60
     rationale: RULE-076 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: insurance_payout_delay_terms
-        - signal: rule_076_evidence
+      signal: insurance_payout_delay_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -3864,9 +3712,7 @@ rules:
     precedence: 60
     rationale: RULE-076 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: insurance_payout_delay_terms
-        - signal: rule_076_evidence
+      signal: insurance_payout_delay_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -3881,9 +3727,7 @@ rules:
     precedence: 60
     rationale: RULE-076 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: insurance_payout_delay_terms
-        - signal: rule_076_evidence
+      signal: insurance_payout_delay_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -4000,9 +3844,7 @@ rules:
     precedence: 60
     rationale: RULE-079 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: data_privacy_breach_terms
-        - signal: rule_079_evidence
+      signal: data_privacy_breach_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -4017,9 +3859,7 @@ rules:
     precedence: 60
     rationale: RULE-079 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: data_privacy_breach_terms
-        - signal: rule_079_evidence
+      signal: data_privacy_breach_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -4034,9 +3874,7 @@ rules:
     precedence: 60
     rationale: RULE-079 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: data_privacy_breach_terms
-        - signal: rule_079_evidence
+      signal: data_privacy_breach_terms
     eligibility:
       type: COMPENSATION
       outcome: REQUIRES_VERIFICATION
@@ -4153,9 +3991,7 @@ rules:
     precedence: 60
     rationale: RULE-082 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: unsolicited_marketing_sms_terms
-        - signal: rule_082_evidence
+      signal: unsolicited_marketing_sms_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -4170,9 +4006,7 @@ rules:
     precedence: 60
     rationale: RULE-082 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: unsolicited_marketing_sms_terms
-        - signal: rule_082_evidence
+      signal: unsolicited_marketing_sms_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -4187,9 +4021,7 @@ rules:
     precedence: 60
     rationale: RULE-082 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: unsolicited_marketing_sms_terms
-        - signal: rule_082_evidence
+      signal: unsolicited_marketing_sms_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -4306,9 +4138,7 @@ rules:
     precedence: 60
     rationale: RULE-085 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: reckless_driving_safety_risk_terms
-        - signal: rule_085_evidence
+      signal: reckless_driving_safety_risk_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -4323,9 +4153,7 @@ rules:
     precedence: 60
     rationale: RULE-085 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: reckless_driving_safety_risk_terms
-        - signal: rule_085_evidence
+      signal: reckless_driving_safety_risk_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -4340,9 +4168,7 @@ rules:
     precedence: 60
     rationale: RULE-085 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: reckless_driving_safety_risk_terms
-        - signal: rule_085_evidence
+      signal: reckless_driving_safety_risk_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -4459,9 +4285,7 @@ rules:
     precedence: 60
     rationale: RULE-088 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: hazardous_material_mishandling_terms
-        - signal: rule_088_evidence
+      signal: hazardous_material_mishandling_terms
     eligibility:
       type: REFUND
       outcome: REQUIRES_VERIFICATION
@@ -4476,9 +4300,7 @@ rules:
     precedence: 60
     rationale: RULE-088 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: hazardous_material_mishandling_terms
-        - signal: rule_088_evidence
+      signal: hazardous_material_mishandling_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -4493,9 +4315,7 @@ rules:
     precedence: 60
     rationale: RULE-088 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: hazardous_material_mishandling_terms
-        - signal: rule_088_evidence
+      signal: hazardous_material_mishandling_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -4612,9 +4432,7 @@ rules:
     precedence: 60
     rationale: RULE-091 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: missing_customs_documents_terms
-        - signal: rule_091_evidence
+      signal: missing_customs_documents_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -4629,9 +4447,7 @@ rules:
     precedence: 60
     rationale: RULE-091 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: missing_customs_documents_terms
-        - signal: rule_091_evidence
+      signal: missing_customs_documents_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -4646,9 +4462,7 @@ rules:
     precedence: 60
     rationale: RULE-091 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: missing_customs_documents_terms
-        - signal: rule_091_evidence
+      signal: missing_customs_documents_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -4765,9 +4579,7 @@ rules:
     precedence: 60
     rationale: RULE-094 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: regulatory_impoundment_hold_terms
-        - signal: rule_094_evidence
+      signal: regulatory_impoundment_hold_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -4782,9 +4594,7 @@ rules:
     precedence: 60
     rationale: RULE-094 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: regulatory_impoundment_hold_terms
-        - signal: rule_094_evidence
+      signal: regulatory_impoundment_hold_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -4799,9 +4609,7 @@ rules:
     precedence: 60
     rationale: RULE-094 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: regulatory_impoundment_hold_terms
-        - signal: rule_094_evidence
+      signal: regulatory_impoundment_hold_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -4918,9 +4726,7 @@ rules:
     precedence: 60
     rationale: RULE-097 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: subscription_contract_renewal_terms
-        - signal: rule_097_evidence
+      signal: subscription_contract_renewal_terms
     eligibility:
       type: REFUND
       outcome: NOT_ELIGIBLE
@@ -4935,9 +4741,7 @@ rules:
     precedence: 60
     rationale: RULE-097 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: subscription_contract_renewal_terms
-        - signal: rule_097_evidence
+      signal: subscription_contract_renewal_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -4952,9 +4756,7 @@ rules:
     precedence: 60
     rationale: RULE-097 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: subscription_contract_renewal_terms
-        - signal: rule_097_evidence
+      signal: subscription_contract_renewal_terms
     eligibility:
       type: COMPENSATION
       outcome: NOT_ELIGIBLE
@@ -5071,9 +4873,7 @@ rules:
     precedence: 60
     rationale: RULE-100 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: executive_sla_breach_terms
-        - signal: rule_100_evidence
+      signal: executive_sla_breach_terms
     eligibility:
       type: REFUND
       outcome: REQUIRES_VERIFICATION
@@ -5088,9 +4888,7 @@ rules:
     precedence: 60
     rationale: RULE-100 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: executive_sla_breach_terms
-        - signal: rule_100_evidence
+      signal: executive_sla_breach_terms
     eligibility:
       type: REPLACEMENT
       outcome: NOT_ELIGIBLE
@@ -5105,9 +4903,7 @@ rules:
     precedence: 60
     rationale: RULE-100 states what this case entitles the customer to. Only an explicit ELIGIBLE authorises a promise.
     when:
-      all_of:
-        - signal: executive_sla_breach_terms
-        - signal: rule_100_evidence
+      signal: executive_sla_breach_terms
     eligibility:
       type: COMPENSATION
       outcome: ELIGIBLE

@@ -20,7 +20,7 @@ export function Footer() {
           <FooterCol title="Evaluation" items={[['/dashboard/benchmark', 'Benchmark'], ['/dashboard/rules/sandbox', 'Rule sandbox'], ['/dashboard/security', 'Deliberate defects'], ['/dashboard/audit', 'Audit trail']]} />
         </div>
         <div className="mt-14 flex flex-wrap items-center justify-between gap-3 border-t border-ink-on-dark/15 pt-6 text-[12.5px] text-sand-2">
-          <span>SupportNova · ResponseX Intelligence · TechWiz 7, Generative AI PowerPlay</span>
+          <span>SupportNova · ResponseX Intelligence · TechWiz 7, Generative AI PowerPlay · Team MSG-Titans4</span>
           <span className="font-mono">RaftarXpress Logistics (Pvt) Ltd — fictional organisation</span>
           <MotionToggle dark />
         </div>

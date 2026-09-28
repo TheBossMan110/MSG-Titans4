@@ -801,7 +801,10 @@ def stage_signals(mapping: Mapping) -> pathlib.Path:
 
     def section(name: str) -> str:
         """Lift a top-level block out of the previous signals file, verbatim."""
-        match = re.search(rf"^{name}:.*?(?=^\w|\Z)", carried, re.S | re.M)
+        # Stop at the next section's "# --" header as well as its key: without
+        # it the header was lifted with this block and written again by the
+        # next one, so every run added another copy of it.
+        match = re.search(rf"^{name}:.*?(?=^\w|^# --|\Z)", carried, re.S | re.M)
         return match.group(0).rstrip() if match else f"{name}: []"
 
     out: list[str] = []
@@ -1216,6 +1219,11 @@ def stage_rules(mapping: Mapping) -> pathlib.Path:
         rank = ESCALATION_RANK[escalation_code]
         reference = rule.get("policy_reference") or {}
         doc_ref = doc_refs.get(reference.get("document_id"))
+        # A routine case applies on the topic alone; its obligations,
+        # entitlements and escalation must apply on exactly the same evidence,
+        # or a complaint is classified by the case and then silently loses
+        # everything the case requires.
+        is_baseline = baseline_of.get(rule["subcategory_id"]) == source_id
 
         # -- classification --
         w = classification.append
@@ -1225,12 +1233,7 @@ def stage_rules(mapping: Mapping) -> pathlib.Path:
         w("    rule_type: CLASSIFICATION")
         w(f"    precedence: {60 + rank * 3}")
         w(f"    rationale: {_yaml_scalar(rule.get('priority_logic_note') or rule['conditions'])}")
-        classification.extend(
-            _when(
-                mapping, rule, lexicon,
-                is_baseline=baseline_of.get(rule["subcategory_id"]) == source_id,
-            )
-        )
+        classification.extend(_when(mapping, rule, lexicon, is_baseline=is_baseline))
         w("    then:")
         w(f"      category: {category_code}")
         w(f"      subcategory: {sub_code}")
@@ -1239,6 +1242,13 @@ def stage_rules(mapping: Mapping) -> pathlib.Path:
             w(f"      support_department: {mapping.departments[support]}")
         w(f"      urgency: {URGENCY_BY_NAME[rule['urgency']]}")
         w(f"      priority: {rule['priority']}")
+        # The matrix names an escalation level for cases that are not
+        # mandatory too ("rude rider -> Supervisor"). Only mandatory ones get
+        # their own ESC rule and a floor; this one is the case's ordinary
+        # outcome, which used to be dropped, so 13 authored escalations never
+        # happened.
+        if escalation_code != "NONE" and not rule.get("is_mandatory_escalation"):
+            w(f"      escalation: {escalation_code}")
         if rule.get("follow_up_required"):
             w("      follow_up_required: true")
         if doc_ref:
@@ -1271,7 +1281,7 @@ def stage_rules(mapping: Mapping) -> pathlib.Path:
                     "required step stays outstanding until a person confirms it."
                 )
             )
-            resolution.extend(_when(mapping, rule, lexicon))
+            resolution.extend(_when(mapping, rule, lexicon, is_baseline=is_baseline))
             w("    then:")
             resolution.extend(
                 _actions("required_actions", rule.get("required_actions") or [])
@@ -1308,7 +1318,7 @@ def stage_rules(mapping: Mapping) -> pathlib.Path:
                     f"raised above {escalation_code}, never lowered below it."
                 )
             )
-            escalation.extend(_when(mapping, rule, lexicon))
+            escalation.extend(_when(mapping, rule, lexicon, is_baseline=is_baseline))
             w("    then:")
             w(f"      escalation: {escalation_code}")
             w(f"      department: {department}")
@@ -1354,7 +1364,7 @@ def stage_rules(mapping: Mapping) -> pathlib.Path:
                     "Only an explicit ELIGIBLE authorises a promise."
                 )
             )
-            eligibility.extend(_when(mapping, rule, lexicon))
+            eligibility.extend(_when(mapping, rule, lexicon, is_baseline=is_baseline))
             w("    eligibility:")
             w(f"      type: {kind}")
             w(f"      outcome: {outcome}")
