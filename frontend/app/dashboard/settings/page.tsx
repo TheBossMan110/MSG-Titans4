@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { MotionToggle } from '@/components/ui/motion-toggle'
 import { useRouter } from 'next/navigation'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
+import { canEditTemplate } from '@/lib/roles'
 import { admin, system, type S } from '@/lib/api'
 import { useApi, useAction, fmtDate, fmtMinutes } from '@/lib/use-api'
+import { useTabParam } from '@/lib/use-query-state'
 import { Badge, Button, Mono, humanise } from '@/components/ui/primitives'
 import { Card, PanelHeader } from '@/components/ui/surfaces'
 import { Field, Input, Select, Textarea, Checkbox } from '@/components/ui/forms'
@@ -18,20 +20,23 @@ type Tab = 'account' | 'system' | 'config' | 'lexicon' | 'sla'
 
 export default function SettingsPage() {
   return (
-    <AppShell eyebrow="Settings" roles={['manager', 'admin', 'evaluator']} wide>
-      <Settings />
+    <AppShell eyebrow="Settings" roles={['manager', 'admin', 'evaluator', 'superadmin']} wide>
+      <Suspense fallback={<SkeletonRows rows={6} />}>
+        <Settings />
+      </Suspense>
     </AppShell>
   )
 }
 
 function Settings() {
   const { user } = useAuth()
-  const [tab, setTab] = useState<Tab>('account')
-  const oversight = user && ['manager', 'admin', 'evaluator'].includes(user.role)
-  const platform = user && ['admin', 'evaluator'].includes(user.role)
+  const oversight = user && ['manager', 'admin', 'evaluator', 'superadmin'].includes(user.role)
+  const platform = user && ['admin', 'evaluator', 'superadmin'].includes(user.role)
   const tabs: Array<{ id: Tab; label: string }> = [{ id: 'account', label: 'Account' }, { id: 'system', label: 'System' }]
   if (platform) tabs.push({ id: 'config', label: 'Configuration' })
   if (oversight) tabs.push({ id: 'lexicon', label: 'Lexicon' }, { id: 'sla', label: 'SLA policies' })
+  // In the URL: AI, SLA and System settings in the sidebar all open this page.
+  const [tab, setTab] = useTabParam(tabs.map((t) => t.id), 'account')
   return (
     <div className="flex flex-col gap-6">
       <div><p className="eyebrow mb-1">Settings</p><h1 className="display text-h2">Account and configuration</h1></div>
@@ -104,7 +109,7 @@ function Config() {
   const [value, setValue] = useState('')
   const [reason, setReason] = useState('')
   const save = useAction((k: string, v: unknown, r?: string) => admin.updateConfig(k, v, r))
-  const isAdmin = user?.role === 'admin'
+  const isAdmin = canEditTemplate(user)
   const open = (e: S['ConfigEntryOut']) => { setEditing(e); setValue(typeof e.value === 'string' ? e.value : JSON.stringify(e.value, null, 2)); setReason('') }
   const submit = async () => {
     if (!editing) return
@@ -140,7 +145,7 @@ function Lexicon() {
   const add = useAction((b: S['LexiconTermIn']) => admin.addTerm(b))
   const edit = useAction((id: string, b: S['LexiconTermUpdateIn']) => admin.editTerm(id, b))
   const remove = useAction((id: string) => admin.removeTerm(id))
-  const isAdmin = user?.role === 'admin'
+  const isAdmin = canEditTemplate(user)
   const signals = Array.from(new Set((q.data ?? []).map((t) => t.signal_key))).sort()
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -188,7 +193,7 @@ function Sla() {
   const [editing, setEditing] = useState<S['SLAPolicyOut'] | null>(null)
   const [form, setForm] = useState<S['SLAPolicyUpdateIn']>({})
   const save = useAction((id: string, b: S['SLAPolicyUpdateIn']) => admin.updateSla(id, b))
-  const isAdmin = user?.role === 'admin'
+  const isAdmin = canEditTemplate(user)
   return (
     <div className="flex flex-col gap-4">
       <p className="max-w-[64ch] text-[13.5px] text-espresso-2">First-response and resolution targets by category and priority. The tighter of the two applies. The sweep marks breaches and at-risk items against these.</p>

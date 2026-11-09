@@ -47,6 +47,7 @@ from schemas.documents import (
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import NotFoundError, ValidationError
 from src.core.logging import get_logger
+from src.core.permissions import require_permission
 from src.core.response_cache import cached_endpoint
 from src.db.enums import DocStatus, UserRole
 from src.db.models import (
@@ -62,7 +63,8 @@ log = get_logger("api.documents")
 
 router = APIRouter(prefix="/documents", tags=["Knowledge Base"])
 
-AdminOnly = Depends(require_role(UserRole.ADMIN))
+# Upload, activate, deactivate: administrators, and whoever else the organisation allows.
+AdminOnly = Depends(require_permission("documents.manage"))
 StaffRead = Depends(
     require_role(
         UserRole.ADMIN, UserRole.MANAGER, UserRole.REVIEWER,

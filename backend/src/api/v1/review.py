@@ -18,6 +18,7 @@ position than one who was told no (SRS 1.8 #7).
 from __future__ import annotations
 
 import uuid
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import select
@@ -38,11 +39,13 @@ from schemas.review import (
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import NotFoundError, ValidationError
 from src.core.logging import get_logger
+from src.core.permissions import require_permission
 from src.core.response_cache import cached_endpoint
 from src.core.scope import complaint_in_scope, is_scoped, restrict
 from src.db.enums import ReviewStatus, UserRole
 from src.db.models import Category, Complaint, Department, ReviewQueueItem, SLAEvent
 from src.services import review, role_views, sla
+from src.services.audit import record_audit
 
 log = get_logger("api.review")
 
@@ -53,6 +56,9 @@ READERS = (*REVIEWERS, UserRole.EVALUATOR, UserRole.AGENT)
 # The queue itself is reviewers' work (FR lxi); agents see a complaint's
 # review history and SLA only for complaints in their own scope.
 QUEUE_READERS = (*REVIEWERS, UserRole.EVALUATOR)
+# Configurable per organisation (src/core/permissions.py); the defaults are the tuples above.
+QueueAccess = Depends(require_permission("review.queue"))
+DecideAccess = Depends(require_permission("review.decide"))
 
 
 def _item_out(db: DbSession, item: ReviewQueueItem, complaint: Complaint, events: list | None = None) -> ReviewItemOut:
@@ -104,7 +110,7 @@ def _load_complaint(db: DbSession, ref: str) -> Complaint:
 @router.get(
     "/queue",
     response_model=Page[ReviewItemOut],
-    dependencies=[Depends(require_role(*QUEUE_READERS))],
+    dependencies=[QueueAccess],
     summary="The manual review queue",
 )
 @cached_endpoint(ttl=30)
@@ -115,13 +121,16 @@ def list_queue(
     status_filter: str | None = Query(None, alias="status"),
     assigned_to_me: bool = False,
     breached_only: bool = False,
+    sort: Literal["urgent", "newest"] = "urgent",
     user: CurrentUser = None,
 ) -> Page[ReviewItemOut]:
     """
     What is waiting for a human (FR lxi; SRS Step 57).
 
-    Ordered by priority then age, so the most severe waiting longest is at the
-    top. A P0 filed an hour ago outranks a P3 filed yesterday.
+    Ordered by priority then age by default, so the most severe waiting longest
+    is at the top: a P0 filed an hour ago outranks a P3 filed yesterday.
+    ``sort=newest`` is what the dashboard's first screen asks for, so a case
+    that has just arrived is not on page five.
     """
     query = select(ReviewQueueItem, Complaint).join(
         Complaint, ReviewQueueItem.complaint_id == Complaint.id
@@ -151,14 +160,18 @@ def list_queue(
         breached = select(SLAEvent.complaint_id).where(SLAEvent.breached.is_(True))
         query = query.where(ReviewQueueItem.complaint_id.in_(breached))
 
-    rows = db.execute(
-        query.order_by(
+    if user is not None and is_scoped(user):
+        query = restrict(query, user)
+
+    ordering = (
+        (ReviewQueueItem.created_at.desc(),) if sort == "newest" else (
             # priority_code sorts lexically and that happens to be correct:
             # P0 < P1 < P2 < P3, most severe first.
             ReviewQueueItem.priority_code.asc(),
             ReviewQueueItem.created_at.asc(),
         )
-    ).all()
+    )
+    rows = db.execute(query.order_by(*ordering)).all()
 
     window = rows[(page - 1) * size : page * size]
     # One query for every row's SLA clocks, not one per row: over a hosted
@@ -179,7 +192,7 @@ def list_queue(
 @router.get(
     "/stats",
     response_model=QueueStatsOut,
-    dependencies=[Depends(require_role(*QUEUE_READERS))],
+    dependencies=[QueueAccess],
     summary="Queue depth and override rate",
 )
 @cached_endpoint(ttl=30)
@@ -199,7 +212,7 @@ def queue_stats(db: DbSession) -> QueueStatsOut:
 @router.post(
     "/queue/{ref}/claim",
     response_model=ReviewItemOut,
-    dependencies=[Depends(require_role(*REVIEWERS))],
+    dependencies=[DecideAccess],
     summary="Claim a queue item",
 )
 def claim_item(ref: str, db: DbSession, user: CurrentUser) -> ReviewItemOut:
@@ -210,6 +223,8 @@ def claim_item(ref: str, db: DbSession, user: CurrentUser) -> ReviewItemOut:
         raise NotFoundError(f"Complaint {complaint.public_ref} is not in the queue.")
 
     review.claim(db, item, user)
+    record_audit(db, entity_type="complaint", entity_id=complaint.id, action="REVIEW_CLAIM", actor=user,
+                 after={"queue_status": item.status, "assignee": user.full_name})
     db.commit()
     return _item_out(db, item, complaint)
 
@@ -221,7 +236,7 @@ def claim_item(ref: str, db: DbSession, user: CurrentUser) -> ReviewItemOut:
     "/{ref}/actions",
     response_model=ReviewActionOut,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_role(*REVIEWERS))],
+    dependencies=[DecideAccess],
     summary="Record a reviewer action",
 )
 def record_action(
@@ -261,6 +276,8 @@ def record_action(
 
     # A priority change moves the deadline with it.
     sla.apply(db, complaint)
+    record_audit(db, entity_type="complaint", entity_id=complaint.id, action=f"REVIEW_{result.action}", actor=user,
+                 after={"changed": result.changed}, reason=payload.comment)
     db.commit()
 
     return ReviewActionOut(**result.summary())
@@ -319,7 +336,7 @@ def sweep_sla(db: DbSession, limit: int = Query(500, ge=1, le=5000)) -> SLASweep
 
 @router.get(
     "/overview",
-    dependencies=[Depends(require_role(*QUEUE_READERS))],
+    dependencies=[QueueAccess],
     summary="The reviewer dashboard: the queue grouped by why a person is needed, and your review history",
 )
 @cached_endpoint(ttl=30)

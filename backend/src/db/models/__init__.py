@@ -6,7 +6,10 @@ what Alembic autogenerate and the test fixtures rely on.  Import order matters
 only for readability; SQLAlchemy resolves relationships lazily by name.
 """
 
+# Registers the organisation filter on every session (src/core/tenancy.py).
+from src.core import tenancy as _tenancy  # noqa: E402,F401
 from src.db.base import Base
+from src.db.models.billing import PlanRequest
 from src.db.models.complaints import (
     Complaint,
     ComplaintAttachment,
@@ -16,7 +19,7 @@ from src.db.models.complaints import (
     Customer,
 )
 from src.db.models.email import EmailMessage
-from src.db.models.identity import AuditLog, RefreshToken, User
+from src.db.models.identity import AuditLog, Organisation, RefreshToken, User
 from src.db.models.intelligence import (
     AgentGuidance,
     ClarificationQuestion,
@@ -65,7 +68,9 @@ from src.db.models.workflow import (
 __all__ = [
     "EmailMessage",
     "Base",
+    "PlanRequest",
     # identity
+    "Organisation",
     "User",
     "RefreshToken",
     "AuditLog",

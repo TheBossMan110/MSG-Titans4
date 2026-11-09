@@ -25,6 +25,10 @@ class UserRole(StrEnum):
     MANAGER = "manager"
     ADMIN = "admin"
     EVALUATOR = "evaluator"
+    # The platform owner (migration 0007): sees every company and the system's
+    # health and accuracy, and maintains the shared template -- but no
+    # company's complaints, customers, people or emails.
+    SUPERADMIN = "superadmin"
 
 
 class ComplaintStatus(StrEnum):
@@ -371,6 +375,8 @@ class ValidationIssueCode(StrEnum):
     NO_TEXT_LAYER = "NO_TEXT_LAYER"
     PARSE_FAILED = "PARSE_FAILED"
     METADATA_INCOMPLETE = "METADATA_INCOMPLETE"
+    # both: a valid file about something else entirely (migration 0005)
+    OFF_TOPIC_CONTENT = "OFF_TOPIC_CONTENT"
 
 
 class IssueOutcome(StrEnum):

@@ -13,6 +13,7 @@ import { Empty, ErrorState, SkeletonRows } from '@/components/ui/feedback'
 import { Stat } from '@/components/ui/data'
 import { Card } from '@/components/ui/surfaces'
 import { useAuth } from '@/lib/auth-context'
+import { can } from '@/lib/roles'
 import { AddUser } from '@/components/app/user-admin'
 
 const OVERSIGHT = ['manager', 'admin', 'evaluator'] as const
@@ -60,10 +61,11 @@ function Users() {
               : 'Every customer and staff account, read only. Open one to see their complaints with their full history, sign-ins and emails. Only an administrator changes roles.'}
           </p>
         </div>
-        {(isAdmin || user?.role === 'manager') && (
+        {/* Administrators add anyone; whoever else the company allows (managers by default) adds agents. */}
+        {can(user, 'users.manage') && (
           <AddUser
-            fixedRole={user?.role === 'manager' ? 'agent' : undefined}
-            triggerLabel={user?.role === 'manager' ? 'Add department agent' : 'Add a user'}
+            fixedRole={isAdmin ? undefined : 'agent'}
+            triggerLabel={isAdmin ? 'Add a user' : 'Add department agent'}
             onCreated={(row) => { q.refresh(); summary.refresh(); router.push(`/dashboard/users/${row.id}`) }}
           />
         )}

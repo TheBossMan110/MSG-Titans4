@@ -290,7 +290,10 @@ def list_rules(
 ) -> list[Rule]:
     query = select(Rule)
     if rule_type:
-        query = query.where(Rule.rule_type == rule_type.strip().upper())
+        # "CLASSIFICATION,ROUTING" is the routing view: each classification rule
+        # carries the department it routes to, and ROUTING holds the fallback.
+        types = [t.strip().upper() for t in rule_type.split(",") if t.strip()]
+        query = query.where(Rule.rule_type.in_(types))
     if active is not None:
         query = query.where(Rule.is_active.is_(active))
     if mandatory is not None:

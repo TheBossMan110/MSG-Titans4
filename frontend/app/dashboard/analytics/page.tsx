@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { AppShell } from '@/components/layout/app-shell'
-import { analytics } from '@/lib/api'
+import { analytics, type S } from '@/lib/api'
 import { useApi, pct } from '@/lib/use-api'
 import { Badge, Button, Mono, humanise } from '@/components/ui/primitives'
 import { Card, PanelHeader } from '@/components/ui/surfaces'
@@ -15,7 +15,7 @@ const WINDOWS = [7, 30, 90, 365]
 
 export default function AnalyticsPage() {
   return (
-    <AppShell eyebrow="Analytics" roles={['manager', 'admin', 'evaluator']} wide>
+    <AppShell eyebrow="Analytics" permission="analytics.view" wide>
       <Story />
     </AppShell>
   )
@@ -27,6 +27,13 @@ export default function AnalyticsPage() {
  * was it, what did the guard stop, how did people respond. Every figure shows
  * its denominator; every null reads as not measured.
  */
+interface RepeatSummary {
+  repeat_rate_pct?: number | null; repeated_complaints?: number; total_complaints?: number
+  top_categories?: Array<{ name: string; count: number }>
+}
+interface ResolutionHours { count?: number; avg_hours?: number | null; median_hours?: number | null; min_hours?: number | null; max_hours?: number | null }
+interface ResolutionSummary { overall?: ResolutionHours; by_priority?: Record<string, ResolutionHours> }
+
 function Story() {
   const [days, setDays] = useState(30)
   const dash = useApi(() => analytics.dashboard(days), [days])
@@ -35,7 +42,8 @@ function Story() {
   const depts = useApi(() => analytics.departments(days), [days])
   const pipes = useApi(() => analytics.pipelines(days), [days])
   const risingTrends = useApi(() => analytics.trends(days <= 7 ? 'DAY' : days <= 30 ? 'WEEK' : 'MONTH'), [days])
-  const d = dash.data
+  // The two summaries the API declares as open dictionaries, read with their known shape.
+  const d = dash.data as (S['DashboardOut'] & { repeat_complaints?: RepeatSummary; resolution_time?: ResolutionSummary }) | null | undefined
 
   return (
     <div className="flex flex-col gap-8">

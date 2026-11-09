@@ -18,7 +18,7 @@ import { Badge, Button, Mono, humanise, priorityTone, statusTone, verificationTo
 import { Stat } from '@/components/ui/data'
 import { Card, PanelHeader } from '@/components/ui/surfaces'
 import { Empty, ErrorState, SkeletonRows, useToast } from '@/components/ui/feedback'
-import { DashSection } from '@/components/app/dashboard-bits'
+import { DashSection, LatestComplaints } from '@/components/app/dashboard-bits'
 
 export default function ReviewerDashboardPage() {
   return (
@@ -76,7 +76,7 @@ function reasonBadge(r: string) {
 function ReviewerDashboard() {
   const { user } = useAuth()
   const q = useApi(() => review.overview(), [], true, { live: true })
-  const queueData = useApi(() => review.queue({ page: 1, size: 50 }), [], true, { live: true })
+  const queueData = useApi(() => review.queue({ page: 1, size: 50, sort: 'newest' }), [], true, { live: true })
   const [filterReason, setFilterReason] = useState<string>('all')
 
   const d = q.data
@@ -130,6 +130,10 @@ function ReviewerDashboard() {
               <Stat label="My decisions in total" value={d?.totals.actions} />
               <Stat label="Of which overrides" value={d?.totals.overrides} tone={d?.totals.overrides ? 'rule' : 'neutral'} />
             </div>
+          </DashSection>
+
+          <DashSection id="latest" title="Latest Complaints" icon={<Inbox size={15} aria-hidden />}>
+            <LatestComplaints rows={d?.latest} />
           </DashSection>
 
           {/* ── 2. Audit-Preserving Override Architecture (Very Important SRS Requirement) ── */}
@@ -285,7 +289,7 @@ function ReviewerDashboard() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex flex-wrap gap-1">
-                              {(item.reasons?.length ? item.reasons : ['GENAI_PYTHON_DISAGREEMENT']).map((r, i) => (
+                              {(item.reasons ?? []).map((r, i) => (
                                 <span key={i}>{reasonBadge(r)}</span>
                               ))}
                             </div>

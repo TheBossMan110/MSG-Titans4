@@ -17,6 +17,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
+from document_processing import relevance
 from document_processing.parser import parse_document
 from document_processing.validation import detect_format
 from src.core.config import settings
@@ -46,8 +47,15 @@ class FileDraft:
     notes: list[str] = field(default_factory=list)
 
 
-def read_complaint_file(data: bytes, file_name: str) -> FileDraft:
-    """Bytes of an uploaded complaint -> a draft for the form. Raises ValidationError with a plain message."""
+def read_complaint_file(data: bytes, file_name: str, db=None) -> FileDraft:
+    """
+    Bytes of an uploaded complaint -> a draft for the form. Raises ValidationError with a plain message.
+
+    With ``db``, a file that is about something else -- song lyrics, a recipe --
+    is refused instead of filling the form (document_processing/relevance.py).
+    That refuses a *draft*, never a complaint: anything typed into the form is
+    still accepted and analysed, as every complaint is.
+    """
     if not data:
         raise ValidationError("The file is empty.")
     if len(data) > settings.max_upload_bytes:
@@ -66,6 +74,13 @@ def read_complaint_file(data: bytes, file_name: str) -> FileDraft:
         raise ValidationError(
             "We couldn't read any text in this file. If it is a scanned photo, please type the complaint instead."
         )
+    if db is not None:
+        verdict = relevance.check(db, text, purpose="complaint", images=relevance.embedded_images(data))
+        if not verdict.relevant:
+            raise ValidationError(
+                verdict.reason or "This file doesn't read like a complaint.",
+                details={"code": "OFF_TOPIC_CONTENT", "evidence": verdict.detail()},
+            )
 
     notes: list[str] = []
     limit = settings.max_complaint_length

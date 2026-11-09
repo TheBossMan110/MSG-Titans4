@@ -12,10 +12,10 @@ from datetime import datetime
 from sqlalchemy import ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base, TimestampMixin, TZDateTime, UUIDPrimaryKey
+from src.db.base import Base, TenantScoped, TimestampMixin, TZDateTime, UUIDPrimaryKey
 
 
-class EmailMessage(UUIDPrimaryKey, TimestampMixin, Base):
+class EmailMessage(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     __tablename__ = "email_messages"
     __table_args__ = (
         Index("ix_email_from", "from_address"),

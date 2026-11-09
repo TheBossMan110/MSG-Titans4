@@ -58,10 +58,29 @@ functional_requirements:
   FR-ii:
     name: Role-Based Access Control
     status: done
-    tables: [users]
-    columns: [users.role, users.department_id]
-    modules: [src/core/deps.py, src/core/scope.py, src/api/v1/people.py, src/services/role_views.py]
+    tables: [users, organisations, plan_requests]
+    columns: [users.role, users.department_id, users.organisation_id, complaints.organisation_id,
+              documents.organisation_id, organisations.settings]
+    modules: [src/core/deps.py, src/core/scope.py, src/core/tenancy.py, src/core/permissions.py,
+              src/core/billing.py, src/api/v1/people.py, src/api/v1/company.py, src/api/v1/platform.py,
+              src/api/v1/billing.py, src/services/platform.py, src/services/role_views.py]
+    api: ["POST /api/company/create", "GET /api/company", "PATCH /api/company", "PUT /api/company/access",
+          "GET /api/company/all", "PATCH /api/company/{organisation_id}/status", "GET /api/platform/overview"]
     notes: >-
+      Multi-company (migration 0006): the super administrator creates a company
+      and its first administrator, and every business row carries organisation_id. The filter
+      in src/core/tenancy.py adds the caller's organisation to every ORM query
+      and stamps it on every insert, so one company cannot read, count or change
+      another's complaints, people or policies even through an endpoint that
+      forgets to filter (tests/test_tenancy.py). Each company's administrator
+      sets, per role, which work is allowed (src/core/permissions.py: analytics,
+      exports, review, re-analysis, documents, adding agents, audit, datasets)
+      and how much of the register it sees (assigned, team or all); defaults are
+      the role gates below. Taxonomy, rules, lexicon and prompts are one shared
+      template that the super administrators and the reference company maintain.
+      A super administrator (migration 0007) belongs to the platform, sees every
+      company's totals and the system's accuracy (/api/platform/overview), and is
+      refused wholesale by every router that serves a company's own data.
       Five role experiences, each with its own dashboard and navigation, enforced
       by the API (tests/test_rbac.py): customers see their own complaints; agents
       their team's and their assigned ones (another team's answers 404); reviewers
@@ -72,7 +91,7 @@ functional_requirements:
       Six roles: customer, agent, reviewer, manager, admin, evaluator.
       Refusals are written to audit_log as ACCESS_DENIED on an independent
       committed session so the evidence survives the request rollback.
-    tests: [tests/test_auth.py, tests/test_rbac.py]
+    tests: [tests/test_auth.py, tests/test_rbac.py, tests/test_tenancy.py, tests/test_superadmin.py]
 
   FR-iii:
     name: Complaint Submission

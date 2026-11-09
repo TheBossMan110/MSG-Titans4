@@ -25,12 +25,12 @@ import uuid
 from sqlalchemy import ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.db.base import Base, Code, Name, TimestampMixin, UUIDPrimaryKey
+from src.db.base import Base, Code, Name, TenantScoped, TimestampMixin, UUIDPrimaryKey
 from src.db.constraints import enum_check
 from src.db.enums import IssueOutcome, Severity, ValidationIssueCode
 
 
-class ComplaintValidationIssue(UUIDPrimaryKey, TimestampMixin, Base):
+class ComplaintValidationIssue(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """SRS Step 10 — one row per detected problem with a submitted complaint."""
 
     __tablename__ = "complaint_validation_issues"
@@ -60,7 +60,7 @@ class ComplaintValidationIssue(UUIDPrimaryKey, TimestampMixin, Base):
     detail: Mapped[str | None] = mapped_column(Text)
 
 
-class DocumentValidationIssue(UUIDPrimaryKey, TimestampMixin, Base):
+class DocumentValidationIssue(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """SRS Step 4 — one row per detected problem with an uploaded document."""
 
     __tablename__ = "document_validation_issues"

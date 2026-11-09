@@ -225,7 +225,7 @@
         "tags": [
           "Authentication"
         ],
-        "summary": "Revoke a refresh token",
+        "summary": "Sign out this session",
         "operationId": "logout_api_auth_logout_post",
         "requestBody": {
           "content": {
@@ -710,6 +710,1717 @@
                     "$ref": "#/components/schemas/ActivityOut"
                   },
                   "title": "Response Activity Api Auth Activity Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/company/create": {
+      "post": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "Create a company and its first administrator (super administrators only)",
+        "description": "Companies do not sign themselves up: the platform decides who joins it, so\na stranger cannot open a workspace and fill it with whatever they like.\nThe super administrator creates the company here and hands its first\nadministrator their sign-in details; nobody is signed in by this call.\n\nThe administrator administers only the new, empty company: no complaints,\nno policies, no other people, and the shared taxonomy, rule matrix and\nprompts read-only. Staff are added from Users & Roles; customers join with\nthe company's sign-up link.",
+        "operationId": "create_company_api_company_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/company/public/{slug}": {
+      "get": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "The name behind a company's customer sign-up link",
+        "description": "Only what the sign-up page shows -- the name and industry -- and only for an active company.",
+        "operationId": "public_profile_api_company_public__slug__get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyPublicOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/company": {
+      "get": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "Your company: profile, counts and who may do what",
+        "operationId": "get_company_api_company_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "Rename your company or change its industry",
+        "operationId": "update_company_api_company_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/company/all": {
+      "get": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "Every company on the platform (super administrators only)",
+        "operationId": "all_companies_api_company_all_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyList"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/company/{organisation_id}/status": {
+      "patch": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "Suspend or reactivate a company (super administrators only)",
+        "description": "A suspended company's people are refused from their very next request, and\ncannot sign in or refresh a session, until it is reactivated. Nothing is\ndeleted: reactivating restores everything as it was. Audited with the reason.",
+        "operationId": "set_company_status_api_company__organisation_id__status_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organisation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organisation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyStatusIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyRow"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/company/{organisation_id}/subscription": {
+      "put": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "Set a company's plan after payment is arranged (super administrators only)",
+        "description": "Payment happens outside the application for now; this records the result. Audited with the reason.",
+        "operationId": "set_subscription_api_company__organisation_id__subscription_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organisation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organisation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyRow"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/company/access": {
+      "put": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "Set which work each role may do, and how much of the register it sees",
+        "description": "Takes effect on the next request of everyone in the company: permissions\nare read from this policy on every check, not baked into tokens. Every\nchange is audited with the policy before and after. Administrators always\nkeep every permission, so a company can never lock itself out.",
+        "operationId": "set_access_api_company_access_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessPolicy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/billing/subscription": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "summary": "Your company's plan and what it has used this month",
+        "operationId": "my_subscription_api_billing_subscription_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/billing/requests": {
+      "post": {
+        "tags": [
+          "Billing"
+        ],
+        "summary": "Ask to join a plan or change plan",
+        "description": "Open to anyone, so it is rate-limited and stores plain text only. A filled\nhoneypot gets the same answer as a real request and is not kept, so a bot\nlearns nothing from the response.",
+        "operationId": "request_plan_api_billing_requests_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanRequestIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanRequestAccepted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "summary": "Requests from the pricing page",
+        "operationId": "list_requests_api_billing_requests_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanRequestList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/billing/requests/{request_id}": {
+      "patch": {
+        "tags": [
+          "Billing"
+        ],
+        "summary": "Update a request's status",
+        "operationId": "update_request_api_billing_requests__request_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanRequestStatusIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanRequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/platform/overview": {
+      "get": {
+        "tags": [
+          "Platform"
+        ],
+        "summary": "Totals across every company, and how the system is doing (super administrators only)",
+        "operationId": "overview_api_platform_overview_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 3650,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Window in days; omit for all time.",
+              "title": "Days"
+            },
+            "description": "Window in days; omit for all time."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformOverview"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/config": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Every runtime configuration value",
+        "description": "Thresholds, comparison weights, policy precedence, guard behaviour.\n\n``editable: false`` marks the rows that are derived rather than\nconfigured \u2014 the ruleset version is stamped onto stored results, so\nhand-editing it would detach them from what produced them.",
+        "operationId": "list_config_api_admin_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConfigEntryOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Config Api Admin Config Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/config/{key}": {
+      "put": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Replace one configuration value",
+        "description": "Change a threshold or a weight, live.\n\nThe new value must keep the existing shape. A list where an object was\nexpected does not fail here \u2014 it fails deep inside the rule engine on the\nnext complaint, which is a far worse place to discover it.",
+        "operationId": "update_config_api_admin_config__key__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigUpdateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigEntryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/taxonomy": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Every vocabulary the rules are written against",
+        "description": "Read-only on purpose.\n\nA category code appears in rule outcomes, in SLA policies, in stored\ncomplaints and in the ground-truth labels. Renaming one from a form would\nsilently orphan all four.",
+        "operationId": "get_taxonomy_api_admin_taxonomy_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxonomyOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/rules": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "The rule matrix",
+        "operationId": "list_rules_api_admin_rules_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rule_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "One rule type, or several separated by commas.",
+              "title": "Rule Type"
+            },
+            "description": "One rule type, or several separated by commas."
+          },
+          {
+            "name": "active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Active"
+            }
+          },
+          {
+            "name": "mandatory",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Mandatory escalation rules only.",
+              "title": "Mandatory"
+            },
+            "description": "Mandatory escalation rules only."
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RuleSummaryOut"
+                  },
+                  "title": "Response List Rules Api Admin Rules Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/rules/{rule_ref}": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "One rule, with its conditions",
+        "operationId": "get_rule_api_admin_rules__rule_ref__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rule_ref",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Rule Ref"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Edit one rule",
+        "description": "Change a rule and have it take effect on the next complaint.\n\nRefused with 422 and every specific problem when a condition is malformed,\nwhen it references a signal no active lexicon term raises, or when an\noutcome names a code that does not exist. Saving such a rule would let it\nsit in the matrix looking like coverage while never firing.\n\nA rule that sets a mandatory escalation may have its level **raised** but\nnot lowered, and cannot be deactivated at all.",
+        "operationId": "update_rule_api_admin_rules__rule_ref__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "rule_ref",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Rule Ref"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleUpdateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleChangeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/rules/test": {
+      "post": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Run the rule engine over a piece of text without storing anything",
+        "description": "What Pipeline 2 alone concludes about this text, right now.\n\nThe endpoint that makes the Live Modification Challenge legible: edit a\nrule, post the same text again, and the difference is visible in one\nresponse. Deterministic and free \u2014 no provider is called and no complaint\nrow is created, so it can be run as often as an evaluator likes without\nspending the free-tier quota or filling the register with test rows.",
+        "operationId": "test_rules_api_admin_rules_test_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RuleTestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleTestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/rules/reload": {
+      "post": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Restore the rule matrix and its vocabulary from their committed source",
+        "description": "The undo for a live demonstration, and the way a deployed configuration\nchange reaches the database.\n\nWhatever was changed on stage goes back to the committed YAML in one call,\nso the next demonstration starts from a known state rather than from\nwhatever the last one left behind. The vocabulary the rules read\n(signals.yaml, topics.yaml) is reloaded with them: a rule naming a signal\nwhose terms are not loaded can never fire. Terms are added or updated,\nnever deleted, so vocabulary an administrator added live survives.",
+        "operationId": "reload_rules_api_admin_rules_reload_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReloadOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/lexicon": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Terms that raise signals",
+        "operationId": "list_lexicon_api_admin_lexicon_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "signal_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Signal Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LexiconTermOut"
+                  },
+                  "title": "Response List Lexicon Api Admin Lexicon Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Add a term",
+        "description": "Teach the rule engine a new word, live.\n\nA REGEX term that will not compile is refused here rather than accepted:\nan uncompilable term disables one signal silently, and a signal that stops\nfiring looks exactly like a complaint that did not mention the thing.",
+        "operationId": "add_term_api_admin_lexicon_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LexiconTermIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LexiconTermOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/lexicon/{term_id}": {
+      "patch": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Edit a term",
+        "operationId": "edit_term_api_admin_lexicon__term_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "term_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Term Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LexiconTermUpdateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LexiconTermOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Withdraw a term",
+        "description": "Deactivated, not deleted.\n\nA term that once raised a signal is part of the explanation for every\ncomplaint decided while it was active. Removing the row would make those\nstored decisions unexplainable.",
+        "operationId": "remove_term_api_admin_lexicon__term_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "term_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Term Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LexiconTermOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/sla": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "SLA targets",
+        "operationId": "list_sla_api_admin_sla_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SLAPolicyOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Sla Api Admin Sla Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/sla/{policy_id}": {
+      "patch": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Retune an SLA target",
+        "description": "Move a deadline, live.\n\nFollow-up due dates are a fraction of the first-response window rather\nthan a separate constant, so retuning a target moves the follow-up\nschedule with it instead of leaving two numbers to drift apart.",
+        "operationId": "update_sla_api_admin_sla__policy_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "policy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Policy Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SLAPolicyUpdateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SLAPolicyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/prompts": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Registered prompt templates",
+        "description": "Every template version with a live on-disk integrity check.\n\n``checksum_matches: false`` means the file changed without a version bump,\nwhich is the one thing a version registry exists to detect.",
+        "operationId": "list_prompts_api_admin_prompts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PromptVersionOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Prompts Api Admin Prompts Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/prompts/{name}": {
+      "patch": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Switch which version of a prompt is used",
+        "description": "Promote a prompt version without a deploy.\n\nDeliberately explicit: dropping a new template into the repository must\nnot silently redirect traffic away from a version an administrator pinned.",
+        "operationId": "activate_prompt_api_admin_prompts__name__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromptActivateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptVersionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/defects": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "The deliberate defects and what should catch each one",
+        "description": "Documented before they are demonstrated (SRS 1.8 #15).\n\nEach entry states what it breaks, which detector should catch it, and why\nthat detector exists \u2014 so a judge reading a result can tell a genuine\nsafeguard from a coincidence.",
+        "operationId": "list_defects_api_admin_defects_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DefectSpecOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Defects Api Admin Defects Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/defects/demonstrate": {
+      "post": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Run every deliberate defect through its real detector",
+        "description": "Produce each documented defect and report what the production detector\nsaid about it.\n\nA safety check nobody has ever seen fire is a safety check nobody has\nreason to believe in. Nothing is persisted and nothing outside this request\nis affected: each faulty artefact exists for the duration of the call and\nis then discarded.",
+        "operationId": "demonstrate_defects_api_admin_defects_demonstrate_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DefectResultOut"
+                  },
+                  "type": "array",
+                  "title": "Response Demonstrate Defects Api Admin Defects Demonstrate Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/defects/{code}/demonstrate": {
+      "post": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Run one deliberate defect through its real detector",
+        "operationId": "demonstrate_defect_api_admin_defects__code__demonstrate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefectResultOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/audit": {
+      "get": {
+        "tags": [
+          "Audit"
+        ],
+        "summary": "The organisation-wide audit trail, newest first",
+        "description": "Every recorded act, filterable by what was touched, what was done and who\ndid it.\n\n``before`` and ``after`` are returned as stored: two snapshots, not a diff.\nSRS Step 59 wants the original recommendation and the reviewer's decision\nboth on the record, and a diff would keep only what changed.",
+        "operationId": "list_audit_api_audit_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Size"
+            }
+          },
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Type"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 48
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "name": "actor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 320
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Actor email.",
+              "title": "Actor"
+            },
+            "description": "Actor email."
+          },
+          {
+            "name": "entity_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_AuditEntryOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/audit/actions": {
+      "get": {
+        "tags": [
+          "Audit"
+        ],
+        "summary": "Every action that has been recorded, with a count",
+        "description": "What the trail contains, for a filter control and for the dashboard's\n\"what changed\" figure. Read from the rows, so an action that has never\nhappened is absent rather than listed at zero.",
+        "operationId": "audit_actions_api_audit_actions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuditActionCountOut"
+                  },
+                  "type": "array",
+                  "title": "Response Audit Actions Api Audit Actions Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/audit/{entity_type}/{entity_id}": {
+      "get": {
+        "tags": [
+          "Audit"
+        ],
+        "summary": "One entity's full trail, oldest first",
+        "description": "How one thing got to its current state.\n\nOldest first, because a trail is read forwards. Capped, because an entity\nwith more than five hundred recorded acts is a bug report rather than a\npage.",
+        "operationId": "entity_trail_api_audit__entity_type___entity_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Entity Type"
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEntryOut"
+                  },
+                  "title": "Response Entity Trail Api Audit  Entity Type   Entity Id  Get"
                 }
               }
             }
@@ -1821,6 +3532,39 @@
               ],
               "title": "Search"
             }
+          },
+          {
+            "name": "assigned_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assigned To"
+            }
+          },
+          {
+            "name": "sla_at_risk",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sla At Risk"
+            }
           }
         ],
         "responses": {
@@ -2402,7 +4146,7 @@
           "Complaints"
         ],
         "summary": "Read a complaint letter (PDF, DOCX or text) into a draft to check and file",
-        "description": "The \"uploaded complaint\" channel. Nothing is filed: the draft goes back to\nthe form, the customer checks it, and it is submitted with channel UPLOAD\nthrough the same intake and pipelines as any other complaint.",
+        "description": "The \"uploaded complaint\" channel. Nothing is filed: the draft goes back to\nthe form, the customer checks it, and it is submitted with channel UPLOAD\nthrough the same intake and pipelines as any other complaint. A file that\nis not about a complaint at all (song lyrics, a recipe) is refused with the\nreason, and the form is left as it was.",
         "operationId": "complaint_from_file_api_complaints_from_file_post",
         "requestBody": {
           "content": {
@@ -2634,6 +4378,53 @@
                     "$ref": "#/components/schemas/FollowUpOut"
                   },
                   "title": "Response Complaint Follow Ups Api Complaints  Ref  Follow Ups Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/complaints/{ref}/confirm-resolution": {
+      "post": {
+        "tags": [
+          "Complaints"
+        ],
+        "summary": "Customer confirms resolution and closes their complaint",
+        "operationId": "customer_confirm_resolution_api_complaints__ref__confirm_resolution_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ref",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ref"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplaintStatusOut"
                 }
               }
             }
@@ -2941,6 +4732,24 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -2973,7 +4782,7 @@
           "Review & SLA"
         ],
         "summary": "The manual review queue",
-        "description": "What is waiting for a human (FR lxi; SRS Step 57).\n\nOrdered by priority then age, so the most severe waiting longest is at the\ntop. A P0 filed an hour ago outranks a P3 filed yesterday.",
+        "description": "What is waiting for a human (FR lxi; SRS Step 57).\n\nOrdered by priority then age by default, so the most severe waiting longest\nis at the top: a P0 filed an hour ago outranks a P3 filed yesterday.\n``sort=newest`` is what the dashboard's first screen asks for, so a case\nthat has just arrived is not on page five.",
         "operationId": "list_queue_api_review_queue_get",
         "security": [
           {
@@ -3038,6 +4847,20 @@
               "type": "boolean",
               "default": false,
               "title": "Breached Only"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "urgent",
+                "newest"
+              ],
+              "type": "string",
+              "default": "urgent",
+              "title": "Sort"
             }
           }
         ],
@@ -3680,6 +5503,308 @@
         }
       }
     },
+    "/api/analytics/products": {
+      "get": {
+        "tags": [
+          "Analytics & Reports"
+        ],
+        "summary": "Product and service breakdown",
+        "operationId": "products_api_analytics_products_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 365,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Products Api Analytics Products Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analytics/urgency": {
+      "get": {
+        "tags": [
+          "Analytics & Reports"
+        ],
+        "summary": "Urgency level distribution",
+        "operationId": "urgency_api_analytics_urgency_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 365,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "title": "Response Urgency Api Analytics Urgency Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analytics/sentiment": {
+      "get": {
+        "tags": [
+          "Analytics & Reports"
+        ],
+        "summary": "Customer sentiment distribution",
+        "operationId": "sentiment_api_analytics_sentiment_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 365,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "title": "Response Sentiment Api Analytics Sentiment Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analytics/resolution-time": {
+      "get": {
+        "tags": [
+          "Analytics & Reports"
+        ],
+        "summary": "Resolution time metrics",
+        "operationId": "resolution_time_api_analytics_resolution_time_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 365,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Resolution Time Api Analytics Resolution Time Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analytics/repeat-complaints": {
+      "get": {
+        "tags": [
+          "Analytics & Reports"
+        ],
+        "summary": "Repeat complaints breakdown",
+        "operationId": "repeat_complaints_api_analytics_repeat_complaints_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 365,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Repeat Complaints Api Analytics Repeat Complaints Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/analytics/pipelines": {
       "get": {
         "tags": [
@@ -4127,7 +6252,7 @@
             "required": false,
             "schema": {
               "type": "string",
-              "pattern": "^(?i)(CSV|XLSX|PDF)$",
+              "pattern": "^(?i)(CSV|XLSX|PDF|JSON)$",
               "default": "CSV",
               "title": "Format"
             }
@@ -4848,1127 +6973,6 @@
         }
       }
     },
-    "/api/admin/config": {
-      "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Every runtime configuration value",
-        "description": "Thresholds, comparison weights, policy precedence, guard behaviour.\n\n``editable: false`` marks the rows that are derived rather than\nconfigured \u2014 the ruleset version is stamped onto stored results, so\nhand-editing it would detach them from what produced them.",
-        "operationId": "list_config_api_admin_config_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ConfigEntryOut"
-                  },
-                  "type": "array",
-                  "title": "Response List Config Api Admin Config Get"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/admin/config/{key}": {
-      "put": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Replace one configuration value",
-        "description": "Change a threshold or a weight, live.\n\nThe new value must keep the existing shape. A list where an object was\nexpected does not fail here \u2014 it fails deep inside the rule engine on the\nnext complaint, which is a far worse place to discover it.",
-        "operationId": "update_config_api_admin_config__key__put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "key",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Key"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConfigUpdateIn"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConfigEntryOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/taxonomy": {
-      "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Every vocabulary the rules are written against",
-        "description": "Read-only on purpose.\n\nA category code appears in rule outcomes, in SLA policies, in stored\ncomplaints and in the ground-truth labels. Renaming one from a form would\nsilently orphan all four.",
-        "operationId": "get_taxonomy_api_admin_taxonomy_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TaxonomyOut"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/admin/rules": {
-      "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "The rule matrix",
-        "operationId": "list_rules_api_admin_rules_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "rule_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Rule Type"
-            }
-          },
-          {
-            "name": "active",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Active"
-            }
-          },
-          {
-            "name": "mandatory",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Mandatory escalation rules only.",
-              "title": "Mandatory"
-            },
-            "description": "Mandatory escalation rules only."
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 200
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Search"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RuleSummaryOut"
-                  },
-                  "title": "Response List Rules Api Admin Rules Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/rules/{rule_ref}": {
-      "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "One rule, with its conditions",
-        "operationId": "get_rule_api_admin_rules__rule_ref__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "rule_ref",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Rule Ref"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RuleDetailOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Edit one rule",
-        "description": "Change a rule and have it take effect on the next complaint.\n\nRefused with 422 and every specific problem when a condition is malformed,\nwhen it references a signal no active lexicon term raises, or when an\noutcome names a code that does not exist. Saving such a rule would let it\nsit in the matrix looking like coverage while never firing.\n\nA rule that sets a mandatory escalation may have its level **raised** but\nnot lowered, and cannot be deactivated at all.",
-        "operationId": "update_rule_api_admin_rules__rule_ref__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "rule_ref",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Rule Ref"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RuleUpdateIn"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RuleChangeOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/rules/test": {
-      "post": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Run the rule engine over a piece of text without storing anything",
-        "description": "What Pipeline 2 alone concludes about this text, right now.\n\nThe endpoint that makes the Live Modification Challenge legible: edit a\nrule, post the same text again, and the difference is visible in one\nresponse. Deterministic and free \u2014 no provider is called and no complaint\nrow is created, so it can be run as often as an evaluator likes without\nspending the free-tier quota or filling the register with test rows.",
-        "operationId": "test_rules_api_admin_rules_test_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RuleTestIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RuleTestOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/admin/rules/reload": {
-      "post": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Restore the rule matrix from its committed source",
-        "description": "The undo for a live demonstration.\n\nWhatever was changed on stage goes back to the committed YAML in one call,\nso the next demonstration starts from a known state rather than from\nwhatever the last one left behind.",
-        "operationId": "reload_rules_api_admin_rules_reload_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReloadOut"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/admin/lexicon": {
-      "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Terms that raise signals",
-        "operationId": "list_lexicon_api_admin_lexicon_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "signal_key",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Signal Key"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/LexiconTermOut"
-                  },
-                  "title": "Response List Lexicon Api Admin Lexicon Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Add a term",
-        "description": "Teach the rule engine a new word, live.\n\nA REGEX term that will not compile is refused here rather than accepted:\nan uncompilable term disables one signal silently, and a signal that stops\nfiring looks exactly like a complaint that did not mention the thing.",
-        "operationId": "add_term_api_admin_lexicon_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LexiconTermIn"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LexiconTermOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/lexicon/{term_id}": {
-      "patch": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Edit a term",
-        "operationId": "edit_term_api_admin_lexicon__term_id__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "term_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Term Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LexiconTermUpdateIn"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LexiconTermOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Withdraw a term",
-        "description": "Deactivated, not deleted.\n\nA term that once raised a signal is part of the explanation for every\ncomplaint decided while it was active. Removing the row would make those\nstored decisions unexplainable.",
-        "operationId": "remove_term_api_admin_lexicon__term_id__delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "term_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Term Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LexiconTermOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/sla": {
-      "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "SLA targets",
-        "operationId": "list_sla_api_admin_sla_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/SLAPolicyOut"
-                  },
-                  "type": "array",
-                  "title": "Response List Sla Api Admin Sla Get"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/admin/sla/{policy_id}": {
-      "patch": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Retune an SLA target",
-        "description": "Move a deadline, live.\n\nFollow-up due dates are a fraction of the first-response window rather\nthan a separate constant, so retuning a target moves the follow-up\nschedule with it instead of leaving two numbers to drift apart.",
-        "operationId": "update_sla_api_admin_sla__policy_id__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "policy_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Policy Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SLAPolicyUpdateIn"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SLAPolicyOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/prompts": {
-      "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Registered prompt templates",
-        "description": "Every template version with a live on-disk integrity check.\n\n``checksum_matches: false`` means the file changed without a version bump,\nwhich is the one thing a version registry exists to detect.",
-        "operationId": "list_prompts_api_admin_prompts_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/PromptVersionOut"
-                  },
-                  "type": "array",
-                  "title": "Response List Prompts Api Admin Prompts Get"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/admin/prompts/{name}": {
-      "patch": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Switch which version of a prompt is used",
-        "description": "Promote a prompt version without a deploy.\n\nDeliberately explicit: dropping a new template into the repository must\nnot silently redirect traffic away from a version an administrator pinned.",
-        "operationId": "activate_prompt_api_admin_prompts__name__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Name"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PromptActivateIn"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PromptVersionOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/admin/defects": {
-      "get": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "The deliberate defects and what should catch each one",
-        "description": "Documented before they are demonstrated (SRS 1.8 #15).\n\nEach entry states what it breaks, which detector should catch it, and why\nthat detector exists \u2014 so a judge reading a result can tell a genuine\nsafeguard from a coincidence.",
-        "operationId": "list_defects_api_admin_defects_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/DefectSpecOut"
-                  },
-                  "type": "array",
-                  "title": "Response List Defects Api Admin Defects Get"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/admin/defects/demonstrate": {
-      "post": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Run every deliberate defect through its real detector",
-        "description": "Produce each documented defect and report what the production detector\nsaid about it.\n\nA safety check nobody has ever seen fire is a safety check nobody has\nreason to believe in. Nothing is persisted and nothing outside this request\nis affected: each faulty artefact exists for the duration of the call and\nis then discarded.",
-        "operationId": "demonstrate_defects_api_admin_defects_demonstrate_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/DefectResultOut"
-                  },
-                  "type": "array",
-                  "title": "Response Demonstrate Defects Api Admin Defects Demonstrate Post"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/admin/defects/{code}/demonstrate": {
-      "post": {
-        "tags": [
-          "Administration"
-        ],
-        "summary": "Run one deliberate defect through its real detector",
-        "operationId": "demonstrate_defect_api_admin_defects__code__demonstrate_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Code"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DefectResultOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/audit": {
-      "get": {
-        "tags": [
-          "Audit"
-        ],
-        "summary": "The organisation-wide audit trail, newest first",
-        "description": "Every recorded act, filterable by what was touched, what was done and who\ndid it.\n\n``before`` and ``after`` are returned as stored: two snapshots, not a diff.\nSRS Step 59 wants the original recommendation and the reviewer's decision\nboth on the record, and a diff would keep only what changed.",
-        "operationId": "list_audit_api_audit_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1,
-              "title": "Page"
-            }
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 200,
-              "minimum": 1,
-              "default": 50,
-              "title": "Size"
-            }
-          },
-          {
-            "name": "entity_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 64
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Entity Type"
-            }
-          },
-          {
-            "name": "action",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 48
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Action"
-            }
-          },
-          {
-            "name": "actor",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 320
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Actor email.",
-              "title": "Actor"
-            },
-            "description": "Actor email."
-          },
-          {
-            "name": "entity_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 64
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Entity Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Page_AuditEntryOut_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/audit/actions": {
-      "get": {
-        "tags": [
-          "Audit"
-        ],
-        "summary": "Every action that has been recorded, with a count",
-        "description": "What the trail contains, for a filter control and for the dashboard's\n\"what changed\" figure. Read from the rows, so an action that has never\nhappened is absent rather than listed at zero.",
-        "operationId": "audit_actions_api_audit_actions_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/AuditActionCountOut"
-                  },
-                  "type": "array",
-                  "title": "Response Audit Actions Api Audit Actions Get"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/audit/{entity_type}/{entity_id}": {
-      "get": {
-        "tags": [
-          "Audit"
-        ],
-        "summary": "One entity's full trail, oldest first",
-        "description": "How one thing got to its current state.\n\nOldest first, because a trail is read forwards. Capped, because an entity\nwith more than five hundred recorded acts is a bug report rather than a\npage.",
-        "operationId": "entity_trail_api_audit__entity_type___entity_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "entity_type",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Entity Type"
-            }
-          },
-          {
-            "name": "entity_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Entity Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AuditEntryOut"
-                  },
-                  "title": "Response Entity Trail Api Audit  Entity Type   Entity Id  Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/organisation": {
       "get": {
         "tags": [
@@ -5983,6 +6987,53 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrganisationOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/organisation/departments": {
+      "post": {
+        "tags": [
+          "Organisation"
+        ],
+        "summary": "Create a new department and optionally provision its manager",
+        "description": "Admin provisions a new department, and optionally creates a manager account for it.",
+        "operationId": "create_department_api_organisation_departments_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -6416,7 +7467,7 @@
           "People"
         ],
         "summary": "Create an account with a role",
-        "description": "Staff accounts are provisioned here; self-registration always creates a customer.",
+        "description": "Staff accounts are provisioned here; self-registration always creates a customer.\nAdministrators can provision any role; anyone else with ``users.manage``\n(managers by default) provisions agents for their own department. The\naccount joins the creator's organisation (src/core/tenancy.py stamps it).",
         "operationId": "create_person_api_people_post",
         "security": [
           {
@@ -6483,13 +7534,14 @@
         ]
       }
     },
-    "/api/people/{user_id}": {
+    "/api/people/{identifier}": {
       "get": {
         "tags": [
           "People"
         ],
         "summary": "One account: details, complaints with history, sign-ins, emails",
-        "operationId": "person_api_people__user_id__get",
+        "description": "An agent or reviewer opens a customer to work their complaint. Colleagues'\naccounts, and anyone's sign-in history and IP addresses, are for the people\nwho oversee staff; to everyone else such an account does not exist.",
+        "operationId": "person_api_people__identifier__get",
         "security": [
           {
             "HTTPBearer": []
@@ -6497,13 +7549,12 @@
         ],
         "parameters": [
           {
-            "name": "user_id",
+            "name": "identifier",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "User Id"
+              "title": "Identifier"
             }
           }
         ],
@@ -6529,7 +7580,9 @@
             }
           }
         }
-      },
+      }
+    },
+    "/api/people/{user_id}": {
       "patch": {
         "tags": [
           "People"
@@ -6648,6 +7701,30 @@
   },
   "components": {
     "schemas": {
+      "AccessPolicy": {
+        "properties": {
+          "permissions": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Permissions"
+          },
+          "complaint_scope": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Complaint Scope"
+          }
+        },
+        "type": "object",
+        "title": "AccessPolicy",
+        "description": "Per configurable role (manager, reviewer, agent): the permissions it holds,\nand how much of the complaint register it sees (assigned, team or all).\nA role left out keeps its current setting."
+      },
       "ActivationResponse": {
         "properties": {
           "document_version_id": {
@@ -7145,6 +8222,110 @@
         ],
         "title": "BenchmarkRunOut"
       },
+      "BenchmarkSummary": {
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "dataset_tag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Tag"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "sample_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Size"
+          },
+          "genai_accuracy_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Genai Accuracy Pct"
+          },
+          "python_accuracy_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Python Accuracy Pct"
+          },
+          "agreement_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agreement Pct"
+          },
+          "escalation_recall_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalation Recall Pct"
+          },
+          "by_field": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "By Field"
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkSummary",
+        "description": "The latest accuracy measurement against a labelled dataset."
+      },
       "Body_attach_evidence_api_complaints__ref__evidence_post": {
         "properties": {
           "file": {
@@ -7324,6 +8505,18 @@
             "type": "string",
             "maxLength": 4000,
             "title": "Content"
+          },
+          "signature": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signature"
           }
         },
         "type": "object",
@@ -7370,12 +8563,17 @@
             "type": "boolean",
             "title": "Degraded",
             "default": false
+          },
+          "signature": {
+            "type": "string",
+            "title": "Signature"
           }
         },
         "type": "object",
         "required": [
           "reply",
-          "intent"
+          "intent",
+          "signature"
         ],
         "title": "ChatOut"
       },
@@ -7682,6 +8880,544 @@
         "title": "CodeOut",
         "description": "One taxonomy code, as everything else refers to it."
       },
+      "CompanyCounts": {
+        "properties": {
+          "staff": {
+            "type": "integer",
+            "title": "Staff"
+          },
+          "customers": {
+            "type": "integer",
+            "title": "Customers"
+          },
+          "complaints": {
+            "type": "integer",
+            "title": "Complaints"
+          },
+          "open_complaints": {
+            "type": "integer",
+            "title": "Open Complaints"
+          },
+          "documents": {
+            "type": "integer",
+            "title": "Documents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "staff",
+          "customers",
+          "complaints",
+          "open_complaints",
+          "documents"
+        ],
+        "title": "CompanyCounts"
+      },
+      "CompanyCreate": {
+        "properties": {
+          "company_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Company Name"
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry"
+          },
+          "admin_full_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Admin Full Name"
+          },
+          "admin_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Admin Email"
+          },
+          "admin_password": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 12,
+            "title": "Admin Password"
+          },
+          "plan": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Plan",
+            "default": "growth"
+          },
+          "trial_days": {
+            "type": "integer",
+            "maximum": 90.0,
+            "minimum": 0.0,
+            "title": "Trial Days",
+            "description": "0 starts the plan as paid.",
+            "default": 14
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_name",
+          "admin_full_name",
+          "admin_email",
+          "admin_password"
+        ],
+        "title": "CompanyCreate",
+        "description": "A company the super administrator adds to the platform, with its first\nadministrator, whose sign-in details the super administrator then shares.\n\nThe administrator role is granted only inside the new company: nothing in\nthis body reaches another organisation's data, and taxonomy, rules and\nprompts stay the shared platform template."
+      },
+      "CompanyCreated": {
+        "properties": {
+          "company": {
+            "$ref": "#/components/schemas/CompanyRow"
+          },
+          "admin_email": {
+            "type": "string",
+            "title": "Admin Email"
+          },
+          "admin_full_name": {
+            "type": "string",
+            "title": "Admin Full Name"
+          },
+          "sign_in_path": {
+            "type": "string",
+            "title": "Sign In Path"
+          },
+          "customer_signup_path": {
+            "type": "string",
+            "title": "Customer Signup Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company",
+          "admin_email",
+          "admin_full_name",
+          "sign_in_path",
+          "customer_signup_path"
+        ],
+        "title": "CompanyCreated",
+        "description": "What the super administrator shares with the new company. The password is\nnot echoed back: the super administrator typed or generated it, and it\nlives in one place only, their screen, until it is handed over."
+      },
+      "CompanyList": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "active": {
+            "type": "integer",
+            "title": "Active"
+          },
+          "suspended": {
+            "type": "integer",
+            "title": "Suspended"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CompanyRow"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "active",
+          "suspended",
+          "items"
+        ],
+        "title": "CompanyList"
+      },
+      "CompanyOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "owns_template": {
+            "type": "boolean",
+            "title": "Owns Template"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/CompanyCounts"
+          },
+          "access": {
+            "$ref": "#/components/schemas/AccessPolicy"
+          },
+          "defaults": {
+            "$ref": "#/components/schemas/AccessPolicy"
+          },
+          "catalogue": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionOut"
+            },
+            "type": "array",
+            "title": "Catalogue"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scopes"
+          },
+          "customer_signup_path": {
+            "type": "string",
+            "title": "Customer Signup Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "owns_template",
+          "counts",
+          "access",
+          "defaults",
+          "catalogue",
+          "roles",
+          "scopes",
+          "customer_signup_path"
+        ],
+        "title": "CompanyOut"
+      },
+      "CompanyPublicOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "slug"
+        ],
+        "title": "CompanyPublicOut",
+        "description": "What a customer sees on the company's sign-up link before they have an account."
+      },
+      "CompanyRow": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "is_reference": {
+            "type": "boolean",
+            "title": "Is Reference"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "administrator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Administrator"
+          },
+          "administrators": {
+            "type": "integer",
+            "title": "Administrators"
+          },
+          "staff": {
+            "type": "integer",
+            "title": "Staff"
+          },
+          "customers": {
+            "type": "integer",
+            "title": "Customers"
+          },
+          "complaints": {
+            "type": "integer",
+            "title": "Complaints"
+          },
+          "open_complaints": {
+            "type": "integer",
+            "title": "Open Complaints"
+          },
+          "documents": {
+            "type": "integer",
+            "title": "Documents"
+          },
+          "last_complaint_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Complaint At"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
+          },
+          "subscription_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscription Status"
+          },
+          "billing_cycle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Billing Cycle"
+          },
+          "trial_ends_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Ends At"
+          },
+          "current_period_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Period End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "is_active",
+          "is_reference",
+          "administrators",
+          "staff",
+          "customers",
+          "complaints",
+          "open_complaints",
+          "documents"
+        ],
+        "title": "CompanyRow",
+        "description": "One company as the super administrators see it in the list of every company."
+      },
+      "CompanyStatusIn": {
+        "properties": {
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_active"
+        ],
+        "title": "CompanyStatusIn",
+        "description": "Suspend a company (its people are signed out and refused) or reactivate it."
+      },
+      "CompanyUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry"
+          }
+        },
+        "type": "object",
+        "title": "CompanyUpdate"
+      },
+      "CompanyVolume": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "is_reference": {
+            "type": "boolean",
+            "title": "Is Reference"
+          },
+          "complaints": {
+            "type": "integer",
+            "title": "Complaints"
+          },
+          "open_complaints": {
+            "type": "integer",
+            "title": "Open Complaints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "is_active",
+          "is_reference",
+          "complaints",
+          "open_complaints"
+        ],
+        "title": "CompanyVolume"
+      },
       "ComparisonOut": {
         "properties": {
           "field": {
@@ -7948,6 +9684,17 @@
             ],
             "title": "Category"
           },
+          "subcategory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subcategory"
+          },
           "department": {
             "anyOf": [
               {
@@ -8063,6 +9810,17 @@
             ],
             "title": "Channel"
           },
+          "agreement_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agreement Score"
+          },
           "description_raw": {
             "type": "string",
             "title": "Description Raw"
@@ -8070,17 +9828,6 @@
           "description_clean": {
             "type": "string",
             "title": "Description Clean"
-          },
-          "subcategory": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Subcategory"
           },
           "support_department": {
             "anyOf": [
@@ -8456,6 +10203,13 @@
             "type": "boolean",
             "title": "Action Needed",
             "default": false
+          },
+          "follow_ups": {
+            "items": {
+              "$ref": "#/components/schemas/FollowUpOut"
+            },
+            "type": "array",
+            "title": "Follow Ups"
           }
         },
         "type": "object",
@@ -8496,6 +10250,17 @@
               }
             ],
             "title": "Category"
+          },
+          "subcategory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subcategory"
           },
           "department": {
             "anyOf": [
@@ -8611,6 +10376,17 @@
               }
             ],
             "title": "Channel"
+          },
+          "agreement_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agreement Score"
           }
         },
         "type": "object",
@@ -8878,6 +10654,38 @@
             },
             "type": "object",
             "title": "Priorities"
+          },
+          "products": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Products"
+          },
+          "urgency": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Urgency"
+          },
+          "sentiment": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Sentiment"
+          },
+          "resolution_time": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Resolution Time"
+          },
+          "repeat_complaints": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Repeat Complaints"
           },
           "sla_risks": {
             "items": {
@@ -9193,6 +11001,79 @@
         ],
         "title": "DepartmentContactOut",
         "description": "The team handling a customer's complaint, and how to reach it."
+      },
+      "DepartmentCreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "manager_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manager Name"
+          },
+          "manager_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manager Email"
+          },
+          "manager_password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manager Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "DepartmentCreate"
       },
       "DepartmentLoadOut": {
         "properties": {
@@ -10571,6 +12452,20 @@
               }
             ],
             "title": "Created At"
+          },
+          "raw_json": {
+            "title": "Raw Json"
+          },
+          "response_raw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Raw"
           }
         },
         "type": "object",
@@ -11401,6 +13296,41 @@
         "title": "MilestoneOut",
         "description": "One step of the customer-facing timeline.\n\nDerived from the status history, but in the customer's vocabulary. The\ninternal states (ANALYZED, MANUAL_REVIEW, ESCALATED) are collapsed on\npurpose: \"a specialist is looking at it\" is the truth a customer needs,\nand \"your case is in manual review because the model and the rules\ndisagreed\" is not."
       },
+      "OrganisationBrief": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "is_platform": {
+            "type": "boolean",
+            "title": "Is Platform",
+            "default": false
+          },
+          "owns_template": {
+            "type": "boolean",
+            "title": "Owns Template",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ],
+        "title": "OrganisationBrief",
+        "description": "What a signed-in user's own record says about their company."
+      },
       "OrganisationOut": {
         "properties": {
           "profile": {
@@ -11880,6 +13810,42 @@
         ],
         "title": "PeopleSummary"
       },
+      "PermissionOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "defaults": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Defaults"
+          },
+          "evaluator": {
+            "type": "boolean",
+            "title": "Evaluator"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "description",
+          "defaults",
+          "evaluator"
+        ],
+        "title": "PermissionOut"
+      },
       "PersonActivity": {
         "properties": {
           "at": {
@@ -12057,7 +14023,7 @@
           "password": {
             "type": "string",
             "maxLength": 256,
-            "minLength": 8,
+            "minLength": 12,
             "title": "Password"
           },
           "role": {
@@ -12360,7 +14326,7 @@
               {
                 "type": "string",
                 "maxLength": 256,
-                "minLength": 8
+                "minLength": 12
               },
               {
                 "type": "null"
@@ -12422,6 +14388,415 @@
           "rules_corrected_the_model"
         ],
         "title": "PipelineOut"
+      },
+      "PlanRequestAccepted": {
+        "properties": {
+          "received": {
+            "type": "boolean",
+            "title": "Received",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "PlanRequestAccepted"
+      },
+      "PlanRequestIn": {
+        "properties": {
+          "company_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Company Name"
+          },
+          "contact_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 2,
+            "title": "Contact Name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "plan_code": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Plan Code"
+          },
+          "billing_cycle": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "annual"
+            ],
+            "title": "Billing Cycle",
+            "default": "monthly"
+          },
+          "team_size": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team Size"
+          },
+          "monthly_complaints": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Complaints"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_name",
+          "contact_name",
+          "email",
+          "plan_code"
+        ],
+        "title": "PlanRequestIn"
+      },
+      "PlanRequestList": {
+        "properties": {
+          "new": {
+            "type": "integer",
+            "title": "New"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PlanRequestOut"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "new",
+          "items"
+        ],
+        "title": "PlanRequestList"
+      },
+      "PlanRequestOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "contact_name": {
+            "type": "string",
+            "title": "Contact Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "plan_code": {
+            "type": "string",
+            "title": "Plan Code"
+          },
+          "billing_cycle": {
+            "type": "string",
+            "title": "Billing Cycle"
+          },
+          "team_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team Size"
+          },
+          "monthly_complaints": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Complaints"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "existing_customer": {
+            "type": "boolean",
+            "title": "Existing Customer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company_name",
+          "contact_name",
+          "email",
+          "plan_code",
+          "billing_cycle",
+          "status",
+          "existing_customer",
+          "created_at"
+        ],
+        "title": "PlanRequestOut"
+      },
+      "PlanRequestStatusIn": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "CONTACTED",
+              "WON",
+              "LOST"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "PlanRequestStatusIn"
+      },
+      "PlatformCompanies": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "active": {
+            "type": "integer",
+            "title": "Active"
+          },
+          "suspended": {
+            "type": "integer",
+            "title": "Suspended"
+          },
+          "new_in_window": {
+            "type": "integer",
+            "title": "New In Window"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "active",
+          "suspended",
+          "new_in_window"
+        ],
+        "title": "PlatformCompanies"
+      },
+      "PlatformOverview": {
+        "properties": {
+          "window_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Window Days"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "companies": {
+            "$ref": "#/components/schemas/PlatformCompanies"
+          },
+          "people": {
+            "$ref": "#/components/schemas/PlatformPeople"
+          },
+          "by_company": {
+            "items": {
+              "$ref": "#/components/schemas/CompanyVolume"
+            },
+            "type": "array",
+            "title": "By Company"
+          },
+          "complaints": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Complaints"
+          },
+          "priorities": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Priorities"
+          },
+          "escalation": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Escalation"
+          },
+          "sla": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Sla"
+          },
+          "resolution_time": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Resolution Time"
+          },
+          "agreement": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Agreement"
+          },
+          "traceability": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Traceability"
+          },
+          "safety": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Safety"
+          },
+          "ai": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Ai"
+          },
+          "benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "generated_at",
+          "companies",
+          "people",
+          "by_company",
+          "complaints",
+          "priorities",
+          "escalation",
+          "sla",
+          "resolution_time",
+          "agreement",
+          "traceability",
+          "safety",
+          "ai"
+        ],
+        "title": "PlatformOverview",
+        "description": "The aggregate blocks are the same dictionaries each company's own analytics\nreturn, computed across every company, so a company's figures and the\nplatform's are always measured the same way."
+      },
+      "PlatformPeople": {
+        "properties": {
+          "staff": {
+            "type": "integer",
+            "title": "Staff"
+          },
+          "customers": {
+            "type": "integer",
+            "title": "Customers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "staff",
+          "customers"
+        ],
+        "title": "PlatformPeople"
       },
       "PolicyConflictOut": {
         "properties": {
@@ -12752,6 +15127,17 @@
             },
             "type": "array",
             "title": "Variables"
+          },
+          "template_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Text"
           }
         },
         "type": "object",
@@ -12849,6 +15235,11 @@
           "status_changes": {
             "type": "integer",
             "title": "Status Changes"
+          },
+          "work_changes": {
+            "type": "integer",
+            "title": "Work Changes",
+            "default": 0
           },
           "checked_at": {
             "type": "string",
@@ -12988,6 +15379,18 @@
             "maxLength": 256,
             "minLength": 12,
             "title": "Password"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
           }
         },
         "type": "object",
@@ -15454,6 +17857,189 @@
         ],
         "title": "SubcategoryBrief"
       },
+      "SubscriptionOut": {
+        "properties": {
+          "plan": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "billing_cycle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Billing Cycle"
+          },
+          "trial_ends_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Ends At"
+          },
+          "current_period_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Period End"
+          },
+          "seats_used": {
+            "type": "integer",
+            "title": "Seats Used"
+          },
+          "seats_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seats Limit"
+          },
+          "ai_used": {
+            "type": "integer",
+            "title": "Ai Used"
+          },
+          "ai_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Limit"
+          },
+          "ai_active": {
+            "type": "boolean",
+            "title": "Ai Active"
+          },
+          "notice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "seats_used",
+          "ai_used",
+          "ai_active",
+          "period_start"
+        ],
+        "title": "SubscriptionOut",
+        "description": "A company's plan and what it has used this month. ``plan`` is empty for an unmetered company."
+      },
+      "SubscriptionUpdate": {
+        "properties": {
+          "plan": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Plan"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "trialing",
+              "active",
+              "past_due",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "billing_cycle": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "annual"
+            ],
+            "title": "Billing Cycle",
+            "default": "monthly"
+          },
+          "trial_ends_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Ends At"
+          },
+          "current_period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Period End"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan",
+          "status"
+        ],
+        "title": "SubscriptionUpdate"
+      },
       "TaxonomyOut": {
         "properties": {
           "categories": {
@@ -16230,6 +18816,34 @@
             "type": "boolean",
             "title": "Mfa Enabled",
             "default": false
+          },
+          "organisation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrganisationBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Permissions"
+          },
+          "complaint_scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complaint Scope"
           }
         },
         "type": "object",

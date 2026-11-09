@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
+import { canEditTemplate } from '@/lib/roles'
 import { admin, system } from '@/lib/api'
 import { useApi, useAction } from '@/lib/use-api'
 import { Badge, Button, Mono, humanise } from '@/components/ui/primitives'
@@ -13,7 +14,7 @@ import { cn } from '@/lib/utils'
 
 export default function PromptsPage() {
   return (
-    <AppShell eyebrow="Prompts" roles={['admin', 'evaluator']}>
+    <AppShell eyebrow="Prompts" roles={['admin', 'evaluator', 'superadmin']}>
       <Prompts />
     </AppShell>
   )
@@ -31,7 +32,7 @@ function Prompts() {
   const version = useApi(() => system.version())
   const activate = useAction((name: string, v: string, reason?: string) => admin.activatePrompt(name, v, reason))
   const [reason, setReason] = useState('')
-  const isAdmin = user?.role === 'admin'
+  const isAdmin = canEditTemplate(user)
   const groups = useMemo(() => {
     const m = new Map<string, NonNullable<typeof q.data>>()
     for (const p of q.data ?? []) m.set(p.name, [...(m.get(p.name) ?? []), p])

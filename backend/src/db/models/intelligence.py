@@ -39,7 +39,16 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base, Code, Name, Ref, TimestampMixin, TZDateTime, UUIDPrimaryKey
+from src.db.base import (
+    Base,
+    Code,
+    Name,
+    Ref,
+    TenantScoped,
+    TimestampMixin,
+    TZDateTime,
+    UUIDPrimaryKey,
+)
 from src.db.constraints import enum_check
 from src.db.enums import (
     EligibilityOutcome,
@@ -53,7 +62,7 @@ from src.db.enums import (
 )
 
 
-class ComplaintPolicyRef(UUIDPrimaryKey, TimestampMixin, Base):
+class ComplaintPolicyRef(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     Every policy reference attached to a complaint, and whether it actually
     holds up.
@@ -111,7 +120,7 @@ class ComplaintPolicyRef(UUIDPrimaryKey, TimestampMixin, Base):
     document_version = relationship("DocumentVersion", lazy="joined")
 
 
-class ResolutionStep(UUIDPrimaryKey, TimestampMixin, Base):
+class ResolutionStep(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     One recommended resolution step, from either pipeline, with its verdict.
 
@@ -154,7 +163,7 @@ class ResolutionStep(UUIDPrimaryKey, TimestampMixin, Base):
     explanation: Mapped[str | None] = mapped_column(Text)
 
 
-class EligibilityDecision(UUIDPrimaryKey, TimestampMixin, Base):
+class EligibilityDecision(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     Refund / replacement / compensation / exception eligibility.
 
@@ -196,7 +205,7 @@ class EligibilityDecision(UUIDPrimaryKey, TimestampMixin, Base):
     )
 
 
-class ClarificationQuestion(UUIDPrimaryKey, TimestampMixin, Base):
+class ClarificationQuestion(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     SRS Step 43: when information is insufficient the pipeline must ask a
     focused question "rather than inventing missing facts".
@@ -224,7 +233,7 @@ class ClarificationQuestion(UUIDPrimaryKey, TimestampMixin, Base):
     answer: Mapped[str | None] = mapped_column(Text)
 
 
-class AgentGuidance(UUIDPrimaryKey, TimestampMixin, Base):
+class AgentGuidance(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     SRS Step 45 — internal, agent-facing guidance.
 

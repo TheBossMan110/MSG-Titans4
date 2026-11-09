@@ -38,20 +38,10 @@ export function VerificationMeterBadge({
   score?: number | null
 }) {
   if (!outcome && score == null) return <span className="text-taupe">—</span>
-  const pctValue =
-    score != null
-      ? Math.round(score <= 1 ? score * 100 : score)
-      : outcome === 'VERIFIED'
-      ? 96
-      : outcome === 'VERIFIED_WITH_WARNING'
-      ? 84
-      : outcome === 'CORRECTED_BY_RULES'
-      ? 74
-      : outcome === 'MANUAL_REVIEW_REQUIRED'
-      ? 58
-      : outcome === 'BLOCKED'
-      ? 30
-      : 70
+  // A percentage is shown only when one was measured. With no AI answer to
+  // compare there is nothing to put a number on, so the outcome stands alone.
+  if (score == null) return <OutcomeBadge outcome={outcome} />
+  const pctValue = Math.round(score <= 1 ? score * 100 : score)
 
   const tone =
     pctValue >= 90

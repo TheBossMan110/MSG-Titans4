@@ -23,9 +23,9 @@ How it stays correct -- never stale after a change:
 * **Single flight.** Ten browsers asking for the same cold answer cause one
   computation, not ten.
 
-Answers are keyed by endpoint, parameters and -- where the endpoint takes the
-signed-in user -- that user's id, so one person's view is never served to
-another. Writes made by another process (a one-off script) are caught by the
+Answers are keyed by endpoint, parameters, the caller's organisation and --
+where the endpoint takes the signed-in user -- that user's id, so one person's
+view is never served to another, nor one company's to another company. Writes made by another process (a one-off script) are caught by the
 ``ttl`` rather than the generation.
 """
 
@@ -57,6 +57,9 @@ TRACKED = frozenset({
     "departments", "sla_policies", "documents", "document_versions", "app_config",
     "genai_runs", "complaint_attachments", "clarification_questions", "resolution_steps",
     "eligibility_decisions", "agent_guidance", "trend_snapshots",
+    # An organisation's access policy decides what a cached list contains: a
+    # narrowed scope must apply on the next request, not when the copy expires.
+    "organisations",
 })
 
 WARM_WINDOW_S = 15 * 60      # re-warm what someone looked at in the last quarter hour
@@ -283,15 +286,26 @@ def cached_endpoint(ttl: float = 60.0) -> Callable:
 
         @functools.wraps(fn)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            from src.core import tenancy
+
             db: Session = kwargs["db"]
             bound = {k: v for k, v in kwargs.items() if k not in ("db", "user", "request", "response")}
             user = kwargs.get("user")
             user_id = getattr(user, "id", None) if takes_user else None
-            key = f"{fn.__module__}.{fn.__qualname__}|{user_id}|" + "&".join(f"{k}={bound[k]!r}" for k in sorted(bound))
+            # The organisation is part of every key, whether or not the
+            # endpoint takes the user: one company's dashboard is never served
+            # to another, and a background recompute runs as that company.
+            organisation = tenancy.current(db)
+            key = (
+                f"{fn.__module__}.{fn.__qualname__}|{organisation}|{user_id}|"
+                + "&".join(f"{k}={bound[k]!r}" for k in sorted(bound))
+            )
 
             def compute(session: Session) -> Any:
                 call = dict(kwargs)
                 call["db"] = session
+                if session is not db:
+                    tenancy.bind(session, organisation)
                 if takes_user and user_id is not None and session is not db:
                     from src.db.models import User
 

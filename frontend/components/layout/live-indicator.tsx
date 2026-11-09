@@ -43,7 +43,8 @@ export function LiveIndicator({ oversight }: { oversight: boolean }) {
               complaints: now.complaints - before.complaints,
               users: now.users - before.users,
               emails: now.emails_in - before.emails_in,
-              statuses: now.status_changes !== before.status_changes,
+              // A complaint being taken or reviewed moves work_changes without moving its status.
+              statuses: now.status_changes !== before.status_changes || now.work_changes !== before.work_changes,
             }
             if (change.complaints || change.users || change.emails || change.statuses) {
               window.dispatchEvent(new CustomEvent<LiveChange>(LIVE_EVENT, { detail: change }))

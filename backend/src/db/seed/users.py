@@ -17,8 +17,10 @@ import os
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from src.core import tenancy
 from src.core.logging import get_logger
 from src.core.security import hash_password
+from src.db.base import PLATFORM_ORGANISATION_ID
 from src.db.enums import UserRole
 from src.db.models import Customer, Department, User
 from src.db.seed.loader import upsert
@@ -41,7 +43,26 @@ SEED_USERS: list[tuple[str, str, str, str | None]] = [
 ]
 
 
+SUPERADMIN_EMAIL = "superadmin@supportnova.com"
+
+
 def seed_users(db: Session) -> dict[str, int]:
+    # The seeded staff and customer belong to RaftarXpress, the reference
+    # company (migration 0006); the super administrator to the platform (0007).
+    tenancy.ensure_default(db)
+    tenancy.ensure_platform(db)
+    upsert(
+        db, User,
+        match={"email": SUPERADMIN_EMAIL},
+        values={
+            "full_name": "Platform Super Admin",
+            "role": UserRole.SUPERADMIN,
+            "department_id": None,
+            "is_active": True,
+            "organisation_id": PLATFORM_ORGANISATION_ID,
+            "password_hash": hash_password(DEFAULT_PASSWORD),
+        },
+    )
     departments = {d.code: d for d in db.execute(select(Department)).scalars()}
     password_hash = hash_password(DEFAULT_PASSWORD)
     created_count = 0

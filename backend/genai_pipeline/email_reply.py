@@ -29,6 +29,7 @@ from sqlalchemy.orm import Session
 from genai_pipeline.providers import AllProvidersFailed, ProviderChain, build_chain
 from genai_pipeline.providers.base import LLMRequest
 from schemas.genai import json_schema_for
+from security.chat_firewall import inspect_message
 from security.injection_defense import DATA_NOT_INSTRUCTIONS_NOTICE, fence, scan
 from security.manipulation_guard import manipulation_rules, unsafe_reply
 from src.core.logging import get_logger
@@ -132,13 +133,18 @@ def compose(
     greeting_fallback = f"Dear {first_name}," if first_name else "Hello,"
     safe = scan(db, f"Subject: {subject}\n\n{body}"[:6000]).sanitised
     fact_lines = "\n".join(f"- {key}: {value}" for key, value in facts.items() if value not in (None, "", []))
+    # An email claiming authority or asking what the company holds gets the plain
+    # acknowledgement. No model is asked, so nothing can be talked out of one.
+    if inspect_message(safe):
+        log.warning("email_attack_stopped")
+        return ComposedReply(greeting=greeting_fallback, paragraphs=fallback, ai_written=False, notes=["attack stopped"])
     prompt = f"CUSTOMER FIRST NAME: {first_name or 'unknown'}\n\nFACTS:\n{fact_lines}\n\nTHE CUSTOMER'S EMAIL:\n{fence(safe)}"
     result = _ask(GENERAL_SYSTEM if general else COMPOSE_SYSTEM, prompt, COMPOSE_SCHEMA, Composed)
     if not isinstance(result, Composed) or not result.paragraphs:
         return ComposedReply(greeting=greeting_fallback, paragraphs=fallback, ai_written=False, notes=["model unavailable"])
 
     paragraphs = [p.strip() for p in result.paragraphs if p and p.strip()][:3]
-    problems = unsafe_reply(db, " ".join(paragraphs))
+    problems = unsafe_reply(db, " ".join(paragraphs), known=f"{subject}\n{body}\n{fact_lines}\n{first_name or ''}")
     if problems:
         # A reply sent without a person reading it may not commit the company
         # to anything, or play along with a manipulation attempt. The

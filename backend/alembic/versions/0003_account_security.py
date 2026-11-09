@@ -45,7 +45,9 @@ def upgrade() -> None:
     )
     op.add_column("users", sa.Column("locked_until", TZDateTime(), nullable=True))
     op.add_column("users", sa.Column("password_changed_at", TZDateTime(), nullable=True))
-    op.alter_column("users", "failed_login_count", server_default=None)
+    # Batch mode: SQLite has no ALTER COLUMN (PostgreSQL gets the same plain ALTER).
+    with op.batch_alter_table("users") as batch:
+        batch.alter_column("failed_login_count", server_default=None)
 
     op.add_column("refresh_tokens", sa.Column("ip_address", sa.String(64), nullable=True))
     op.add_column("refresh_tokens", sa.Column("session_started_at", TZDateTime(), nullable=True))

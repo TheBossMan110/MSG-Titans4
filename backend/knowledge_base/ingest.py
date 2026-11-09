@@ -5,6 +5,7 @@ Document ingestion — the orchestrator that turns an uploaded file into rows.
       -> validate            (SRS Step 4)   -> document_validation_issues
       -> store               object storage
       -> parse               (SRS Step 5)   -> metadata, sections
+      -> relevance gate                     -> refused if not about complaint handling
       -> scan for injection  (SRS Step 50)  -> injection_events
       -> version             (SRS Step 7)   -> documents, document_versions
       -> sections            (SRS Step 5)   -> document_sections
@@ -34,6 +35,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from document_processing import relevance
 from document_processing.chunker import chunk_document
 from document_processing.contracts import ParsedDocument, ParseIssue
 from document_processing.metadata import family_key_for
@@ -187,6 +189,28 @@ def ingest_document(
             issues=all_issues, message=reason,
         )
 
+    # ── 2b. is it about complaint handling at all? ──
+    # A well-formed file about something else -- a song and a picture in a
+    # Word document -- would otherwise land in METADATA_REVIEW and become text
+    # the model may cite. Refused with the numbers behind the decision.
+    body = parsed.raw_text or "\n\n".join(s.text for s in parsed.sections)
+    verdict = relevance.check(db, body, purpose="policy", images=relevance.embedded_images(data))
+    if not verdict.relevant:
+        all_issues.append(ParseIssue(
+            code=ValidationIssueCode.OFF_TOPIC_CONTENT, message=verdict.reason or "Not a policy document.",
+            field="content", detail=verdict.detail(), fatal=True,
+        ))
+        _record_issues(
+            db, all_issues,
+            file_name=validation.file_name, file_hash=validation.file_hash,
+            uploaded_by=uploaded_by, document_version_id=None, rejected=True,
+        )
+        log.info("ingest_off_topic", file=validation.file_name, density=verdict.density, song_like=verdict.song_like)
+        return IngestResult(
+            file_name=validation.file_name, accepted=False,
+            issues=all_issues, message=verdict.reason or "Not a policy document.",
+        )
+
     all_issues.extend(validate_metadata(parsed.metadata, file_name=validation.file_name))
 
     # ── 3. store the original file ──
@@ -299,7 +323,6 @@ def ingest_document(
     # it and may have a reason. Its text reaches a model only inside the
     # untrusted-document fence (retrieval.as_prompt_context), and no document
     # can move a decision -- Pipeline 2 has no instruction-following surface.
-    body = parsed.raw_text or "\n\n".join(s.text for s in parsed.sections)
     found = scan(db, body)
     # Policies legitimately speak of approvals and authority ("requires
     # supervisor approval"), so that one family of patterns, meaningful in a

@@ -23,6 +23,7 @@ from sqlalchemy import (
     BigInteger,
     DateTime,
     Float,
+    ForeignKey,
     Integer,
     MetaData,
     String,
@@ -130,6 +131,33 @@ class UUIDPrimaryKey:
 class TimestampMixin:
     created_at: Mapped[datetime] = mapped_column(
         TZDateTime, server_default=func.now(), default=utcnow, nullable=False, sort_order=100
+    )
+
+
+# The organisation every row belonged to before there was more than one: the
+# seeded RaftarXpress data, the demo accounts, and anything a background job
+# writes without a signed-in user behind it. Its dataset defined the shared
+# template (taxonomy, rule matrix, lexicon), so its administrators may edit it.
+DEFAULT_ORGANISATION_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
+# The platform itself (migration 0007): holds the super administrators and no
+# business data at all, so a super administrator has no company's rows in reach.
+PLATFORM_ORGANISATION_ID = uuid.UUID("00000000-0000-0000-0000-000000000000")
+
+
+class TenantScoped:
+    """
+    A row that belongs to one organisation (migration 0006).
+
+    Mixing this in is the whole opt-in: src/core/tenancy.py adds
+    ``organisation_id = <the caller's>`` to every ORM query on these tables and
+    stamps it on every insert, so an endpoint that forgets to filter is still
+    filtered. Reference data -- taxonomy, rules, lexicon, prompts -- is not
+    tenant-scoped: it is the shared template every organisation runs on.
+    """
+
+    organisation_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("organisations.id", ondelete="CASCADE"),
+        nullable=False, default=DEFAULT_ORGANISATION_ID, index=True, sort_order=99,
     )
 
 

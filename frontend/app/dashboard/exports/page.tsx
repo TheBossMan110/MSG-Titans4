@@ -9,7 +9,7 @@ import { Empty, ErrorState, SkeletonRows } from '@/components/ui/feedback'
 
 export default function ExportsPage() {
   return (
-    <AppShell eyebrow="Exports" roles={['manager', 'admin', 'evaluator']}>
+    <AppShell eyebrow="Exports" permission="analytics.view">
       <Exports />
     </AppShell>
   )

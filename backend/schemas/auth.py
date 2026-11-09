@@ -8,6 +8,7 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 
 from schemas.common import APIModel
+from schemas.company import OrganisationBrief
 
 
 class LoginRequest(BaseModel):
@@ -43,6 +44,12 @@ class UserOut(APIModel):
     last_login_at: datetime | None = None
     created_at: datetime
     mfa_enabled: bool = False
+    # Multi-company: whose data this is, and what this person's company lets
+    # their role do (src/core/permissions.py). The interface offers what these
+    # allow; the API enforces the same on every request regardless.
+    organisation: OrganisationBrief | None = None
+    permissions: list[str] = Field(default_factory=list)
+    complaint_scope: str | None = None
 
 
 class UserCreate(BaseModel):
@@ -66,6 +73,9 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     full_name: str = Field(min_length=2, max_length=255)
     password: str = Field(min_length=12, max_length=256)
+    # The company's sign-up link carries it (/register?company=<slug>); without
+    # one the customer joins the platform organisation, as before.
+    company: str | None = Field(None, max_length=64)
 
 
 class PasswordChangeRequest(BaseModel):

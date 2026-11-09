@@ -15,6 +15,8 @@ type Status = S['StatusBrief']
 interface Msg {
   role: 'user' | 'assistant'
   content: string
+  /** The server's mark on a line Nova really said; sent back with it on the next turn. */
+  signature?: string
   draft?: Draft | null
   statuses?: Status[]
   signIn?: boolean
@@ -22,19 +24,19 @@ interface Msg {
 }
 
 const STORE = 'nova-chat-v1'
-const GREETING: Msg = {
+const greeting = (company: string): Msg => ({
   role: 'assistant',
-  content: "Hi, I'm Nova from RaftarXpress support. Tell me what went wrong and I'll help you raise a complaint — or ask me about one you already raised.",
-}
+  content: `Hi, I'm Nova from ${company} support. Tell me what went wrong and I'll help you raise a complaint — or ask me about one you already raised.`,
+})
 const STARTERS = ['My parcel is late', 'My parcel arrived damaged', 'Check my complaint status', 'How does this work?']
 
-function load(): Msg[] {
+function load(fallback: Msg): Msg[] {
   try {
     const raw = sessionStorage.getItem(STORE)
     const parsed = raw ? (JSON.parse(raw) as Msg[]) : null
-    return parsed?.length ? parsed : [GREETING]
+    return parsed?.length ? parsed : [fallback]
   } catch {
-    return [GREETING]
+    return [fallback]
   }
 }
 
@@ -45,13 +47,15 @@ function load(): Msg[] {
  */
 export function ChatPanel({ onClose, className }: { onClose?: () => void; className?: string }) {
   const { user } = useAuth()
-  const [messages, setMessages] = useState<Msg[]>([GREETING])
+  // Nova works for the signed-in customer's own company; a visitor meets the reference company.
+  const company = user?.organisation?.name ?? 'RaftarXpress'
+  const [messages, setMessages] = useState<Msg[]>(() => [greeting(company)])
   const [input, setInput] = useState('')
   const [pending, setPending] = useState(false)
   const list = useRef<HTMLDivElement>(null)
   const field = useRef<HTMLTextAreaElement>(null)
 
-  useEffect(() => { setMessages(load()) }, [])
+  useEffect(() => { setMessages(load(greeting(company))) }, [company])
   useEffect(() => {
     try { sessionStorage.setItem(STORE, JSON.stringify(messages.slice(-40))) } catch {}
     list.current?.scrollTo({ top: list.current.scrollHeight, behavior: 'smooth' })
@@ -68,9 +72,9 @@ export function ChatPanel({ onClose, className }: { onClose?: () => void; classN
     try {
       const history = next
         .filter((m) => !m.filing)
-        .map((m) => ({ role: m.role, content: m.content }))
+        .map((m) => ({ role: m.role, content: m.content, signature: m.signature }))
       const r = await assistant.chat(history)
-      setMessages((m) => [...m, { role: 'assistant', content: r.reply, draft: r.draft ?? null, statuses: r.statuses ?? [], signIn: r.needs_sign_in }])
+      setMessages((m) => [...m, { role: 'assistant', content: r.reply, signature: r.signature, draft: r.draft ?? null, statuses: r.statuses ?? [], signIn: r.needs_sign_in }])
     } catch (e) {
       setMessages((m) => [...m, { role: 'assistant', content: `Sorry, I couldn't reply just now (${errorMessage(e)}). You can still use the complaint form.` }])
     } finally {
@@ -106,7 +110,7 @@ export function ChatPanel({ onClose, className }: { onClose?: () => void; classN
     }
   }, [])
 
-  const reset = () => { setMessages([GREETING]); try { sessionStorage.removeItem(STORE) } catch {} }
+  const reset = () => { setMessages([greeting(company)]); try { sessionStorage.removeItem(STORE) } catch {} }
   const started = messages.length > 1
 
   return (
@@ -115,7 +119,7 @@ export function ChatPanel({ onClose, className }: { onClose?: () => void; classN
         <span className="relative inline-flex size-9 items-center justify-center rounded-full ring-1 ring-ink-on-dark/20"><NovaAvatar size={36} /><span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-espresso bg-verified-dim" aria-hidden /></span>
         <div className="min-w-0 flex-1">
           <p className="text-[14.5px] font-medium leading-tight">Nova</p>
-          <p className="text-[12px] text-ink-on-dark/70">RaftarXpress support · usually replies in seconds</p>
+          <p className="text-[12px] text-ink-on-dark/70">{company} support · usually replies in seconds</p>
         </div>
         {started && <button type="button" onClick={reset} className="rounded-full px-2.5 py-1 text-[12px] text-ink-on-dark/80 hover:bg-ink-on-dark/10">New chat</button>}
         {onClose && <button type="button" onClick={onClose} aria-label="Close chat" className="inline-flex size-8 items-center justify-center rounded-full hover:bg-ink-on-dark/10"><X size={17} aria-hidden /></button>}
@@ -153,7 +157,7 @@ export function ChatPanel({ onClose, className }: { onClose?: () => void; classN
           <ArrowUp size={18} aria-hidden />
         </button>
       </form>
-      <p className="bg-white/80 px-4 pb-3 text-[11.5px] text-taupe-2">Nova only helps with RaftarXpress deliveries and complaints. Nothing is filed until you press “File this complaint”.</p>
+      <p className="bg-white/80 px-4 pb-3 text-[11.5px] text-taupe-2">Nova only helps with {company} deliveries and complaints. Nothing is filed until you press “File this complaint”.</p>
     </div>
   )
 }

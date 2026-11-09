@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
+import { can } from '@/lib/roles'
 import { review } from '@/lib/api'
 import { useApi, useAction, fmtRelative } from '@/lib/use-api'
 import { Badge, Button, Mono, humanise, priorityTone } from '@/components/ui/primitives'
@@ -14,7 +15,7 @@ import { StatusBadge, OutcomeBadge, EscalationBadge } from '@/components/app/com
 
 export default function ReviewPage() {
   return (
-    <AppShell eyebrow="Review queue" roles={['reviewer', 'manager', 'admin', 'evaluator']} wide>
+    <AppShell eyebrow="Review queue" permission="review.queue" wide>
       <Queue />
     </AppShell>
   )
@@ -30,7 +31,7 @@ function Queue() {
   const q = useApi(() => review.queue({ page, size: 25, status: status || undefined, assigned_to_me: mine || undefined, breached_only: breached || undefined }), [page, status, mine, breached], true, { live: true })
   const stats = useApi(() => review.stats(), [], true, { live: true })
   const sweep = useAction(() => review.sweep())
-  const isReviewer = user && ['reviewer', 'manager', 'admin'].includes(user.role)
+  const isReviewer = can(user, 'review.decide')
   const canSweep = user && ['manager', 'admin'].includes(user.role)
   const depth = stats.data?.depth ?? {}
   const rate = stats.data?.override_rate as { count?: number; total?: number } | undefined

@@ -27,11 +27,13 @@ from typing import Any
 from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session, joinedload, lazyload, load_only
 
+from src.core.scope import is_scoped, restrict
 from src.db.models import Complaint, Department, ReviewQueueItem, SLAEvent, User
 from src.db.models.workflow import ReviewAction
 from src.services import analytics
 
 CLOSED = ("RESOLVED", "CLOSED")
+LATEST = 10     # how many of the newest complaints every staff dashboard lists
 
 # The dashboards read a handful of small columns. Loading whole rows -- the
 # complaint text, and the category/department joins every Complaint query
@@ -77,16 +79,39 @@ def _brief(c: Complaint, **extra: Any) -> dict[str, Any]:
     }
 
 
+def latest_complaints(db: Session, user: User | None, *, department_id: Any = None) -> list[dict[str, Any]]:
+    """
+    The newest real complaints this person may see, whatever state they are in.
+
+    The other lists on a dashboard show only part of the register -- what is
+    critical, escalated, queued for review -- and most of them oldest first,
+    so a new, ordinary complaint appeared on none of them. Benchmark rows are
+    left out: they are scored, not worked.
+    """
+    query = select(Complaint).options(*_SLIM).where(Complaint.dataset_tag.is_(None))
+    if user is not None:
+        query = restrict(query, user)
+    if department_id is not None:
+        query = query.where(Complaint.department_id == department_id)
+    rows = db.execute(query.order_by(Complaint.created_at.desc()).limit(LATEST)).scalars().all()
+    owners = {c.assigned_to for c in rows if c.assigned_to}
+    names = dict(db.execute(select(User.id, User.full_name).where(User.id.in_(owners))).all()) if owners else {}
+    return [_brief(c, assignee=names.get(c.assigned_to), escalation=c.escalation_code) for c in rows]
+
+
 # ══════════════════════════════════════════════════════════════
 # manager
 # ══════════════════════════════════════════════════════════════
-def manager_overview(db: Session, *, department_code: str | None = None) -> dict[str, Any]:
+def manager_overview(db: Session, *, department_code: str | None = None, user: User | None = None) -> dict[str, Any]:
     now = datetime.now(UTC)
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     departments = db.execute(select(Department).order_by(Department.name)).scalars().all()
     team = next((d for d in departments if d.code == (department_code or "").upper()), None)
 
     def scoped(query):
+        # An administrator can narrow what a manager sees; the dashboard honours it.
+        if user is not None:
+            query = restrict(query, user)
         return query.where(Complaint.department_id == team.id) if team else query
 
     complaints = db.execute(scoped(select(Complaint).options(*_SLIM))).scalars().all()
@@ -163,13 +188,18 @@ def manager_overview(db: Session, *, department_code: str | None = None) -> dict
             "last_login_at": a.last_login_at.isoformat() if a.last_login_at else None,
         })
 
-    critical = sorted((c for c in open_ if c.priority_code == "P0"), key=lambda c: c.created_at or now)[:8]
+    # Newest first: oldest-first put a new P0 behind every old one in an eight-row list.
+    critical = sorted((c for c in open_ if c.priority_code == "P0"), key=lambda c: c.created_at or now, reverse=True)[:8]
     escalations = sorted((c for c in open_ if escalated(c)), key=lambda c: c.created_at or now, reverse=True)[:8]
     risks = analytics.sla_risks(db, limit=8)
     if team:
         risks = [r for r in risks if r.get("team") == team.name]
+    if user is not None and is_scoped(user):
+        allowed = {c.public_ref for c in complaints}
+        risks = [r for r in risks if r.get("public_ref") in allowed]
 
     return {
+        "latest": latest_complaints(db, user, department_id=team.id if team else None),
         "department": team.code if team else None,
         "department_name": team.name if team else None,
         "departments": [{"code": d.code, "name": d.name} for d in departments],
@@ -189,10 +219,13 @@ def manager_overview(db: Session, *, department_code: str | None = None) -> dict
 # ══════════════════════════════════════════════════════════════
 def reviewer_overview(db: Session, user: User) -> dict[str, Any]:
     items = db.execute(
-        select(ReviewQueueItem, Complaint)
-        .join(Complaint, Complaint.id == ReviewQueueItem.complaint_id)
-        .options(*_SLIM)
-        .where(ReviewQueueItem.status.in_(("OPEN", "IN_REVIEW")))
+        restrict(
+            select(ReviewQueueItem, Complaint)
+            .join(Complaint, Complaint.id == ReviewQueueItem.complaint_id)
+            .options(*_SLIM)
+            .where(ReviewQueueItem.status.in_(("OPEN", "IN_REVIEW"))),
+            user,
+        )
         .order_by(ReviewQueueItem.priority_code.asc().nulls_last(), ReviewQueueItem.created_at.asc())
     ).all()
 
@@ -202,6 +235,8 @@ def reviewer_overview(db: Session, user: User) -> dict[str, Any]:
             (item, c) for item, c in items
             if set(item.reasons or []) & set(reasons) or (key == "adversarial" and c.injection_suspected)
         ]
+        # Each group shows six; the newest six, or a fresh case never appears in one.
+        matched.sort(key=lambda pair: _aware(pair[0].created_at) if pair[0].created_at else datetime.min.replace(tzinfo=UTC), reverse=True)
         groups.append({
             "key": key, "label": label, "reasons": list(reasons), "count": len(matched),
             "items": [
@@ -232,6 +267,7 @@ def reviewer_overview(db: Session, user: User) -> dict[str, Any]:
     ).scalar_one()
 
     return {
+        "latest": latest_complaints(db, user),
         "open": len(items),
         "claimed_by_me": len(mine),
         "unclaimed": sum(1 for item, _ in items if item.assigned_to is None),
@@ -276,4 +312,4 @@ def agent_performance(db: Session, user: User) -> dict[str, Any]:
     }
 
 
-__all__ = ["REVIEW_GROUPS", "agent_performance", "manager_overview", "reviewer_overview"]
+__all__ = ["REVIEW_GROUPS", "agent_performance", "latest_complaints", "manager_overview", "reviewer_overview"]

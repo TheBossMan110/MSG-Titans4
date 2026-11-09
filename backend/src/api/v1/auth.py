@@ -30,7 +30,7 @@ from src.core.deps import CurrentUser, DbSession
 from src.core.errors import AuthError, NotFoundError
 from src.core.ratelimit import LOGIN_LIMIT, limiter
 from src.core.security import hash_password, verify_password
-from src.db.models import AuditLog
+from src.db.models import AuditLog, Organisation
 from src.services import auth as auth_service
 from src.services.audit import record_audit
 
@@ -57,12 +57,21 @@ def register(
     a role, and the service ignores anything that tries. Staff accounts come
     from an administrator, so no one can promote themselves by posting JSON.
     """
+    organisation_id = None
+    if payload.company:
+        found = db.execute(
+            select(Organisation).where(Organisation.slug == payload.company.strip().lower(), Organisation.is_active.is_(True))
+        ).scalars().first()
+        if found is None:
+            raise NotFoundError("That company sign-up link is not valid. Ask the company for its current link.")
+        organisation_id = found.id
     user, access, refresh = auth_service.register(
         db,
         email=payload.email,
         full_name=payload.full_name,
         password=payload.password,
         request=request,
+        organisation_id=organisation_id,
     )
     return TokenResponse(
         access_token=access,

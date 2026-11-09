@@ -26,12 +26,12 @@ from typing import Any
 from sqlalchemy import Boolean, ForeignKey, Index, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base, Code, TimestampMixin, TZDateTime, UUIDPrimaryKey
+from src.db.base import Base, Code, TenantScoped, TimestampMixin, TZDateTime, UUIDPrimaryKey
 from src.db.constraints import enum_check
 from src.db.enums import ComparisonStatus, Severity, VerificationOutcome, Winner
 
 
-class Comparison(UUIDPrimaryKey, TimestampMixin, Base):
+class Comparison(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """One row per compared field per complaint."""
 
     __tablename__ = "comparisons"
@@ -67,7 +67,7 @@ class Comparison(UUIDPrimaryKey, TimestampMixin, Base):
     explanation: Mapped[str | None] = mapped_column(Text)
 
 
-class VerificationDecision(UUIDPrimaryKey, TimestampMixin, Base):
+class VerificationDecision(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     The single reconciled verdict for a complaint.
 

@@ -15,12 +15,46 @@ from typing import Any
 from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base, BigIntPK, JSONType, Name, TimestampMixin, TZDateTime, UUIDPrimaryKey
+from src.db.base import (
+    Base,
+    BigIntPK,
+    Code,
+    JSONType,
+    Name,
+    TenantScoped,
+    TimestampMixin,
+    TZDateTime,
+    UUIDPrimaryKey,
+)
 from src.db.constraints import enum_check
 from src.db.enums import UserRole
 
 
-class User(UUIDPrimaryKey, TimestampMixin, Base):
+class Organisation(UUIDPrimaryKey, TimestampMixin, Base):
+    """
+    A company using the platform (migration 0006): its people, complaints and
+    policies are its own, and what each of its roles may do is set here.
+
+    ``settings`` holds the access policy an administrator edits on the Access
+    Control page::
+
+        {"permissions":     {"manager": ["analytics.view", ...], "reviewer": [...], "agent": [...]},
+         "complaint_scope": {"manager": "all", "reviewer": "all", "agent": "team"}}
+
+    A role missing from either map gets the defaults in src/core/permissions.py,
+    which are exactly what the platform did before organisations existed.
+    """
+
+    __tablename__ = "organisations"
+
+    name: Mapped[str] = mapped_column(Name, nullable=False)
+    slug: Mapped[str] = mapped_column(Code, nullable=False, unique=True)
+    industry: Mapped[str | None] = mapped_column(String(120))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    settings: Mapped[dict[str, Any] | None] = mapped_column(JSONType)
+
+
+class User(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     __tablename__ = "users"
     __table_args__ = (
         enum_check("role", UserRole),
@@ -54,6 +88,25 @@ class User(UUIDPrimaryKey, TimestampMixin, Base):
     def mfa_enabled(self) -> bool:
         return self.mfa_enabled_at is not None
 
+    # ── what the signed-in user may do, for UserOut (src/core/permissions.py) ──
+    @property
+    def organisation(self) -> dict[str, Any] | None:
+        from src.core import tenancy
+
+        return tenancy.brief(self.organisation_id)
+
+    @property
+    def permissions(self) -> list[str]:
+        from src.core import permissions
+
+        return sorted(permissions.granted(self))
+
+    @property
+    def complaint_scope(self) -> str:
+        from src.core import permissions
+
+        return permissions.complaint_scope(self)
+
     def __repr__(self) -> str:  # pragma: no cover
         return f"<User {self.email} ({self.role})>"
 
@@ -74,7 +127,7 @@ class RefreshToken(UUIDPrimaryKey, TimestampMixin, Base):
     session_started_at: Mapped[datetime | None] = mapped_column(TZDateTime)
 
 
-class AuditLog(TimestampMixin, Base):
+class AuditLog(TimestampMixin, TenantScoped, Base):
     """
     Append-only.  The application role must not be granted UPDATE/DELETE here —
     see database/grants.sql.

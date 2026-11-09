@@ -38,6 +38,7 @@ customer, and every decision is stored as its own row so that no number on scree
 | Role | Email | Password | Available on |
 |---|---|---|---|
 | **Administrator** | `admin@supportnova.com` | `123456789` | Live site |
+| **Super administrator** (the platform: every company's totals, no company's data) | `superadmin@supportnova.com` | `SupportNova#2026` | Live site and any freshly seeded database |
 | **Reviewer** | `review@supportnova.com` | `123456789` | Live site |
 | **Evaluator** (read access everywhere, Administrator view) | `evaluator@raftarxpress.com` | `SupportNova#2026` | Live site and any freshly seeded database |
 | Administrator | `admin@raftarxpress.com` | `SupportNova#2026` | Live site and any freshly seeded database |
@@ -49,6 +50,7 @@ customer, and every decision is stored as its own row so that no number on scree
 | Agent: Safety | `agent.safety@raftarxpress.com` | `SupportNova#2026` | Live site and any freshly seeded database |
 | Customer | `customer@raftarxpress.com` | `SupportNova#2026` | Live site and any freshly seeded database |
 | Customer (your own) | Sign up at `/register` | your choice (12+ characters) | Every new sign-up becomes a customer |
+| Company administrator | Created by the super administrator: **Companies → Create company** | set there, then shared with the company | Administrator of that company's private workspace |
 
 These passwords are published on purpose: the system holds synthetic data only. The seeded password comes from
 `backend/src/db/seed/users.py` and can be changed with the `SEED_PASSWORD` environment variable.
@@ -126,6 +128,7 @@ lockout (five wrong passwords lock an account for 15 minutes) on an account you 
 ## Contents
 
 * [How it works](#how-it-works)
+* [Multi-company workspaces and access control](#multi-company-workspaces-and-access-control)
 * [Repository map](#repository-map)
 * [Installation (Windows)](#installation-windows)
 * [Execution instructions](#execution-instructions)
@@ -169,6 +172,64 @@ That README was written before the RaftarXpress corpus replaced the earlier samp
 design sections rather than its organisation and status tables. Requirement coverage is machine-checked:
 [backend/documentation/REQUIREMENTS_COVERAGE.md](backend/documentation/REQUIREMENTS_COVERAGE.md).
 
+## Multi-company workspaces and access control
+
+SupportNova is not tied to RaftarXpress. The super administrator creates each company and its first
+administrator on **Companies → Create company**, then shares the sign-in details. Companies cannot sign themselves
+up, so nobody can open a workspace and fill it with unvetted content. RaftarXpress and all existing data are simply
+the first company on the platform (migration `0006_organisations` backfilled every row to it).
+
+* **Isolation is enforced under the endpoints, not in them.** Forty business tables carry `organisation_id`.
+  `src/core/tenancy.py` adds the caller's organisation to every ORM query and stamps it on every insert, so an
+  endpoint that forgets to filter is still filtered; the response cache, background workers and live intake
+  stream are bound to the same organisation. A company cannot list, count, open or change another company's
+  complaints, customers, people, policies, emails, reports or audit log. `tests/test_tenancy.py` proves it through
+  ordinary endpoints written before organisations existed.
+* **Each company decides who may do what** on **Company & Access** (`/dashboard/access`): per role (manager,
+  reviewer, agent), which work is allowed (analytics, report downloads, the review queue and decisions,
+  re-running the pipelines, managing policy documents, adding agents, the audit log, datasets) and how much of
+  the complaint register it sees (*only their cases*, *their team*, *everything*). The API checks the policy on
+  every request (`src/core/permissions.py`); the sidebar hides what is withheld and adds what is granted.
+  Defaults are exactly the role gates described in this README, administrators always keep everything, and
+  every change is audited with before and after.
+* **Customers join a company through its link**, `/register?company=<slug>`, shown on Company & Access.
+* **The super administrator sees the platform, not the companies.** `superadmin@supportnova.com` (migration
+  `0007_platform_superadmin`) belongs to the platform itself, which holds no business data. It sees a
+  **Platform overview** (companies, complaints across every company, AI-versus-rules agreement, measured
+  accuracy, safety and service figures) and a **Companies** page (every company's size and status, with Suspend /
+  Reactivate, and **Create company**), and it maintains the shared template. Every router that serves a company's complaints, people,
+  emails or analytics refuses the role outright (`tests/test_superadmin.py`). Company administrators,
+  RaftarXpress's included, see everything about their own company and nothing about the others.
+* **Shared template.** Taxonomy, the rule matrix, lexicon and prompts are one template every company runs on;
+  the super administrators and RaftarXpress's administrators change them (another company gets 403).
+* **Every complaint reaches a person.** After analysis a new complaint goes to the least-loaded agent on its team,
+  then the supporting team, then any agent in the company (`src/services/assignment.py`). The agent, reviewer and
+  manager dashboards list the newest complaints and refresh themselves when anything changes.
+* **Plans.** Each company is on a plan (`config/plans.json`, shown at `/pricing`) that sets its staff accounts and
+  AI-analysed complaints per month (`src/core/billing.py`). **A limit never refuses a customer's complaint**: past the
+  allowance, or after a trial, the rules handle it alone. Requests from the pricing page appear on **Plan requests**;
+  the super administrator sets the plan on **Companies** once payment is arranged, and administrators see usage on
+  **Subscription**.
+
+### The chat cannot be talked into showing company information
+
+`security/chat_firewall.py` runs in code before any model is asked. A message that claims a role ("I am superadmin"),
+asks what the assistant holds, or asks for its instructions gets a fixed refusal and is recorded on the Security
+page; no model ever sees it. What a model does write is checked again and replaced whole if it accepts a claimed role,
+describes what it holds, or names an email, phone number or reference the customer did not give
+(`security/manipulation_guard.py`). The conversation is signed by the server, so a forged earlier "Nova" line is
+ignored. `tests/test_chat_firewall.py` also runs every genuine complaint in the dataset through the gate.
+
+### Uploads that are not about complaint handling are refused
+
+A valid PDF or DOCX can still be the wrong thing (a picture and a song pasted into a Word file, a recipe, a CV).
+`document_processing/relevance.py` measures how much of the text is complaint-handling vocabulary (the Pipeline 2
+lexicon, business nouns and policy wording) and refuses an off-topic policy upload or complaint letter with the
+reason, recorded as `OFF_TOPIC_CONTENT` in `document_validation_issues`. No model is asked, so it works with every
+AI provider down. Thresholds are in `config/policy.yaml` (`content_relevance`, editable at runtime) and were
+measured on the corpus: all 30 policy documents and 500 complaints pass, every off-topic sample is refused
+(`tests/test_content_relevance.py`).
+
 ## Repository map
 
 The repository has three top-level folders: `backend/` (FastAPI, Python), `frontend/` (Next.js) and `dataset/`
@@ -181,7 +242,7 @@ application they belong to.
 | `AI_USAGE.md` | [AI_USAGE.md](AI_USAGE.md) (frontend: [frontend/AI_USAGE.md](frontend/AI_USAGE.md)) | Declaration of AI used in the product and AI tools used in development |
 | `requirements.txt` | [requirements.txt](requirements.txt) → [backend/requirements.txt](backend/requirements.txt) | Python dependencies; exact tested versions in `backend/constraints.txt`, test tools in `backend/requirements-dev.txt` |
 | `LICENSE` | [LICENSE](LICENSE) | MIT licence |
-| `src/` | [backend/src/](backend/src/) | FastAPI application: `core/` (config, security, middleware), `db/` (53-table models, seeders), `api/v1/` (routers), `services/` |
+| `src/` | [backend/src/](backend/src/) | FastAPI application: `core/` (config, security, middleware), `db/` (55-table models, seeders), `api/v1/` (routers), `services/` |
 | `templates/` | [backend/templates/](backend/templates/README.md) | Signpost: where prompt, email and reply templates live |
 | `static/` | [backend/static/](backend/static/README.md) | Signpost: static assets are served by the frontend from `frontend/public/` |
 | `complaint_processing/` | [backend/complaint_processing/](backend/complaint_processing/) | Intake, text clean-up, entity extraction, validation, duplicate detection, file and email letters |
@@ -197,8 +258,8 @@ application they belong to.
 | `comparison_engine/` | [backend/comparison_engine/](backend/comparison_engine/) | GenAI-versus-Python field diff, ladders, scores, verification decision |
 | `hallucination_checks/` | [backend/hallucination_checks/](backend/hallucination_checks/) | Citation validation, claim support, contradictory-policy detection |
 | `security/` | [backend/security/](backend/security/) | Prompt-injection defence, manipulation guard, response guard, deliberate-defect catalogue |
-| `database/` | [backend/database/](backend/database/) | Schema documentation (53 tables), ER diagram and `schema.sql`; migrations are in `backend/alembic/` |
-| `tests/` | [backend/tests/](backend/tests/) | 989 pytest tests in 41 files; see [TEST_CASES.md](backend/documentation/TEST_CASES.md) |
+| `database/` | [backend/database/](backend/database/) | Schema documentation (53 tables; `organisations` added by migration 0006), ER diagram and `schema.sql`; migrations are in `backend/alembic/` |
+| `tests/` | [backend/tests/](backend/tests/) | 1,243 pytest tests in 48 files; see [TEST_CASES.md](backend/documentation/TEST_CASES.md) |
 | `sample_complaints/` | [backend/sample_complaints/](backend/sample_complaints/) | Sample complaints for evaluators (CSV and JSON); the full corpus is `dataset/raftarxpress/complaints/` (500) |
 | `sample_documents/` | [backend/sample_documents/](backend/sample_documents/) | Sample policy documents (PDF and DOCX); the full set is `dataset/raftarxpress/documents/` (25) |
 | `hidden_test_ready/` | [backend/hidden_test_ready/](backend/hidden_test_ready/README.md) | Drop zone and instructions for the evaluators' hidden complaint pack |
@@ -207,7 +268,7 @@ application they belong to.
 | `reports/` | [backend/reports/](backend/reports/) | GenAI-versus-Python comparison, complaint intelligence and security reports (MD, CSV, XLSX) |
 | `config/` | [backend/config/](backend/config/) | Configuration as data: taxonomy, policy precedence and thresholds, signals, lexicon, requirement registry |
 
-Also worth knowing: `backend/alembic/` (migrations, head `0004_email_messages`), `backend/scripts/` (dataset
+Also worth knowing: `backend/alembic/` (migrations, head `0008_plan_requests`), `backend/scripts/` (dataset
 converter and verifier, document renderer, report generator, Gmail relay script), `frontend/` (the web
 application) and `dataset/raftarxpress/` (500 labelled complaints, 105 rules, 25 policy documents, organisation
 profile and reply templates).
@@ -319,7 +380,7 @@ DATABASE_URL=postgresql+psycopg://postgres.<ref>:<password>@aws-0-<region>.poole
 Use the **session** pooler (port 5432). The transaction pooler (port 6543) does not support prepared statements
 and fails with confusing driver errors. If the password contains `@`, `#`, `/` or `%`, URL-encode it.
 
-Then create the tables (Alembic, head `0004_email_messages`):
+Then create the tables (Alembic, head `0008_plan_requests`):
 
 ```powershell
 .venv\Scripts\python -m alembic upgrade head
@@ -431,7 +492,7 @@ pipeline.
 
 ```powershell
 cd SupportNova\backend
-.venv\Scripts\python -m pytest -q                                   # everything: 989 passed
+.venv\Scripts\python -m pytest -q                                   # everything: 1243 passed
 .venv\Scripts\python -m pytest -q tests\test_python_validation.py   # one file
 .venv\Scripts\python -m pytest -q -k escalation                     # by keyword
 ```
@@ -486,7 +547,8 @@ can also open the manager, reviewer and agent dashboards from the user menu at t
 * Drop PDF or DOCX files, optionally choose a department, keep *Activate on success* ticked to supersede the
   previous version, click **Ingest**, then **Open version**.
 * **Look for:** per-file result (accepted, duplicate, rejected with reason), sections with page or paragraph
-  numbers, chunks, validation findings, and which version is now active. A version can be staged (unticked),
+  numbers, chunks, validation findings, and which version is now active. A file that is not about complaint
+  handling (try a Word file with a song in it) is refused with `OFF_TOPIC_CONTENT` and the reason. A version can be staged (unticked),
   checked for impact and activated later; the impact view lists open complaints that cite the old version.
 
 ### Configure complaint rules
@@ -598,7 +660,7 @@ open `/dashboard/benchmark`, **Import a dataset** with a new tag, then **Start a
 
 | Part | Where | Notes |
 |---|---|---|
-| Database | Supabase PostgreSQL (free), session pooler | Migrated with Alembic to `0004_email_messages`; filled once, never reseeded |
+| Database | Supabase PostgreSQL (free), session pooler | Migrated with Alembic to `0008_plan_requests`; filled once, never reseeded |
 | Backend | Render web service (free), root directory `backend/` | Runs `python -m alembic upgrade head`, then `uvicorn src.main:app --host 0.0.0.0 --port $PORT` (see `backend/Dockerfile`); exactly one process |
 | Frontend | Vercel (Hobby), root directory `frontend/` | Next.js 16; `/api/session/*` route handlers keep the refresh token in an httpOnly cookie |
 | Email | Gmail mailbox `supportnova110@gmail.com` | Inbound read over IMAP every `EMAIL_POLL_SECONDS`; replies sent through the Apps Script relay because Render's free plan blocks SMTP |
@@ -645,6 +707,10 @@ An alternative, always-on deployment on an Oracle Cloud free VM is written up st
   `RULE-100`) are valid but no complaint exercises them.
 * **Multi-issue complaints** are carried as a primary issue, a secondary issue and an optional supporting
   department, but a complaint is routed to one owning department; there is no automatic split into two cases.
+* **One rule template and one mailbox.** Every company runs on the shared courier rule matrix, and the email channel
+  serves the reference company only. WhatsApp intake is not built.
+* **Payment is manual.** A plan is requested on the pricing page, invoiced outside the application and then set by the
+  super administrator. Stripe does not onboard Pakistani businesses.
 * **Email** depends on a Gmail mailbox: IMAP polling (about a minute) and roughly 100 relay-sent replies a day.
 * **Evaluator role** is read-mostly: it cannot download report files, upload documents or act on reviews.
 * **Report downloads** apply the mismatch, breach, override and unresolved filters but not the dataset-tag

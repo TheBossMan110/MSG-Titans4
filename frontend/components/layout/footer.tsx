@@ -15,7 +15,7 @@ export function Footer() {
               unverified.
             </p>
           </div>
-          <FooterCol title="Product" items={[['#product', 'How it works'], ['#intelligence', 'The pipeline'], ['#security', 'Security'], ['#analytics', 'Analytics']]} />
+          <FooterCol title="Product" items={[['/#product', 'How it works'], ['/#intelligence', 'The pipeline'], ['/#security', 'Security'], ['/#analytics', 'Analytics'], ['/pricing', 'Pricing']]} />
           <FooterCol title="Application" items={[['/login', 'Sign in'], ['/track', 'Track a complaint'], ['/dashboard', 'Dashboard']]} />
           <FooterCol title="Evaluation" items={[['/dashboard/benchmark', 'Benchmark'], ['/dashboard/rules/sandbox', 'Rule sandbox'], ['/dashboard/security', 'Deliberate defects'], ['/dashboard/audit', 'Audit trail']]} />
         </div>

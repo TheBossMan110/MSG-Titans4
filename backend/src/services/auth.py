@@ -11,7 +11,7 @@ from fastapi import Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from src.core import totp
+from src.core import tenancy, totp
 from src.core.config import settings
 from src.core.errors import AuthError, ConflictError, ValidationError
 from src.core.security import (
@@ -38,9 +38,14 @@ def register(
     full_name: str,
     password: str,
     request: Request | None = None,
+    organisation_id: Any = None,
 ) -> tuple[User, str, str]:
     """
     Create a customer account and sign it in (FR i).
+
+    ``organisation_id`` is the company whose sign-up link was used; without
+    one the account joins the reference company. Companies themselves are
+    created by the super administrator (src/api/v1/company.py), never here.
 
     **The role is not a parameter.** Self-registration always produces a
     CUSTOMER, whatever the request body says; agent, reviewer, manager, admin
@@ -87,6 +92,7 @@ def register(
         role=UserRole.CUSTOMER,
         is_active=True,
         last_login_at=datetime.now(UTC),
+        organisation_id=organisation_id,
     )
     db.add(user)
     db.flush()  # assign the primary key before the token references it
@@ -197,6 +203,16 @@ def authenticate(
             action="LOGIN_BLOCKED", reason="inactive_account", request=request,
         )
         raise AuthError("This account has been deactivated.")
+
+    if tenancy.is_suspended(user.organisation_id):
+        record_security_event(
+            actor=user, entity_type="auth", entity_id=str(user.id),
+            action="LOGIN_BLOCKED", reason="organisation_suspended", request=request,
+        )
+        raise AuthError(
+            "Your organisation's account has been suspended. Contact the platform administrator.",
+            code="ORGANISATION_SUSPENDED",
+        )
 
     user.failed_login_count = 0
     user.locked_until = None
@@ -409,6 +425,8 @@ def refresh_tokens(
     user = db.get(User, user_id) if user_id else None
     if user is None or not user.is_active:
         raise AuthError("Account not found or deactivated.")
+    if tenancy.is_suspended(user.organisation_id):
+        raise AuthError("Your organisation's account has been suspended.", code="ORGANISATION_SUSPENDED")
 
     stored.revoked_at = datetime.now(UTC)
 

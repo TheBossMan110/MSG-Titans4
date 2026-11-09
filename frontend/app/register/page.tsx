@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
-import { errorMessage } from '@/lib/api'
+import { company, errorMessage } from '@/lib/api'
 import { Badge, Button, Eyebrow, Wordmark } from '@/components/ui/primitives'
 import { Field, Input, PasswordInput } from '@/components/ui/forms'
 import { cn } from '@/lib/utils'
@@ -24,6 +24,14 @@ function Register() {
   const router = useRouter()
   const params = useSearchParams()
   const next = params.get('next')
+  // A company's sign-up link: the customer becomes that company's customer.
+  const slug = params.get('company')
+  const [joining, setJoining] = useState<{ name: string; industry?: string | null } | null>(null)
+  const [badLink, setBadLink] = useState(false)
+  useEffect(() => {
+    if (!slug) return
+    company.publicProfile(slug).then(setJoining).catch(() => setBadLink(true))
+  }, [slug])
 
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -57,7 +65,7 @@ function Register() {
     setPending(true)
     setError(null)
     try {
-      await register(email.trim(), fullName.trim(), password)
+      await register(email.trim(), fullName.trim(), password, slug)
       router.replace(next && next.startsWith('/') ? next : '/dashboard/my-complaints')
     } catch (err) {
       setError(errorMessage(err))
@@ -77,6 +85,16 @@ function Register() {
           <p className="mt-3 text-[14.5px] text-taupe-2">
             Sign up to submit a complaint and follow every step the system takes on it.
           </p>
+          {joining && (
+            <p className="mt-4 rounded-[var(--radius-md)] border border-line bg-ivory px-3.5 py-2.5 text-[13.5px] text-espresso-2">
+              You are joining <b className="text-espresso">{joining.name}</b>{joining.industry ? ` (${joining.industry})` : ''} as a customer.
+            </p>
+          )}
+          {badLink && (
+            <p role="alert" className="mt-4 rounded-[var(--radius-md)] border border-critical/30 bg-critical-dim px-3.5 py-2.5 text-[13.5px] text-espresso">
+              This company sign-up link is not valid. Ask the company for its current link.
+            </p>
+          )}
 
           <form onSubmit={submit} className="mt-8 flex flex-col gap-4" noValidate>
             <Field label="Full name" required error={touched && fullName.trim().length < 2 ? 'Please give your name.' : null}>

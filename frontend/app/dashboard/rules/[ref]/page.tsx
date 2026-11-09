@@ -4,6 +4,7 @@ import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
+import { canEditTemplate } from '@/lib/roles'
 import { admin, type S } from '@/lib/api'
 import { plainValue } from '@/components/app/complaint-bits'
 import { useApi, useAction } from '@/lib/use-api'
@@ -18,7 +19,7 @@ export default function RulePage({ params }: { params: Promise<{ ref: string }> 
   const { ref } = use(params)
   const ruleRef = decodeURIComponent(ref)
   return (
-    <AppShell eyebrow={<span>Rules / <Mono>{ruleRef}</Mono></span>} roles={['agent', 'reviewer', 'manager', 'admin', 'evaluator']} wide>
+    <AppShell eyebrow={<span>Rules / <Mono>{ruleRef}</Mono></span>} roles={['agent', 'reviewer', 'manager', 'admin', 'evaluator', 'superadmin']} wide>
       <Rule ruleRef={ruleRef} />
     </AppShell>
   )
@@ -38,7 +39,7 @@ function Rule({ ruleRef }: { ruleRef: string }) {
   const [form, setForm] = useState<S['RuleUpdateIn']>({})
   const [conditions, setConditions] = useState('')
   const [condError, setCondError] = useState<string | null>(null)
-  const isAdmin = user?.role === 'admin'
+  const isAdmin = canEditTemplate(user)
 
   useEffect(() => {
     if (!q.data) return

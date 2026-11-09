@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button, Wordmark } from '@/components/ui/primitives'
@@ -11,6 +12,7 @@ const links = [
   { href: '#intelligence', label: 'Intelligence' },
   { href: '#security', label: 'Security' },
   { href: '#analytics', label: 'Analytics' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '#about', label: 'About' },
 ]
 
@@ -26,6 +28,9 @@ export function MarketingNav() {
   const [active, setActive] = useState<string>('')
   const [open, setOpen] = useState(false)
   const { user } = useAuth()
+  const pathname = usePathname()
+  // Section links belong to the landing page; from anywhere else they go back to it.
+  const target = (href: string) => (href.startsWith('#') && pathname !== '/' ? `/${href}` : href)
 
   useEffect(() => {
     let frame = 0
@@ -45,7 +50,7 @@ export function MarketingNav() {
 
   // Which section is under the reader, so the nav says where they are.
   useEffect(() => {
-    const ids = links.map((l) => l.href.slice(1))
+    const ids = links.filter((l) => l.href.startsWith('#')).map((l) => l.href.slice(1))
     const targets = ids.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[]
     if (!targets.length) return
     const io = new IntersectionObserver(
@@ -81,7 +86,7 @@ export function MarketingNav() {
           {links.map((l) => (
             <li key={l.href}>
               <a
-                href={l.href}
+                href={target(l.href)}
                 aria-current={active === l.href ? 'true' : undefined}
                 className={cn(
                   'relative rounded-full px-3.5 py-1.5 text-[13.5px] font-medium transition-colors duration-300',
@@ -139,7 +144,7 @@ export function MarketingNav() {
             {links.map((l, i) => (
               <li key={l.href}>
                 <a
-                  href={l.href}
+                  href={target(l.href)}
                   onClick={() => setOpen(false)}
                   className="flex items-baseline gap-4 border-b border-line-soft py-3.5 font-display text-[26px] tracking-[-0.02em]"
                 >

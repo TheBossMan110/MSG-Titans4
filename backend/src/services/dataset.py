@@ -42,6 +42,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from complaint_processing.entities import parse_amount
+from complaint_processing.intake import PUBLIC_REF_PREFIX, last_ref_number, next_customer_ref
 from complaint_processing.preprocess import preprocess
 from src.core.logging import get_logger
 from src.db.enums import Channel, ComplaintStatus
@@ -199,9 +200,8 @@ def _customer(db: Session, email: str | None, name: str | None) -> Customer | No
     if existing is not None:
         return existing
 
-    count = db.execute(select(func.count()).select_from(Customer)).scalar_one()
     customer = Customer(
-        external_ref=f"CUST-{count + 1:06d}",
+        external_ref=next_customer_ref(db),
         display_name=(name or "").strip() or normalised.split("@")[0],
         email=normalised,
     )
@@ -235,9 +235,10 @@ def import_rows(
         db.flush()
         log.info("dataset_cleared", dataset_tag=tag, removed=removed)
 
-    # Numbered from one count, not one per row. Same scheme as intake's
-    # next_public_ref, so imported and submitted complaints share a sequence.
-    number = db.execute(select(func.count()).select_from(Complaint)).scalar_one()
+    # Numbered from one lookup, not one per row. Same scheme as intake's
+    # next_public_ref, so imported and submitted complaints share a sequence --
+    # across every organisation, and past any gap a ``replace`` just left.
+    number = last_ref_number(db, Complaint.public_ref, PUBLIC_REF_PREFIX)
     # The file's own ids, so a row can point at an earlier row: the corpus
     # marks a follow-up with ``previous_ref`` and repeat detection reads it.
     by_external: dict[str, Complaint] = {}

@@ -49,7 +49,7 @@ function AdminDashboard() {
       <section className="mesh-banner grain relative overflow-hidden rounded-[var(--radius-xl)] px-6 py-8 text-ink-on-dark md:px-10 md:py-10">
         <div className="relative z-[1] flex flex-wrap items-end justify-between gap-6">
           <div className="animate-rise">
-            <p className="eyebrow mb-3 text-sand-2">Admin dashboard · signed in as {user.role}</p>
+            <p className="eyebrow mb-3 text-sand-2">Admin dashboard · signed in as {user.role}{user.organisation ? ` · ${user.organisation.name}` : ''}</p>
             <h1 className="display text-h1 text-ink-on-dark">{user.full_name}</h1>
             <p className="mt-3 max-w-[56ch] text-[15.5px] text-ink-on-dark/80">The whole register at a glance: volume, where it goes, how urgent it is, and where a person is needed.</p>
           </div>
@@ -58,6 +58,20 @@ function AdminDashboard() {
           </div>
         </div>
       </section>
+
+      {/* A company that has just joined has nothing to chart yet: show it the way in instead. */}
+      {user.role === 'admin' && user.organisation && !user.organisation.is_platform && d && d.volume.total === 0 && (
+        <Card tone="glass" radius="xl" className="flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="eyebrow mb-1">Welcome to {user.organisation.name}</p>
+            <p className="max-w-[64ch] text-[14.5px] text-espresso-2">
+              Your workspace is private and empty. Upload your policies, add your team, decide what each role may do,
+              and share your customer sign-up link. The checklist keeps track.
+            </p>
+          </div>
+          <Button href="/dashboard/access" icon={<UserPlus size={15} aria-hidden />}>Finish setting up</Button>
+        </Card>
+      )}
 
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Time window">
         <span className="mr-1 text-[13px] text-taupe-2">Showing</span>

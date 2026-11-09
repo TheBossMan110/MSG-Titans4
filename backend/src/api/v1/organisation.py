@@ -29,6 +29,7 @@ from schemas.organisation import (
 )
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import ConflictError, ValidationError
+from src.core.permissions import require_platform_admin
 from src.core.response_cache import cached_endpoint
 from src.db.enums import ComplaintStatus, DocStatus, UserRole
 from src.db.models import (
@@ -62,6 +63,14 @@ def _config(db: Any, key: str, default: Any) -> Any:
 @cached_endpoint(ttl=60)
 def organisation(db: DbSession) -> OrganisationOut:
     profile = _config(db, "organisation", {})
+    # Another company on the platform is described by its own record, not by
+    # the dataset's RaftarXpress profile; the teams and taxonomy are shared.
+    from src.core import tenancy
+
+    bound = tenancy.current(db)
+    if bound is not None and not tenancy.owns_template(bound):
+        own = tenancy.info(bound) or {}
+        profile = {"name": own.get("name"), "industry": own.get("industry")}
     extras: dict[str, dict[str, Any]] = _config(db, "department_profiles", {})
 
     categories = db.execute(
@@ -192,7 +201,8 @@ def organisation(db: DbSession) -> OrganisationOut:
     "/departments",
     response_model=TeamOut,
     status_code=http_status.HTTP_201_CREATED,
-    dependencies=[Depends(require_role(UserRole.ADMIN))],
+    # Departments are part of the shared taxonomy every organisation routes to.
+    dependencies=[Depends(require_platform_admin)],
     summary="Create a new department and optionally provision its manager",
 )
 def create_department(
@@ -241,7 +251,11 @@ def create_department(
         m_email = payload.manager_email.strip().lower()
         if db.execute(select(User.id).where(func.lower(User.email) == m_email)).first():
             raise ConflictError(f"An account with email '{m_email}' already exists.")
-        m_pwd = payload.manager_password or "SupportNova#2026"
+        # No default: a fallback password is printed in the README, so an account
+        # created with it could be signed in to by anyone who read the repository.
+        m_pwd = payload.manager_password or ""
+        if len(m_pwd) < 12:
+            raise ValidationError("Give the manager a temporary password of at least 12 characters.")
         m_name = (payload.manager_name or f"{name} Manager").strip()
         manager_user = User(
             email=m_email,

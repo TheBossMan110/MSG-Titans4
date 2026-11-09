@@ -67,8 +67,10 @@ export function AddUser({
   }
 
   const create = useAction(() => people.create({ ...form, department_code: form.department_code || null }))
-  const ready = form.full_name.trim().length >= 2 && /\S+@\S+\.\S+/.test(form.email) && form.password.length >= 8
+  const ready = form.full_name.trim().length >= 2 && /\S+@\S+\.\S+/.test(form.email) && form.password.length >= 12
   const set = (k: keyof typeof blank, v: string) => setForm((f) => ({ ...f, [k]: v }))
+  // The read-only judge account belongs to the reference company; the server refuses it elsewhere.
+  const roles = user?.organisation?.owns_template ? ROLE_OPTIONS : ROLE_OPTIONS.filter(([v]) => v !== 'evaluator')
 
   const lockRole = Boolean(fixedRole) || isManager
   const lockDept = Boolean(fixedDepartment) || isManager
@@ -129,7 +131,7 @@ export function AddUser({
                   disabled={lockRole}
                   onChange={(e) => set('role', e.target.value)}
                 >
-                  {ROLE_OPTIONS.map(([v, l]) => (
+                  {roles.map(([v, l]) => (
                     <option key={v} value={v}>
                       {l}
                     </option>
@@ -167,7 +169,7 @@ export function AddUser({
           <Field
             label="Temporary password"
             required
-            hint="At least 8 characters. Ask them to change it after signing in."
+            hint="At least 12 characters. Ask them to change it after signing in."
           >
             {(id) => (
               <PasswordInput
@@ -219,7 +221,7 @@ export function AddDepartment({ onCreated }: { onCreated?: (dept: S['TeamOut']) 
     form.code.trim().length >= 2 &&
     form.name.trim().length >= 2 &&
     (!withManager ||
-      (/\S+@\S+\.\S+/.test(form.manager_email) && (form.manager_password.length === 0 || form.manager_password.length >= 8)))
+      (/\S+@\S+\.\S+/.test(form.manager_email) && form.manager_password.length >= 12))
 
   return (
     <>
@@ -336,7 +338,8 @@ export function AddDepartment({ onCreated }: { onCreated?: (dept: S['TeamOut']) 
                 </div>
                 <Field
                   label="Temporary password"
-                  hint="At least 8 characters. Defaults to SupportNova#2026 if empty."
+                  required
+                  hint="At least 12 characters. Ask them to change it after signing in."
                 >
                   {(id) => (
                     <PasswordInput
@@ -344,7 +347,6 @@ export function AddDepartment({ onCreated }: { onCreated?: (dept: S['TeamOut']) 
                       autoComplete="new-password"
                       value={form.manager_password}
                       onChange={(e) => set('manager_password', e.target.value)}
-                      placeholder="SupportNova#2026"
                     />
                   )}
                 </Field>
@@ -397,14 +399,14 @@ export function ManageAccount({ person, self, onSaved }: { person: S['PersonRow'
             </Select>
           )}</Field>
         </div>
-        <Field label="New password" hint="Leave empty to keep the current one. At least 8 characters.">
+        <Field label="New password" hint="Leave empty to keep the current one. At least 12 characters.">
           {(id) => <Input id={id} type="text" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Set a new password" />}
         </Field>
         <Checkbox label={self ? 'Active (you cannot disable your own account)' : 'Active — can sign in'} checked={active} disabled={self} onChange={(e) => setActive(e.target.checked)} />
         {(changes.role || changes.is_active === false || changes.password) && (
           <p className="text-[12.5px] text-warning">Saving signs {person.full_name} out of every device, so the change applies at once.</p>
         )}
-        <Button className="self-start" icon={changes.password ? <KeyRound size={15} aria-hidden /> : <Save size={15} aria-hidden />} disabled={!dirty || (password.length > 0 && password.length < 8)} loading={save.pending}
+        <Button className="self-start" icon={changes.password ? <KeyRound size={15} aria-hidden /> : <Save size={15} aria-hidden />} disabled={!dirty || (password.length > 0 && password.length < 12)} loading={save.pending}
           onClick={async () => {
             const row = await save.run()
             if (row) { toast('ok', 'Account updated.'); setPassword(''); setTeam(null); onSaved() }

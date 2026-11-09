@@ -30,7 +30,7 @@ class PersonCreate(BaseModel):
 
     email: EmailStr
     full_name: str = Field(min_length=2, max_length=255)
-    password: str = Field(min_length=8, max_length=256)
+    password: str = Field(min_length=12, max_length=256)
     role: str
     department_code: str | None = None
 
@@ -42,7 +42,7 @@ class PersonUpdate(BaseModel):
     role: str | None = None
     department_code: str | None = None
     is_active: bool | None = None
-    password: str | None = Field(default=None, min_length=8, max_length=256)
+    password: str | None = Field(default=None, min_length=12, max_length=256)
 
 
 class SignInOut(BaseModel):
@@ -128,4 +128,5 @@ class Pulse(BaseModel):
     latest_email_from: str | None = None
     latest_email_at: datetime | None = None
     status_changes: int
+    work_changes: int = 0
     checked_at: datetime

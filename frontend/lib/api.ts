@@ -288,7 +288,7 @@ export async function submitWithProgress(
 
 /* ------------------------------------------------------------------ shared types */
 
-export type Role = 'customer' | 'agent' | 'reviewer' | 'manager' | 'admin' | 'evaluator'
+export type Role = 'customer' | 'agent' | 'reviewer' | 'manager' | 'admin' | 'evaluator' | 'superadmin'
 export type User = Omit<S['UserOut'], 'role'> & { role: Role }
 export interface SessionResponse { access_token: string; expires_in: number; user: User }
 /** A correct password on an account with two-step sign-in: the code is still to come. */
@@ -322,6 +322,25 @@ export interface MyQueue {
 }
 
 /* ------------------------------------------------------------------ auth */
+
+/** A sign-up through the session proxy: the refresh token becomes an httpOnly cookie. */
+async function sessionPost(path: string, body: unknown): Promise<SessionResponse> {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    credentials: 'same-origin',
+  })
+  if (!res.ok) {
+    let parsed: unknown = null
+    try { parsed = await res.json() } catch {}
+    throw new ApiError(res.status, describe(res.status, parsed), parsed)
+  }
+  const data = (await res.json()) as SessionResponse
+  accessToken = data.access_token
+  sessionUser = data.user
+  return data
+}
 
 export const auth = {
   /** Via the session proxy so the refresh token becomes an httpOnly cookie. */
@@ -362,24 +381,9 @@ export const auth = {
     sessionUser = data.user
     return data
   },
-  /** Same proxy path as login, so the refresh token lands in the cookie. */
-  register: async (email: string, full_name: string, password: string): Promise<SessionResponse> => {
-    const res = await fetch('/api/session/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, full_name, password }),
-      credentials: 'same-origin',
-    })
-    if (!res.ok) {
-      let parsed: unknown = null
-      try { parsed = await res.json() } catch {}
-      throw new ApiError(res.status, describe(res.status, parsed), parsed)
-    }
-    const data = (await res.json()) as SessionResponse
-    accessToken = data.access_token
-    sessionUser = data.user
-    return data
-  },
+  /** Same proxy path as login, so the refresh token lands in the cookie. ``company`` is a sign-up link's slug. */
+  register: (email: string, full_name: string, password: string, company?: string | null) =>
+    sessionPost('/api/session/register', { email, full_name, password, company: company || undefined }),
   refresh: refreshSession,
   me: () => apiFetch<User>('/api/auth/me'),
   changePassword: (current_password: string, new_password: string) =>
@@ -430,7 +434,7 @@ export interface ResponseDraft {
   guard_status?: string; citations?: unknown[]; flags?: unknown[]; approved_at?: string | null; sent_at?: string | null
 }
 export interface AgentItem {
-  public_ref: string; title: string; status: string; assigned_to_me: boolean
+  public_ref: string; title: string; status: string; assigned_to_me: boolean; is_new: boolean
   customer_name?: string | null; customer_email?: string | null
   category: string | null; subcategory?: string | null; priority: string | null; urgency: string | null; sentiment: string | null
   team: string | null; summary: string | null
@@ -454,9 +458,10 @@ export interface AgentPerformance {
 export interface Brief {
   public_ref: string; title: string; priority: string | null; status: string; team: string | null
   created_at: string | null; escalation?: string | null; reasons?: string[]; queue_status?: string
-  claimed_by_me?: boolean; waiting_since?: string | null
+  claimed_by_me?: boolean; waiting_since?: string | null; assignee?: string | null
 }
 export interface ManagerOverview {
+  latest: Brief[]
   department: string | null; department_name: string | null
   departments: Array<{ code: string; name: string }>
   today: { total: number; new_today: number; open: number; in_progress: number; escalated: number; sla_at_risk: number; critical: number; manual_review: number; resolved: number }
@@ -467,6 +472,7 @@ export interface ManagerOverview {
   unassigned_open: number; generated_at: string
 }
 export interface ReviewerOverview {
+  latest: Brief[]
   open: number; claimed_by_me: number; unclaimed: number
   reasons: Record<string, number>
   groups: Array<{ key: string; label: string; reasons: string[]; count: number; items: Brief[] }>
@@ -536,7 +542,7 @@ export const complaints = {
 /* ------------------------------------------------------------------ review */
 
 export const review = {
-  queue: (f?: { page?: number; size?: number; status?: string; assigned_to_me?: boolean; breached_only?: boolean }) =>
+  queue: (f?: { page?: number; size?: number; status?: string; assigned_to_me?: boolean; breached_only?: boolean; sort?: 'urgent' | 'newest' }) =>
     apiFetch<Page<S['ReviewItemOut']>>(`/api/review/queue${qs(f)}`),
   stats: () => apiFetch<S['QueueStatsOut']>('/api/review/stats'),
   /** The reviewer dashboard: the queue grouped by why, and this reviewer's history. */
@@ -701,8 +707,45 @@ export const live = {
 
 /** Nova, the chat receptionist. It only talks; filing goes through complaints.stream. */
 export const assistant = {
-  chat: (messages: Array<{ role: 'user' | 'assistant'; content: string }>) =>
+  /** Nova's earlier lines go back with the signature they came with; unsigned ones are ignored. */
+  chat: (messages: Array<{ role: 'user' | 'assistant'; content: string; signature?: string }>) =>
     apiFetch<S['ChatOut']>('/api/assistant/chat', { method: 'POST', body: { messages } }),
+}
+
+export const billing = {
+  /** Administrators: their company's plan and this month's usage. */
+  subscription: () => apiFetch<S['SubscriptionOut']>('/api/billing/subscription'),
+  /** Anyone: ask for a plan from the pricing page. */
+  request: (body: S['PlanRequestIn']) => apiFetch<S['PlanRequestAccepted']>('/api/billing/requests', { method: 'POST', body }),
+  /** Super administrators: what has been asked for. */
+  requests: () => apiFetch<S['PlanRequestList']>('/api/billing/requests'),
+  setRequestStatus: (id: string, status: S['PlanRequestStatusIn']['status']) =>
+    apiFetch<S['PlanRequestOut']>(`/api/billing/requests/${enc(id)}`, { method: 'PATCH', body: { status } }),
+}
+
+/** The signed-in user's company: its profile, counts, and who may do what inside it. */
+export const company = {
+  get: () => apiFetch<S['CompanyOut']>('/api/company'),
+  update: (body: S['CompanyUpdate']) => apiFetch<S['CompanyOut']>('/api/company', { method: 'PATCH', body }),
+  /** Administrators only. A role left out keeps its current setting. */
+  setAccess: (body: S['AccessPolicy']) => apiFetch<S['CompanyOut']>('/api/company/access', { method: 'PUT', body }),
+  /** No sign-in needed: the name behind a customer sign-up link. */
+  publicProfile: (slug: string) => apiFetch<S['CompanyPublicOut']>(`/api/company/public/${enc(slug)}`),
+  /** Super administrators only: every company on the platform. */
+  all: () => apiFetch<S['CompanyList']>('/api/company/all'),
+  /** Super administrators only: a company and its first administrator. Nobody is signed in. */
+  create: (body: S['CompanyCreate']) => apiFetch<S['CompanyCreated']>('/api/company/create', { method: 'POST', body }),
+  /** The platform's administrators only: suspend or reactivate a company. */
+  setStatus: (id: string, is_active: boolean, reason?: string) =>
+    apiFetch<S['CompanyRow']>(`/api/company/${enc(id)}/status`, { method: 'PATCH', body: { is_active, reason } }),
+  /** Super administrators: record a company's plan once payment is arranged. */
+  setSubscription: (id: string, body: S['SubscriptionUpdate']) =>
+    apiFetch<S['CompanyRow']>(`/api/company/${enc(id)}/subscription`, { method: 'PUT', body }),
+}
+
+/** The super administrator's view: totals across every company, never one company's rows. */
+export const platform = {
+  overview: (days?: number) => apiFetch<S['PlatformOverview']>(`/api/platform/overview${qs({ days })}`),
 }
 
 /** The organisation the dataset defines: profile, teams, taxonomy, SLAs, templates. */

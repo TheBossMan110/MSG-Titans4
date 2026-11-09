@@ -4,6 +4,7 @@ import { use } from 'react'
 import Link from 'next/link'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
+import { can } from '@/lib/roles'
 import { complaints, review, admin } from '@/lib/api'
 import { useApi, useAction } from '@/lib/use-api'
 import { Badge, Button, Mono, humanise } from '@/components/ui/primitives'
@@ -35,7 +36,8 @@ function ReviewItem({ refId }: { refId: string }) {
   const c = useApi(() => complaints.get(refId), [refId])
   const explain = useApi(() => complaints.explain(refId), [refId])
   const oversight = Boolean(user && ['manager', 'admin', 'evaluator'].includes(user.role))
-  const isReviewer = Boolean(user && ['reviewer', 'manager', 'admin'].includes(user.role))
+  // Who may claim and decide: reviewers and managers by default, set per company.
+  const isReviewer = can(user, 'review.decide')
   const taxonomy = useApi(() => admin.taxonomy(), [], Boolean(oversight))
   const claim = useAction(() => review.claim(refId))
 

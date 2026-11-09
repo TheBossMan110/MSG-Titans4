@@ -1,0 +1,47 @@
+{
+  "currency": "PKR",
+  "trial_days": 14,
+  "annual_months_charged": 10,
+  "plans": [
+    {
+      "code": "starter",
+      "name": "Starter",
+      "tagline": "One support team moving off WhatsApp groups and spreadsheets.",
+      "monthly_price": 19900,
+      "seats": 5,
+      "ai_complaints": 1000,
+      "featured": false,
+      "support": "Email support"
+    },
+    {
+      "code": "growth",
+      "name": "Growth",
+      "tagline": "A courier or online store handling complaints across several teams.",
+      "monthly_price": 59900,
+      "seats": 15,
+      "ai_complaints": 5000,
+      "featured": true,
+      "support": "Priority support and a guided onboarding"
+    },
+    {
+      "code": "scale",
+      "name": "Scale",
+      "tagline": "High-volume operations that answer to SLAs every day.",
+      "monthly_price": 149000,
+      "seats": 50,
+      "ai_complaints": 15000,
+      "featured": false,
+      "support": "Named contact and a quarterly review"
+    },
+    {
+      "code": "enterprise",
+      "name": "Enterprise",
+      "tagline": "Banks, telecoms and national carriers with their own requirements.",
+      "monthly_price": null,
+      "seats": null,
+      "ai_complaints": null,
+      "featured": false,
+      "support": "Written service agreement, scoped with you"
+    }
+  ]
+}

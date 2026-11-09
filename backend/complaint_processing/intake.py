@@ -49,7 +49,7 @@ from complaint_processing.entities import extract_entities, load_entity_patterns
 from complaint_processing.preprocess import preprocess
 from python_validation import resolution
 from security.injection_defense import record_events, scan_complaint
-from src.core import progress
+from src.core import progress, tenancy
 from src.core.logging import get_logger
 from src.db.enums import (
     Channel,
@@ -136,22 +136,41 @@ class IntakeResult:
 # ══════════════════════════════════════════════════════════════
 # references
 # ══════════════════════════════════════════════════════════════
+def last_ref_number(db: Session, column: Any, prefix: str) -> int:
+    """
+    The highest number issued so far for ``prefix-000123`` references.
+
+    The row count alone is not enough: once rows are deleted from the middle
+    of the sequence (a dataset re-imported with ``replace``), the count falls
+    below the highest reference and count + 1 hands out a number that is
+    already taken. The larger of the count and the highest existing number
+    never collides. Counted across every organisation: the reference is unique
+    on the platform, and one organisation's count would hand two companies the
+    same number.
+    """
+    everywhere = tenancy.ALL_TENANTS
+    count = db.execute(select(func.count(column)).execution_options(**everywhere)).scalar_one()
+    highest = db.execute(
+        select(func.max(column)).where(column.like(f"{prefix}-%")).execution_options(**everywhere)
+    ).scalar_one()
+    tail = highest.rsplit("-", 1)[-1] if highest else ""
+    return max(count, int(tail) if tail.isdigit() else 0)
+
+
 def next_public_ref(db: Session) -> str:
     """
     The next customer-facing reference, ``CMP-000123``.
 
-    Derived from the row count rather than a sequence so it behaves the same
+    Derived from the stored rows rather than a sequence so it behaves the same
     on SQLite and PostgreSQL — the offline demo fallback has to produce
     references that look identical to the hosted one.
     """
-    count = db.execute(select(func.count()).select_from(Complaint)).scalar_one()
-    return f"{PUBLIC_REF_PREFIX}-{count + 1:06d}"
+    return f"{PUBLIC_REF_PREFIX}-{last_ref_number(db, Complaint.public_ref, PUBLIC_REF_PREFIX) + 1:06d}"
 
 
 def next_customer_ref(db: Session) -> str:
-    """The next customer reference, ``CUST-000042``."""
-    count = db.execute(select(func.count()).select_from(Customer)).scalar_one()
-    return f"CUST-{count + 1:06d}"
+    """The next customer reference, ``CUST-000042``, unique across organisations."""
+    return f"CUST-{last_ref_number(db, Customer.external_ref, 'CUST') + 1:06d}"
 
 
 def find_or_create_customer(
@@ -218,7 +237,7 @@ def submit(
     run_genai: bool = True,
 ) -> IntakeResult:
     """
-    Accept a complaint, record it, and analyse it.
+    Accept a complaint, record it, analyse it and hand it to a person.
 
     Raises :class:`IntakeRejected` only for an empty complaint. Every other
     finding is recorded and the complaint accepted, because a customer with a
@@ -368,6 +387,11 @@ def submit(
     # ── 7. analyse and write back ──
     try:
         analyse_complaint(db, complaint, result, run_genai=run_genai)
+        # A real complaint goes to a person. A benchmark row is scored, not worked.
+        if dataset_tag is None:
+            from src.services import assignment
+
+            assignment.assign_new_complaint(db, complaint)
     except Exception as exc:  # noqa: BLE001 - the complaint must survive this
         # The complaint is already persisted and findable. Analysis failing is
         # a reason for a human to pick it up, not a reason to lose it.
@@ -659,6 +683,8 @@ def write_deferred_notes(pending: list[PendingNote]) -> None:
             complaint = db.get(Complaint, note.complaint_id)
             if complaint is None:
                 continue
+            # Written as the complaint's organisation: the note cites its policies.
+            tenancy.bind(db, complaint.organisation_id)
             try:
                 escalation_notes.generate(
                     db, complaint,

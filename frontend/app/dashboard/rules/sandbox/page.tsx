@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 
 export default function SandboxPage() {
   return (
-    <AppShell eyebrow="Rules / Sandbox" roles={['manager', 'admin', 'evaluator']} wide>
+    <AppShell eyebrow="Rules / Sandbox" roles={['manager', 'admin', 'evaluator', 'superadmin']} wide>
       <Sandbox />
     </AppShell>
   )

@@ -53,8 +53,10 @@ def upgrade() -> None:
     )
     op.add_column("rules", sa.Column("eligibility", JSONType, nullable=True))
     # The server default exists only to backfill existing rows; the application
-    # always supplies the value explicitly.
-    op.alter_column("rules", "is_catch_all", server_default=None)
+    # always supplies the value explicitly. Batch mode, because SQLite has no
+    # ALTER COLUMN (on PostgreSQL this is the same plain ALTER).
+    with op.batch_alter_table("rules") as batch:
+        batch.alter_column("is_catch_all", server_default=None)
 
 
 def downgrade() -> None:

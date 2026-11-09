@@ -11,7 +11,7 @@ interface AuthCtx {
   /** A user, or the step token when two-step sign-in asks for a code next. */
   login: (email: string, password: string) => Promise<User | { mfaToken: string }>
   completeMfa: (mfaToken: string, code: string) => Promise<User>
-  register: (email: string, fullName: string, password: string) => Promise<User>
+  register: (email: string, fullName: string, password: string, company?: string | null) => Promise<User>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -74,10 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const register = useCallback(async (email: string, fullName: string, password: string) => {
+  const register = useCallback(async (email: string, fullName: string, password: string, company?: string | null) => {
     setError(null)
     try {
-      const res = await authApi.register(email, fullName, password)
+      const res = await authApi.register(email, fullName, password, company)
       setUser(res.user)
       return res.user
     } catch (e) {

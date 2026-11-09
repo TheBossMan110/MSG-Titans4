@@ -103,6 +103,7 @@ from src.core.config import settings
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import AppError, NotFoundError, PermissionError_, ValidationError
 from src.core.logging import get_logger
+from src.core.permissions import require_permission
 from src.core.ratelimit import limiter
 from src.core.response_cache import cached_endpoint
 from src.core.scope import can_see, complaint_in_scope, restrict
@@ -431,12 +432,17 @@ def create_complaint_stream(
     comes from the pipeline at the moment it happens, none are timed.
     """
     user_id, role = user.id, user.role  # plain values: the worker has its own session
+    organisation_id = user.organisation_id
     events: queue.Queue[tuple[str, Any] | None] = queue.Queue()
 
     def work() -> None:
+        from src.core import tenancy
         from src.db.base import SessionLocal
 
         db = SessionLocal()
+        # The worker's own session reads and writes as the submitter's organisation,
+        # so retrieval cites that organisation's policies and nobody else's.
+        tenancy.bind(db, organisation_id)
         pending: list[Any] = []
         try:
             with progress.reporting(lambda event: events.put(("step", event))), \
@@ -492,6 +498,10 @@ def _intake(
     analyse: bool,
 ) -> IntakeResponse:
     """Accept, analyse and commit one complaint; shape the answer for ``role``."""
+    from src.core import billing, tenancy
+
+    # Past a plan's limit the complaint is still taken; the rules handle it alone.
+    run_genai = billing.ai_block_reason(db, tenancy.current(db)) is None
     try:
         result: _IntakeResult = submit_complaint(
             db,
@@ -517,6 +527,7 @@ def _intake(
                 else None
             ),
             analyse=analyse,
+            run_genai=run_genai,
         )
     except IntakeRejected as exc:
         db.commit()  # keep the recorded findings
@@ -1061,7 +1072,7 @@ def _rename(row: dict) -> dict:
 @router.post(
     "/{ref}/reanalyse",
     response_model=ReanalyseResponse,
-    dependencies=[Depends(require_role(UserRole.MANAGER, UserRole.ADMIN))],
+    dependencies=[Depends(require_permission("complaints.reanalyse"))],
     summary="Re-run both pipelines for a complaint",
 )
 def reanalyse(
@@ -1275,15 +1286,17 @@ async def attach_evidence(
 )
 @limiter.limit("20/minute")
 async def complaint_from_file(
-    request: Request, response: Response, user: CurrentUser, file: UploadFile = File(...),
+    request: Request, response: Response, user: CurrentUser, db: DbSession, file: UploadFile = File(...),
 ) -> FileDraftOut:
     """
     The "uploaded complaint" channel. Nothing is filed: the draft goes back to
     the form, the customer checks it, and it is submitted with channel UPLOAD
-    through the same intake and pipelines as any other complaint.
+    through the same intake and pipelines as any other complaint. A file that
+    is not about a complaint at all (song lyrics, a recipe) is refused with the
+    reason, and the form is left as it was.
     """
     data = await file.read(settings.max_upload_bytes + 1)
-    draft = file_intake.read_complaint_file(data, file.filename or "complaint")
+    draft = file_intake.read_complaint_file(data, file.filename or "complaint", db=db)
     log.info("complaint_file_read", format=draft.file_format, chars=len(draft.description), by=user.role)
     return FileDraftOut(**draft.__dict__)
 

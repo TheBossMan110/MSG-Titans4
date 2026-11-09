@@ -5,6 +5,7 @@ import { use, useState } from 'react'
 import Link from 'next/link'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
+import { can } from '@/lib/roles'
 import { complaints, admin, type S } from '@/lib/api'
 import { useApi, useAction, fmtDate } from '@/lib/use-api'
 import { useToast } from '@/components/ui/feedback'
@@ -41,7 +42,8 @@ function Detail({ refId }: { refId: string }) {
   const q = useApi(() => complaints.get(refId), [refId])
   const explain = useApi(() => complaints.explain(refId), [refId])
   const oversight = user && ['manager', 'admin', 'evaluator'].includes(user.role)
-  const canReanalyse = user && ['manager', 'admin'].includes(user.role)
+  // Managers by default; each company's administrator decides (Company & Access).
+  const canReanalyse = can(user, 'complaints.reanalyse')
   const canAct = user && ['agent', 'reviewer', 'manager', 'admin'].includes(user.role)
   const taxonomy = useApi(() => admin.taxonomy(), [], Boolean(oversight))
   const reanalyse = useAction((genai: boolean) => complaints.reanalyse(refId, genai))

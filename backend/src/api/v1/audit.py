@@ -20,6 +20,7 @@ from sqlalchemy import func, select
 from schemas.audit import AuditActionCountOut, AuditEntryOut
 from schemas.common import Page
 from src.core.deps import DbSession, require_role
+from src.core.permissions import require_permission
 from src.db.enums import UserRole
 from src.db.models import AuditLog, User
 
@@ -31,7 +32,8 @@ router = APIRouter(prefix="/audit", tags=["Audit"])
 READERS = (UserRole.MANAGER, UserRole.ADMIN, UserRole.EVALUATOR)
 GLOBAL_READERS = (UserRole.ADMIN, UserRole.EVALUATOR)
 ENTITY_READERS = (*READERS, UserRole.REVIEWER)
-ReadAccess = Depends(require_role(*GLOBAL_READERS))
+# The whole log: GLOBAL_READERS by default, configurable per organisation.
+ReadAccess = Depends(require_permission("audit.view"))
 EntityAccess = Depends(require_role(*ENTITY_READERS))
 
 MAX_TRAIL = 500

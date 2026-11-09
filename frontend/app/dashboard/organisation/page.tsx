@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { Suspense, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   Building2, Clock, Database, FileText, Layers, Mail, MapPin, Package, ShieldAlert, Users,
@@ -14,15 +14,18 @@ import { Stat, Table, Td, Th, Tr } from '@/components/ui/data'
 import { ErrorState, Skeleton, Tabs } from '@/components/ui/feedback'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
+import { useTabParam } from '@/lib/use-query-state'
 import { AddDepartment } from '@/components/app/user-admin'
 
 const STAFF = ['agent', 'reviewer', 'manager', 'admin', 'evaluator'] as const
-type Tab = 'teams' | 'taxonomy' | 'sla' | 'templates' | 'datasets'
+const TABS = ['teams', 'taxonomy', 'sla', 'templates', 'datasets'] as const
 
 export default function OrganisationPage() {
   return (
     <AppShell eyebrow="Organisation" roles={[...STAFF]} wide>
-      <Organisation />
+      <Suspense fallback={<Skeleton className="h-64" />}>
+        <Organisation />
+      </Suspense>
     </AppShell>
   )
 }
@@ -31,7 +34,8 @@ function Organisation() {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
   const q = useApi(() => organisation.get())
-  const [tab, setTab] = useState<Tab>('teams')
+  // In the URL, not in state: the sidebar's Departments and Categories both open this page.
+  const [tab, setTab] = useTabParam(TABS, 'teams')
 
   if (q.error) return <ErrorState title="The organisation could not be loaded" message={q.error} onRetry={q.refresh} />
   const o = q.data

@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 
 export default function TrendsPage() {
   return (
-    <AppShell eyebrow="Analytics / Trends" roles={['manager', 'admin', 'evaluator']} wide>
+    <AppShell eyebrow="Analytics / Trends" permission="analytics.view" wide>
       <Trends />
     </AppShell>
   )

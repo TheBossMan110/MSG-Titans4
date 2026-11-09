@@ -8,14 +8,14 @@ import { useApi, useAction } from '@/lib/use-api'
 import { Badge, Button, Mono } from '@/components/ui/primitives'
 import { Card } from '@/components/ui/surfaces'
 import { Field, Select, Checkbox } from '@/components/ui/forms'
-import { ErrorState } from '@/components/ui/feedback'
+import { ErrorState, useToast } from '@/components/ui/feedback'
 import { cn } from '@/lib/utils'
 
 const ACCEPT = '.pdf,.docx'
 
 export default function UploadPage() {
   return (
-    <AppShell eyebrow="Knowledge base / Upload" roles={['admin']}>
+    <AppShell eyebrow="Knowledge base / Upload" permission="documents.manage">
       <Upload />
     </AppShell>
   )
@@ -28,8 +28,23 @@ function Upload() {
   const [over, setOver] = useState(false)
   const [result, setResult] = useState<S['UploadResponse'] | null>(null)
   const input = useRef<HTMLInputElement>(null)
+  const toast = useToast()
   const taxonomy = useApi(() => admin.taxonomy())
   const up = useAction((fs: File[]) => knowledge.upload(fs, { department_code: dept || undefined, activate }))
+  const ingest = async () => {
+    const r = await up.run(files)
+    if (!r) return
+    setResult(r)
+    setFiles([])
+    // A refused file is said out loud, not only shown in red further down the page.
+    const refused = r.results.filter((x) => !x.accepted)
+    if (refused.length) {
+      const offTopic = refused.some((x) => (x.issues ?? []).some((i) => i.code === 'OFF_TOPIC_CONTENT'))
+      toast('err', offTopic
+        ? `${refused[0].file_name} is not acceptable: it is not a customer-service policy. ${refused.length > 1 ? `${refused.length} files were refused.` : ''}`
+        : `${refused.length} file${refused.length > 1 ? 's were' : ' was'} refused. See the reasons below.`)
+    }
+  }
 
   const add = (list: FileList | null) => {
     if (!list) return
@@ -66,7 +81,7 @@ function Upload() {
       </div>
 
       {up.error && <ErrorState title="Upload failed" message={up.error} />}
-      <div><Button size="lg" loading={up.pending} disabled={!files.length} onClick={async () => { const r = await up.run(files); if (r) { setResult(r); setFiles([]) } }}>Upload {files.length ? `${files.length} file${files.length > 1 ? 's' : ''}` : ''}</Button></div>
+      <div><Button size="lg" loading={up.pending} disabled={!files.length} onClick={ingest}>Upload {files.length ? `${files.length} file${files.length > 1 ? 's' : ''}` : ''}</Button></div>
 
       {result && (
         <Card>

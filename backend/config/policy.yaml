@@ -131,3 +131,26 @@ response_guard:
   # permitted action was derived by Pipeline 2.
   strict_types: [REFUND, COMPENSATION, TIMELINE, EXCEPTION]
   require_citation_for_policy_claims: true
+
+# ── 7. Content relevance (document_processing/relevance.py) ──────────────
+# A valid PDF or DOCX about something else -- a song and a picture, a recipe,
+# a CV -- is refused: as a policy it would become text the model may cite, as
+# a complaint letter it would fill the form with nonsense. "Density" is
+# complaint-handling terms per 100 words (the Pipeline 2 lexicon, business
+# nouns and, for policies, policy wording). Measured on the corpus: policies
+# >= 9.3; complaints naming no business noun >= 10 with 4 different terms;
+# off-topic samples < 5 with at most 3. Tests hold these values to "no corpus
+# file refused, every off-topic sample refused".
+content_relevance:
+  enabled: true
+  policy_min_density: 6.0
+  policy_min_distinct: 6
+  complaint_min_density_without_anchor: 4.5
+  complaint_min_distinct_without_anchor: 4
+  song_max_density: 10.0
+  song_repeat_share: 0.25
+  song_min_lines: 8
+  # A CV is caught by its shape, not its words (a support agent's CV is full
+  # of "complaints" and "refunds"): Education, Experience, Skills... headings.
+  cv_min_sections: 4
+  cv_min_sections_with_marker: 2

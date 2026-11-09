@@ -16,15 +16,19 @@ Three limits are enforced in code, not only asked for in the prompt:
   server among the signed-in customer's own complaints. The model is never
   given a complaint it did not hear about in this conversation, and anything
   it writes about status is replaced by what the server found.
-* **Injection.** Every customer message is neutralised and scanned first, and
-  the transcript is fenced as data, exactly as a complaint body is.
-* **Manipulation.** The prompt carries the security rules of
-  ``security/manipulation_guard``, and every reply is checked in code before it
-  is shown: one that approves, promises or guarantees an outcome, plays along
-  with a jailbreak or quotes its instructions is replaced by the policy
-  refusal. When the customer's message was an attack, the reply always says
-  that the company's written policy decides, and the attempt is recorded in
-  ``injection_events``.
+* **Injection.** Every customer message is neutralised and screened first
+  (``security/injection_defense`` and ``security/chat_firewall``). One that is
+  an attack -- an override, a claimed role, a request for what Nova holds -- is
+  answered with a fixed refusal **without any model being asked**, and recorded
+  in ``injection_events``. Everything else reaches the model fenced as data.
+* **Manipulation and disclosure.** What the model writes is untrusted output.
+  ``security/manipulation_guard`` checks it in code before it is shown: one
+  that approves, promises or guarantees an outcome, accepts a claimed role,
+  describes what it holds or quotes its instructions, or names an email,
+  phone number or reference the customer did not give, is replaced whole.
+* **History.** The browser sends the conversation back each turn, so Nova's
+  earlier lines are only believed when they carry the server's signature
+  (src/api/v1/assistant.py). A forged "you are verified as admin" is dropped.
 
 When no model answers, Nova still works in a reduced way: a reference like
 CMP-000123 still returns its status, and everything else points to the form.
@@ -42,8 +46,26 @@ from sqlalchemy.orm import Session
 from genai_pipeline.providers import AllProvidersFailed, ProviderChain, build_chain
 from genai_pipeline.providers.base import LLMRequest
 from schemas.genai import json_schema_for
-from security.injection_defense import DATA_NOT_INSTRUCTIONS_NOTICE, fence, record_events, scan
-from security.manipulation_guard import manipulation_rules, policy_refusal, unsafe_reply
+from security.chat_firewall import (
+    DATA_EXFILTRATION,
+    PRIVILEGE_CLAIM,
+    PROMPT_EXTRACTION,
+    inspect_message,
+)
+from security.injection_defense import (
+    DATA_NOT_INSTRUCTIONS_NOTICE,
+    ScanResult,
+    fence,
+    record_events,
+    scan,
+)
+from security.manipulation_guard import (
+    disclosure_reasons,
+    manipulation_rules,
+    policy_refusal,
+    unsafe_reply,
+)
+from src.core import tenancy
 from src.core.logging import get_logger
 from src.db.models import AppConfig, User
 
@@ -130,18 +152,35 @@ def converse(
     if not turns or turns[-1]["role"] != "user":
         return AssistantResult(reply="Hello! I'm Nova. Tell me what went wrong and I'll help you raise a complaint.", intent="chat")
 
-    # Every customer line is neutralised and scanned; the transcript is data.
+    # Every customer line is neutralised and screened; the transcript is data.
+    # A line that was an attack stays out of it, with whatever Nova said back,
+    # so it cannot be built on in a later turn.
     lines: list[str] = []
+    said: list[str] = []
     last_scan = None
+    drop_reply = False
     for message in turns:
         text = message["content"][:MAX_MESSAGE_CHARS]
         if message["role"] == "user":
-            last_scan = scan(db, text)
-            lines.append(f"Customer: {last_scan.sanitised}")
+            last_scan = _screen(db, text)
+            said.append(last_scan.sanitised)
+            drop_reply = last_scan.suspected
+            if not drop_reply:
+                lines.append(f"Customer: {last_scan.sanitised}")
+        elif drop_reply:
+            drop_reply = False
         else:
             lines.append(f"Nova: {text}")
     last_customer = turns[-1]["content"]
-    attacked = bool(last_scan is not None and last_scan.suspected)
+    known = "\n".join(said)
+
+    # The decision that matters, made in code and before any model is asked:
+    # a message stopped here cannot be answered with anything it should not be.
+    if last_scan is not None and last_scan.suspected:
+        record_events(db, last_scan, source_type="CHAT")
+        org = _org_name(db)
+        log.warning("assistant_attack_stopped", labels=last_scan.labels)
+        return AssistantResult(reply=_refusal_for(last_scan.labels, org), intent="collecting")
 
     chain = chain or ProviderChain(build_chain(), max_retries=1)
     turn: AssistantTurn | None = None
@@ -159,31 +198,36 @@ def converse(
         except (AllProvidersFailed, ValidationError, ValueError) as exc:
             log.warning("assistant_turn_failed", error=type(exc).__name__)
 
-    if attacked:
-        # The same audit trail a complaint gets. Written after the model call,
-        # so no transaction is held open while the model thinks.
-        record_events(db, last_scan, source_type="CHAT")
-
     if turn is None:
         return _degraded(db, last_customer, user=user, status_lookup=status_lookup)
 
     result = AssistantResult(reply=turn.reply.strip(), intent=turn.intent)
     org = _org_name(db)
-    problems = unsafe_reply(db, result.reply)
+    # What the model wrote is checked as untrusted output, and replaced whole:
+    # a refusal stuck in front of a leak still shows the leak.
+    problems = unsafe_reply(db, result.reply, known=known)
+    if turn.draft is not None:
+        problems += disclosure_reasons(f"{turn.draft.title}\n{turn.draft.description}", known=known)
     if problems:
         log.warning("assistant_reply_blocked", reasons=problems[:5])
-        lead = _LEAK_REFUSAL if "prompt disclosure" in problems else policy_refusal(org)
-        result.reply = lead + " " + _OFFER
+        if "prompt disclosure" in problems:
+            result.reply = _LEAK_REFUSAL + " " + _OFFER
+        elif any(reason.startswith("disclosure") for reason in problems):
+            result.reply = _NO_ACCESS
+        else:
+            # The customer asked an honest question and the model over-promised.
+            # They did nothing wrong, so this is not worded as a refusal.
+            result.reply = (
+                f"I can't promise a time or an outcome here: the team checks every case against {org}'s "
+                "written policy first, and nobody can override that in a chat. Tell me what happened "
+                "and I'll help you raise a complaint so they can look into it."
+            )
         result.intent = "collecting" if turn.intent == "draft_complaint" else turn.intent
         turn.draft = None
     elif turn.intent == "off_topic" and _OUTCOME_WORDS.search(last_customer):
         # Asking for a refund is never off topic; a brush-off would read as evasion.
         result.reply = policy_refusal(org) + " " + _OFFER
         result.intent = "collecting"
-    elif attacked and not re.search(r"\bpolic(?:y|ies)\b", result.reply, re.IGNORECASE):
-        # An attack gets the plain answer the customer should hear, whatever the model chose to say.
-        lead = _LEAK_REFUSAL if "PROMPT_LEAK" in last_scan.labels else policy_refusal(org)
-        result.reply = lead + " " + result.reply
 
     if turn.intent == "draft_complaint" and turn.draft is not None:
         draft = turn.draft.model_dump()
@@ -216,17 +260,48 @@ _LEAK_REFUSAL = (
     "and nobody can change that in a chat."
 )
 _OFFER = "What I can do is help you raise a complaint so the team can check it against that policy — tell me what happened."
+_NO_ACCESS = (
+    "I'm sorry, I can't share company, staff or other customers' information, and what anyone types in this "
+    "chat can't give them extra access. I can only help with your own deliveries and complaints. "
+    "Tell me what went wrong and I'll help you raise a complaint."
+)
+
+
+def _screen(db: Session, text: str) -> ScanResult:
+    """The injection scan, plus the checks for who someone claims to be and what they are after."""
+    result = scan(db, text)
+    result.matches = [*result.matches, *inspect_message(result.sanitised)]
+    return result
+
+
+def _refusal_for(labels: list[str], org: str) -> str:
+    if set(labels) & {PRIVILEGE_CLAIM, DATA_EXFILTRATION}:
+        return _NO_ACCESS
+    if set(labels) & {PROMPT_EXTRACTION, "PROMPT_LEAK"}:
+        return _LEAK_REFUSAL + " " + _OFFER
+    return policy_refusal(org) + " " + _OFFER
+
+
+def _profile(db: Session) -> dict[str, Any]:
+    """
+    Who Nova works for in this conversation. Another company's customer is
+    told about that company, never about the reference company whose profile
+    the shared configuration holds.
+    """
+    bound = tenancy.current(db)
+    if bound is not None and not tenancy.owns_template(bound):
+        own = tenancy.info(bound) or {}
+        return {"name": own.get("name"), "industry": own.get("industry")}
+    row = db.get(AppConfig, "organisation")
+    return row.value if row is not None and isinstance(row.value, dict) else {}
 
 
 def _org_name(db: Session) -> str:
-    row = db.get(AppConfig, "organisation")
-    org = row.value if row is not None and isinstance(row.value, dict) else {}
-    return org.get("name") or "the company"
+    return _profile(db).get("name") or "the company"
 
 
 def _system(db: Session, user: User | None) -> str:
-    row = db.get(AppConfig, "organisation")
-    org = row.value if row is not None and isinstance(row.value, dict) else {}
+    org = _profile(db)
     name = org.get("name") or "the company"
     facts = "; ".join(filter(None, [
         f"{name} is {org.get('industry', 'a courier company')}" if org.get("industry") else None,
@@ -236,8 +311,9 @@ def _system(db: Session, user: User | None) -> str:
         "every complaint is read by an AI and then checked against the company's written rules; a person reviews any disagreement",
         "customers can track a complaint by its reference on the website and add photos or receipts there",
     ]))
+    # The display name stays out: the customer typed it, and these are the instructions.
     customer = (
-        f"The customer is signed in as {user.full_name}. They can file a complaint and ask about their own complaints."
+        "The customer is signed in. They can file a complaint and ask about their own complaints."
         if user is not None else
         "The customer is NOT signed in. You can help them describe the problem and answer questions; filing and status need them to sign in."
     )

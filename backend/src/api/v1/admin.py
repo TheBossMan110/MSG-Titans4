@@ -47,6 +47,7 @@ from security import deliberate_defect
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import NotFoundError, ValidationError
 from src.core.logging import get_logger
+from src.core.permissions import require_platform_admin
 from src.core.response_cache import cached_endpoint
 from src.db.enums import UserRole
 from src.services import admin_config
@@ -59,18 +60,20 @@ router = APIRouter(prefix="/admin", tags=["Administration"])
 
 # Reading the configuration is how an evaluator verifies the system is
 # configuration-driven rather than hard-coded, so they can see all of it.
-READERS = (UserRole.ADMIN, UserRole.MANAGER, UserRole.EVALUATOR)
+READERS = (UserRole.ADMIN, UserRole.MANAGER, UserRole.EVALUATOR, UserRole.SUPERADMIN)
 WRITERS = (UserRole.ADMIN,)
 
 ReadAccess = Depends(require_role(*READERS))
-WriteAccess = Depends(require_role(*WRITERS))
+# The configuration is one shared template every organisation runs on, so
+# only the platform organisation's administrators change it.
+WriteAccess = Depends(require_platform_admin)
 # The reference every member of staff works from -- the rule matrix, the
 # taxonomy and the SLA targets -- is readable by agents and reviewers too;
 # only an administrator changes it (FR ii).
 StaffReadAccess = Depends(require_role(*READERS, UserRole.REVIEWER, UserRole.AGENT))
 # Platform configuration -- runtime settings, prompts, deliberate defects -- is
 # the administrator's; evaluators read it to verify the system is config-driven.
-PlatformAccess = Depends(require_role(UserRole.ADMIN, UserRole.EVALUATOR))
+PlatformAccess = Depends(require_role(UserRole.ADMIN, UserRole.EVALUATOR, UserRole.SUPERADMIN))
 
 
 def _refuse(exc: ConfigRefused) -> ValidationError:
@@ -173,7 +176,7 @@ def get_taxonomy(db: DbSession) -> TaxonomyOut:
 @cached_endpoint(ttl=300)
 def list_rules(
     db: DbSession,
-    rule_type: str | None = None,
+    rule_type: str | None = Query(None, description="One rule type, or several separated by commas."),
     active: bool | None = None,
     mandatory: bool | None = Query(None, description="Mandatory escalation rules only."),
     search: str | None = Query(None, max_length=200),

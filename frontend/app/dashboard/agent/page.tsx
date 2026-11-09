@@ -51,16 +51,16 @@ function AgentDashboard() {
   const counts = {
     all: items.length,
     assigned: items.filter((i) => i.assigned_to_me).length,
-    new: items.filter((i) => i.status === 'NEW').length,
-    in_progress: items.filter((i) => i.status !== 'NEW' && i.status !== 'RESOLVED' && i.status !== 'CLOSED').length,
+    new: items.filter((i) => i.is_new).length,
+    in_progress: items.filter((i) => !i.is_new && i.status !== 'RESOLVED' && i.status !== 'CLOSED').length,
     sla_risk: items.filter((i) => i.escalation_warnings.some((w) => w.toLowerCase().includes('risk') || w.toLowerCase().includes('breach'))).length,
     escalated: items.filter((i) => i.escalation_warnings.some((w) => w.toLowerCase().includes('escalat')) || i.priority === 'P0').length,
   }
 
   const filteredItems = items.filter((i) => {
     if (tab === 'assigned' && !i.assigned_to_me) return false
-    if (tab === 'new' && i.status !== 'NEW') return false
-    if (tab === 'in_progress' && (i.status === 'NEW' || i.status === 'RESOLVED' || i.status === 'CLOSED')) return false
+    if (tab === 'new' && !i.is_new) return false
+    if (tab === 'in_progress' && (i.is_new || i.status === 'RESOLVED' || i.status === 'CLOSED')) return false
     if (tab === 'sla_risk' && !i.escalation_warnings.some((w) => w.toLowerCase().includes('risk') || w.toLowerCase().includes('breach'))) return false
     if (tab === 'escalated' && !i.escalation_warnings.some((w) => w.toLowerCase().includes('escalat')) && i.priority !== 'P0') return false
 
@@ -90,7 +90,7 @@ function AgentDashboard() {
             <p className="eyebrow mb-3 text-sand-2">Agent dashboard{q.data?.team ? ` · ${q.data.team}` : ''}</p>
             <h1 className="display text-h1 text-ink-on-dark">{user.full_name}</h1>
             <p className="mt-3 max-w-[56ch] text-[15.5px] text-ink-on-dark/80">
-              {oversight ? 'Exactly what an agent sees: their complaints, what the AI recommends, what the rules decided, and a reply ready to check.' : 'Your complaints and your team’s unassigned ones, most urgent first — with what the AI recommends and a reply ready to check.'}
+              {oversight ? 'Exactly what an agent sees: their complaints, what the AI recommends, what the rules decided, and a reply ready to check.' : 'Your complaints and your team’s unassigned ones, newest first and then the most urgent — with what the AI recommends and a reply ready to check.'}
             </p>
           </div>
           {oversight && <Button href={HOME[viewOf(user.role)]} variant="onDark" icon={<LayoutDashboard size={15} aria-hidden />}>{VIEW_LABEL[viewOf(user.role)]} dashboard</Button>}
@@ -191,7 +191,7 @@ function AgentDashboard() {
                         className={cn('cursor-pointer [&>td]:border-t [&>td]:border-line-soft [&>td]:px-3 [&>td]:py-2.5 hover:bg-white/70', current?.public_ref === i.public_ref && 'bg-white')}
                       >
                         <td className="max-w-[280px]">
-                          <span className="block font-mono text-[12px] text-taupe-2">{i.public_ref}{i.assigned_to_me && ' · yours'}</span>
+                          <span className="flex items-center gap-1.5 font-mono text-[12px] text-taupe-2">{i.public_ref}{i.assigned_to_me && ' · yours'}{i.is_new && <Badge tone="info">New</Badge>}</span>
                           <span className="block truncate font-medium text-espresso">{i.title}</span>
                         </td>
                         <td>

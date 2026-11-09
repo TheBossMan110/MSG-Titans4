@@ -36,8 +36,10 @@ from schemas.people import (
     SignInOut,
     StatusStep,
 )
+from src.core import billing, tenancy
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import ConflictError, NotFoundError, ValidationError
+from src.core.permissions import require_permission
 from src.core.response_cache import cached_endpoint
 from src.core.security import hash_password
 from src.db.enums import UserRole
@@ -52,8 +54,11 @@ router = APIRouter(prefix="/people", tags=["People"])
 # Managers see the people register to monitor their teams; only an
 # administrator creates accounts, assigns roles or disables them (FR ii).
 AdminOnly = Depends(require_role(UserRole.ADMIN))
-CanCreatePerson = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER))
-ROLES = {role.value for role in UserRole}
+# Administrators, and whoever their organisation allows (managers by default).
+CanCreatePerson = Depends(require_permission("users.manage"))
+# Roles a company can give its people. A super administrator belongs to the
+# platform, never to a company, and is not created from this register.
+ROLES = {role.value for role in UserRole} - {UserRole.SUPERADMIN.value}
 live_router = APIRouter(prefix="/live", tags=["People"], dependencies=[Depends(require_role(*STAFF))])
 # Who a complaint can be assigned to: names, roles and teams only, for every
 # member of staff (a reviewer reassigns without reading the people register).
@@ -211,7 +216,21 @@ def people_summary(db: DbSession) -> PeopleSummary:
 
 @router.get("/{identifier}", response_model=PersonDetail, dependencies=[Depends(require_role(*STAFF))], summary="One account: details, complaints with history, sign-ins, emails")
 @cached_endpoint(ttl=30)
-def person(identifier: str, db: DbSession) -> PersonDetail:
+def person(identifier: str, db: DbSession, user: CurrentUser) -> PersonDetail:
+    """
+    An agent or reviewer opens a customer to work their complaint. Colleagues'
+    accounts, and anyone's sign-in history and IP addresses, are for the people
+    who oversee staff; to everyone else such an account does not exist.
+    """
+    detail = _person_detail(identifier, db)
+    if user.role in OVERSIGHT or detail.person.id == user.id:
+        return detail
+    if detail.person.role != UserRole.CUSTOMER:
+        raise NotFoundError(f"No account or customer found for '{identifier}'.")
+    return detail.model_copy(update={"activity": []})
+
+
+def _person_detail(identifier: str, db: DbSession) -> PersonDetail:
     # 1. Try finding by Customer.external_ref (e.g. CUST-00184)
     customer = db.execute(
         select(Customer).where(func.upper(Customer.external_ref) == identifier.strip().upper())
@@ -382,6 +401,10 @@ def pulse(db: DbSession) -> Pulse:
         latest_email_at=latest_email[1] if latest_email else None,
         # The history table only grows, so its newest id changes whenever any status moves.
         status_changes=db.execute(select(func.coalesce(func.max(ComplaintStatusHistory.id), 0))).scalar_one(),
+        # Work on a complaint that does not change its status: taking it, a review decision.
+        work_changes=db.execute(
+            select(func.coalesce(func.max(AuditLog.id), 0)).where(AuditLog.entity_type == "complaint")
+        ).scalar_one(),
         checked_at=datetime.now(UTC),
     )
 
@@ -402,16 +425,20 @@ def _department_id(db: DbSession, code: str | None):
              dependencies=[CanCreatePerson], summary="Create an account with a role")
 def create_person(payload: PersonCreate, request: Request, db: DbSession, user: CurrentUser) -> PersonRow:
     """Staff accounts are provisioned here; self-registration always creates a customer.
-    Administrators can provision any role; managers can provision agents for their assigned department."""
+    Administrators can provision any role; anyone else with ``users.manage``
+    (managers by default) provisions agents for their own department. The
+    account joins the creator's organisation (src/core/tenancy.py stamps it)."""
     from src.services.audit import record_audit
 
     role = payload.role.strip().lower()
     if role not in ROLES:
         raise ValidationError(f"Role must be one of {', '.join(sorted(ROLES))}.")
+    if role == UserRole.EVALUATOR and not tenancy.owns_template(user.organisation_id):
+        raise ValidationError("Evaluator accounts belong to the platform, not to a company.")
 
-    if user.role == UserRole.MANAGER:
+    if user.role != UserRole.ADMIN:
         if role != UserRole.AGENT:
-            raise ValidationError("Managers are only permitted to create Agent accounts.")
+            raise ValidationError(f"A {user.role} may only create Agent accounts.")
         if not user.department_id:
             raise ValidationError("Your account is not assigned to a department.")
         dept_id = user.department_id
@@ -421,6 +448,8 @@ def create_person(payload: PersonCreate, request: Request, db: DbSession, user: 
     email = payload.email.strip().lower()
     if db.execute(select(User.id).where(func.lower(User.email) == email)).first():
         raise ConflictError("An account with this email already exists.")
+    if role in billing.STAFF_ROLES:
+        billing.require_seat(db, user.organisation_id)
     person = User(
         email=email, full_name=payload.full_name.strip(), role=role,
         password_hash=hash_password(payload.password),
@@ -454,12 +483,21 @@ def update_person(user_id: uuid.UUID, payload: PersonUpdate, request: Request, d
               "is_active": person.is_active, "full_name": person.full_name}
     changes: dict = {}
 
+    # Turning a customer or a disabled account into working staff takes a seat.
+    final_role = (payload.role or person.role).strip().lower()
+    final_active = person.is_active if payload.is_active is None else payload.is_active
+    holds_seat = person.is_active and person.role in billing.STAFF_ROLES
+    if final_active and final_role in billing.STAFF_ROLES and not holds_seat:
+        billing.require_seat(db, user.organisation_id)
+
     if payload.role is not None:
         role = payload.role.strip().lower()
         if role not in ROLES:
             raise ValidationError(f"Role must be one of {', '.join(sorted(ROLES))}.")
         if person.id == user.id and role != person.role:
             raise ValidationError("You cannot change your own role.")
+        if role == UserRole.EVALUATOR and not tenancy.owns_template(user.organisation_id):
+            raise ValidationError("Evaluator accounts belong to the platform, not to a company.")
         if role != person.role:
             person.role = role
             changes["role"] = role

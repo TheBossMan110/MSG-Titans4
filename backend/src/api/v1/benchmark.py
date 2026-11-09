@@ -30,6 +30,7 @@ from schemas.benchmark import (
 from src.core.deps import DbSession, require_role
 from src.core.errors import NotFoundError, ValidationError
 from src.core.logging import get_logger
+from src.core.permissions import require_permission
 from src.db.enums import UserRole
 from src.services import benchmark, dataset
 
@@ -73,7 +74,7 @@ def describe_dataset(dataset_tag: str, db: DbSession) -> DatasetOut:
     "/datasets/{dataset_tag}/import",
     response_model=ImportResultOut,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_role(*OPERATORS))],
+    dependencies=[Depends(require_permission("benchmark.run"))],
     summary="Import a labelled or unlabelled complaint file",
 )
 async def import_dataset(
@@ -137,7 +138,7 @@ def delete_dataset(dataset_tag: str, db: DbSession) -> dict[str, int | str]:
     "/run",
     response_model=BenchmarkRunOut,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_role(*OPERATORS))],
+    dependencies=[Depends(require_permission("benchmark.run"))],
     summary="Score a dataset against its ground-truth labels",
 )
 def run_benchmark(

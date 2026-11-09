@@ -144,6 +144,13 @@ def get_current_user(
     if user is None or not user.is_active:
         raise AuthError("Account not found or deactivated.")
 
+    from src.core import tenancy
+
+    if tenancy.is_suspended(user.organisation_id):
+        raise AuthError("Your organisation's account has been suspended.", code="ORGANISATION_SUSPENDED")
+    # From here on this request reads and writes only its own organisation's rows.
+    tenancy.bind(db, user.organisation_id)
+
     request.state.user = user
     request.state.session_id = sid
     return user

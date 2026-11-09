@@ -35,7 +35,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base, Code, Name, TimestampMixin, UUIDPrimaryKey
+from src.db.base import Base, Code, Name, TenantScoped, TimestampMixin, UUIDPrimaryKey
 from src.db.constraints import enum_check
 from src.db.enums import GenAIPipeline, GenAIRunStatus, Urgency
 
@@ -99,7 +99,7 @@ class LLMCache(TimestampMixin, Base):
     hit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
 
-class GenAIRun(UUIDPrimaryKey, TimestampMixin, Base):
+class GenAIRun(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     One attempt at one GenAI call.  Retries create additional rows (not
     overwrites) so the retry evidence deliverable is satisfied by simply
@@ -149,7 +149,7 @@ class GenAIRun(UUIDPrimaryKey, TimestampMixin, Base):
         return f"<GenAIRun {self.pipeline} {self.status} attempt={self.attempt}>"
 
 
-class ValidationRun(UUIDPrimaryKey, TimestampMixin, Base):
+class ValidationRun(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     The output of Pipeline 2.
 
@@ -216,7 +216,7 @@ class ValidationRun(UUIDPrimaryKey, TimestampMixin, Base):
     )
 
 
-class RuleHit(UUIDPrimaryKey, TimestampMixin, Base):
+class RuleHit(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     Which rules fired, and exactly which text spans triggered them.
 

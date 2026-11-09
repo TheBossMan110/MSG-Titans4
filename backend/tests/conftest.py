@@ -110,6 +110,15 @@ def _fresh_response_cache() -> Generator[None, None, None]:
     yield
 
 
+@pytest.fixture(autouse=True)
+def _fresh_rate_limits() -> Generator[None, None, None]:
+    """A limit is per minute in production; one test's requests must not spend the next test's allowance."""
+    from src.core.ratelimit import limiter
+
+    limiter.reset()
+    yield
+
+
 @pytest.fixture
 def db() -> Generator[Session, None, None]:
     session = SessionLocal()
@@ -143,6 +152,7 @@ def auth_headers(client: TestClient, seed_password: str):
     emails = {
         "evaluator": "evaluator@raftarxpress.com",
         "admin": "admin@raftarxpress.com",
+        "superadmin": "superadmin@supportnova.com",
         "manager": "manager@raftarxpress.com",
         "reviewer": "reviewer@raftarxpress.com",
         "agent": "agent.billing@raftarxpress.com",

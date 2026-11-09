@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState, type ReactNode } from 'react'
 import {
   AlertTriangle, ArrowRight, BarChart3, Briefcase, CheckCircle2, Clock, ExternalLink,
-  FileText, LayoutDashboard, ShieldAlert, ShieldCheck, Siren, TrendingUp,
+  FileText, Inbox, LayoutDashboard, ShieldAlert, ShieldCheck, Siren, TrendingUp,
   UserCheck, UserRound, Users, XCircle,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
@@ -15,7 +15,7 @@ import { Badge, Button, Mono, escalationTone, humanise, priorityTone } from '@/c
 import { Select } from '@/components/ui/forms'
 import { Stat, Table, Td, Th, Tr } from '@/components/ui/data'
 import { Empty, ErrorState, SkeletonRows } from '@/components/ui/feedback'
-import { DashSection } from '@/components/app/dashboard-bits'
+import { DashSection, LatestComplaints } from '@/components/app/dashboard-bits'
 import { AddUser } from '@/components/app/user-admin'
 import { useRouter } from 'next/navigation'
 
@@ -114,28 +114,26 @@ function ManagerDashboard() {
           {/* ── 1. TODAY Operational Metrics ── */}
           <DashSection id="overview" title="Today's Operational Metrics" icon={<Clock size={15} aria-hidden />}>
             <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4 xl:grid-cols-8">
-              <Stat label="Total Complaints" value={d?.today.total ?? 248} size="lg" />
+              <Stat label="Total Complaints" value={d?.today.total} size="lg" />
               <Stat label="New Today" value={d?.today.new_today} />
-              <Stat label="Open" value={d?.today.open ?? 91} />
-              <Stat label="In Progress" value={d?.today.in_progress ?? 63} />
-              <Stat label="Escalated" value={d?.today.escalated ?? 18} tone={d?.today.escalated ? 'warning' : 'neutral'} />
-              <Stat label="SLA At Risk" value={d?.today.sla_at_risk ?? 7} tone={d?.today.sla_at_risk ? 'warning' : 'neutral'} />
-              <Stat label="Critical (P0)" value={d?.today.critical ?? 4} tone={d?.today.critical ? 'critical' : 'neutral'} />
-              <Stat label="Manual Review" value={d?.today.manual_review ?? 12} tone="rule" />
+              <Stat label="Open" value={d?.today.open} />
+              <Stat label="In Progress" value={d?.today.in_progress} />
+              <Stat label="Escalated" value={d?.today.escalated} tone={d?.today.escalated ? 'warning' : 'neutral'} />
+              <Stat label="SLA At Risk" value={d?.today.sla_at_risk} tone={d?.today.sla_at_risk ? 'warning' : 'neutral'} />
+              <Stat label="Critical (P0)" value={d?.today.critical} tone={d?.today.critical ? 'critical' : 'neutral'} />
+              <Stat label="Manual Review" value={d?.today.manual_review} tone="rule" />
             </div>
+          </DashSection>
+
+          <DashSection id="latest" title="Latest Complaints" icon={<Inbox size={15} aria-hidden />}>
+            <LatestComplaints rows={d?.latest} />
           </DashSection>
 
           {/* ── 2. Department Performance (SRS High-Level Resolution Bars) ── */}
           <DashSection id="teams" title="Department Performance" icon={<Users size={15} aria-hidden />}>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 mb-5">
-              {(d?.teams && d.teams.length > 0 ? d.teams : [
-                { code: 'BILLING', name: 'Billing', resolved_pct: 92, open: 14, total: 175 },
-                { code: 'LOGISTICS', name: 'Logistics', resolved_pct: 87, open: 26, total: 200 },
-                { code: 'WARRANTY', name: 'Warranty', resolved_pct: 94, open: 9, total: 150 },
-                { code: 'TECHNICAL', name: 'Technical', resolved_pct: 81, open: 32, total: 168 },
-                { code: 'RETURNS', name: 'Returns', resolved_pct: 90, open: 10, total: 100 },
-              ]).map((dept: any) => {
-                const pctVal = dept.resolved_pct ?? 90
+              {(d?.teams ?? []).map((dept) => {
+                const pctVal = dept.resolved_pct
                 return (
                   <div
                     key={dept.code}

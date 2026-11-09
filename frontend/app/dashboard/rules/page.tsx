@@ -1,13 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ShieldCheck } from 'lucide-react'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
+import { canEditTemplate } from '@/lib/roles'
 import { admin, type S } from '@/lib/api'
 import { useApi, useAction } from '@/lib/use-api'
+import { useQueryState, useTabParam } from '@/lib/use-query-state'
 import { Badge, Button, Mono, humanise, escalationTone, priorityTone, urgencyTone } from '@/components/ui/primitives'
 import { Card } from '@/components/ui/surfaces'
 import { Select, SearchBox, Checkbox } from '@/components/ui/forms'
@@ -18,11 +20,20 @@ import { cn } from '@/lib/utils'
 const OVERSIGHT = ['manager', 'admin', 'evaluator'] as const
 // 619 rules on one page is ~9,000 elements: slow to draw and slow to leave.
 const ROWS = 50
+// Routing has no rule type of its own: each classification rule names the
+// department it routes to, and ROUTING holds only the catch-all fallback.
+const ROUTING_VIEW = 'CLASSIFICATION,ROUTING'
+const TYPES: Array<[string, string]> = [
+  ['CLASSIFICATION', 'Classification'], [ROUTING_VIEW, 'Routing (classification + fallback)'], ['ROUTING', 'Routing fallback only'],
+  ['ESCALATION', 'Escalation'], ['ELIGIBILITY', 'Eligibility'], ['RESOLUTION', 'Resolution'], ['PRIORITY', 'Priority'],
+]
 
 export default function RulesPage() {
   return (
-    <AppShell eyebrow="Rules" roles={['agent', 'reviewer', 'manager', 'admin', 'evaluator']} wide>
-      <Matrix />
+    <AppShell eyebrow="Rules" roles={['agent', 'reviewer', 'manager', 'admin', 'evaluator', 'superadmin']} wide>
+      <Suspense fallback={<SkeletonRows rows={10} />}>
+        <Matrix />
+      </Suspense>
     </AppShell>
   )
 }
@@ -35,8 +46,9 @@ function Matrix() {
   const router = useRouter()
   const { user } = useAuth()
   const toast = useToast()
-  const [tab, setTab] = useState<'rules' | 'taxonomy'>('rules')
-  const [type, setType] = useState('')
+  // Both in the URL: Resolution Rules and Routing Rules in the sidebar open this same page.
+  const [tab, setTab] = useTabParam(['rules', 'taxonomy'] as const, 'rules')
+  const [type, setType] = useQueryState('type')
   const [search, setSearch] = useState('')
   const [mandatory, setMandatory] = useState(false)
   const [inactive, setInactive] = useState(false)
@@ -45,7 +57,8 @@ function Matrix() {
   const rules = useApi(() => admin.rules({ rule_type: type || undefined, search: search || undefined, mandatory: mandatory || undefined, active: inactive ? undefined : true }), [type, search, mandatory, inactive])
   const taxonomy = useApi(() => admin.taxonomy())
   const reload = useAction(() => admin.reloadRules())
-  const isAdmin = user?.role === 'admin'
+  // The template's editors: super administrators and the reference company's administrators.
+  const isAdmin = canEditTemplate(user)
 
   const all = rules.data ?? []
   const counts = useMemo(() => ({
@@ -59,7 +72,7 @@ function Matrix() {
         <div><p className="eyebrow mb-1">Pipeline 2 · configuration as data</p><h1 className="display text-h2">Rule matrix</h1></div>
         <div className="flex gap-2">
           <Button href="/dashboard/rules/sandbox" variant="secondary">Sandbox</Button>
-          {isAdmin && <Button loading={reload.pending} onClick={async () => { const r = await reload.run(); if (r) { toast('ok', `Reloaded from YAML: ${Object.entries(r.reloaded ?? {}).map(([k, v]) => `${k} ${v}`).join(', ')} · ruleset ${r.ruleset_version}`); rules.refresh() } else if (reload.error) toast('err', reload.error) }}>Reload from YAML</Button>}
+          {/* {isAdmin && <Button loading={reload.pending} onClick={async () => { const r = await reload.run(); if (r) { toast('ok', `Reloaded from YAML: ${Object.entries(r.reloaded ?? {}).map(([k, v]) => `${k} ${v}`).join(', ')} · ruleset ${r.ruleset_version}`); rules.refresh() } else if (reload.error) toast('err', reload.error) }}>Reload from YAML</Button>} */}
         </div>
       </div>
 
@@ -76,10 +89,16 @@ function Matrix() {
         <>
           <div className="flex flex-wrap items-center gap-3">
             <SearchBox value={search} onChange={setSearch} placeholder="Reference, name or rationale" className="w-full sm:w-[320px]" />
-            <Select value={type} onChange={(e) => setType(e.target.value)} aria-label="Rule type" className="w-auto"><option value="">All types</option>{['CLASSIFICATION', 'ROUTING', 'ESCALATION', 'ELIGIBILITY', 'RESOLUTION', 'PRIORITY'].map((t) => <option key={t} value={t}>{humanise(t)}</option>)}</Select>
+            <Select value={type} onChange={(e) => setType(e.target.value)} aria-label="Rule type" className="w-auto"><option value="">All types</option>{TYPES.map(([t, label]) => <option key={t} value={t}>{label}</option>)}</Select>
             <Checkbox label="Mandatory only" checked={mandatory} onChange={(e) => setMandatory(e.target.checked)} />
             <Checkbox label="Show inactive" checked={inactive} onChange={(e) => setInactive(e.target.checked)} />
           </div>
+          {type === ROUTING_VIEW && (
+            <p className="max-w-[72ch] text-[13.5px] leading-relaxed text-espresso-2">
+              Routing is decided by the classification rules: each one names the department its complaints go to.
+              <Mono className="mx-1 text-[12.5px]">RTE-0001</Mono> catches whatever nothing else matched, sends it to Customer Relations and still flags it for a person.
+            </p>
+          )}
           {rules.error ? <ErrorState message={rules.error} onRetry={rules.refresh} /> : rules.loading && !rules.data ? <SkeletonRows rows={10} /> : !all.length ? <Empty title="No rules match" /> : (
             <Table>
               <thead><tr><Th>Rule</Th><Th>Type</Th><Th align="right">Precedence</Th><Th>Outcome</Th><Th>Flags</Th><Th align="right">Version</Th></tr></thead>

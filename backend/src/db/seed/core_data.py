@@ -189,6 +189,7 @@ _CONFIG_DESCRIPTIONS: dict[str, str] = {
     "scoring": "Formulas and targets for the computed verification scores (FR li).",
     "thresholds": "Duplicate, repeat, hallucination and retrieval thresholds.",
     "response_guard": "Unsupported-promise guard behaviour (SRS Step 34).",
+    "content_relevance": "Thresholds for refusing uploads that are not about complaint handling (song lyrics, recipes).",
 }
 
 

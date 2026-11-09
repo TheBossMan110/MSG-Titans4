@@ -43,6 +43,7 @@ from src.db.base import (
     Code,
     Name,
     Ref,
+    TenantScoped,
     TimestampMixin,
     TZDateTime,
     UUIDPrimaryKey,
@@ -60,7 +61,7 @@ from src.db.enums import (
 )
 
 
-class Customer(UUIDPrimaryKey, TimestampMixin, Base):
+class Customer(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """Synthetic only — SRS Step 1 forbids real customer confidential data."""
 
     __tablename__ = "customers"
@@ -78,7 +79,7 @@ class Customer(UUIDPrimaryKey, TimestampMixin, Base):
     complaints = relationship("Complaint", back_populates="customer")
 
 
-class Complaint(UUIDPrimaryKey, TimestampMixin, Base):
+class Complaint(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     The central record.
 
@@ -206,7 +207,7 @@ class Complaint(UUIDPrimaryKey, TimestampMixin, Base):
         return f"<Complaint {self.public_ref} {self.status}>"
 
 
-class ComplaintEntity(UUIDPrimaryKey, TimestampMixin, Base):
+class ComplaintEntity(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     SRS Step 16 — entity extraction.
 
@@ -234,7 +235,7 @@ class ComplaintEntity(UUIDPrimaryKey, TimestampMixin, Base):
     complaint = relationship("Complaint", back_populates="entities")
 
 
-class ComplaintLink(UUIDPrimaryKey, TimestampMixin, Base):
+class ComplaintLink(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """SRS Steps 52/54 — duplicate, near-duplicate and repeat relationships."""
 
     __tablename__ = "complaint_links"
@@ -256,7 +257,7 @@ class ComplaintLink(UUIDPrimaryKey, TimestampMixin, Base):
     detected_by: Mapped[str] = mapped_column(Code, nullable=False)  # TRIGRAM/EMBEDDING/REFERENCE
 
 
-class ComplaintStatusHistory(TimestampMixin, Base):
+class ComplaintStatusHistory(TimestampMixin, TenantScoped, Base):
     """FR lxv — complaint lifecycle tracking."""
 
     __tablename__ = "complaint_status_history"
@@ -276,7 +277,7 @@ class ComplaintStatusHistory(TimestampMixin, Base):
     reason: Mapped[str | None] = mapped_column(Text)
 
 
-class ComplaintAttachment(UUIDPrimaryKey, TimestampMixin, Base):
+class ComplaintAttachment(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """SRS Step 10 — unsupported attachments must be detected, not crash."""
 
     __tablename__ = "complaint_attachments"

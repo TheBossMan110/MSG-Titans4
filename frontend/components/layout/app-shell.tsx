@@ -1,25 +1,40 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import {
-  AlertTriangle, ArrowRight, BarChart3, BookOpen, Briefcase, Building2, ChevronDown, ClipboardCheck, Clock, Download, FileSearch, FileText, FlaskConical, Gauge, GitCompare, Headset, History, Inbox, Info, LayoutDashboard, ListChecks, LogOut, type LucideIcon, Mail, MessageCircle, MessageSquareReply, Plus, ScrollText, Settings, ShieldAlert, Siren, Sparkles, Target, TrendingUp, TriangleAlert, Trophy, UserCheck, UserRound, Users,
+  AlertTriangle, ArrowRight, BarChart3, BookOpen, Briefcase, Building, Building2, ChevronDown, ClipboardCheck, Clock, CreditCard, Download, FileSearch, FileText, FlaskConical, Gauge, GitCompare, Headset, History, Inbox, Info, KeyRound, LayoutDashboard, ListChecks, LogOut, type LucideIcon, Mail, MessageCircle, MessageSquareReply, Plus, ScrollText, Settings, ShieldAlert, Siren, Sparkles, Target, TrendingUp, TriangleAlert, Trophy, UserCheck, UserRound, Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import type { Role } from '@/lib/api'
 import { Button, Wordmark } from '@/components/ui/primitives'
 import { ADMIN_SECTIONS, AGENT_SECTIONS, MANAGER_SECTIONS, REVIEWER_SECTIONS, USER_SECTIONS } from '@/components/app/dashboard-bits'
-import { HOME, SWITCHABLE, VIEW_LABEL, type View, viewForPath, viewOf } from '@/lib/roles'
+import { can, HOME, type Permission, SWITCHABLE, VIEW_LABEL, type View, viewForPath, viewOf } from '@/lib/roles'
 import { getLenis } from '@/components/motion/smooth-scroll'
 import { AuthGuard } from './auth-guard'
 import { LiveIndicator } from './live-indicator'
 
 const OVERSIGHT: Role[] = ['manager', 'admin', 'evaluator']
 
-type Item = { href: string; label: string; icon: LucideIcon; exact?: boolean }
+// `permission`: shown only to someone whose company grants it (Company & Access).
+type Item = { href: string; label: string; icon: LucideIcon; exact?: boolean; permission?: Permission }
 type Group = { title: string; items: Item[] }
+
+/**
+ * Pages a company can open to a role that does not normally have them. When
+ * an administrator grants one, it appears in that role's sidebar under
+ * "Granted by your administrator"; when withheld, the role's own entry goes.
+ */
+const GRANTABLE: Item[] = [
+  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3, permission: 'analytics.view' },
+  { href: '/dashboard/reports', label: 'Reports', icon: FileText, permission: 'analytics.view' },
+  { href: '/dashboard/review', label: 'Review Queue', icon: Inbox, exact: true, permission: 'review.queue' },
+  { href: '/dashboard/knowledge-base/upload', label: 'Upload policies', icon: FileSearch, permission: 'documents.manage' },
+  { href: '/dashboard/audit', label: 'Audit log', icon: ScrollText, permission: 'audit.view' },
+  { href: '/dashboard/benchmark', label: 'Benchmark', icon: FlaskConical, permission: 'benchmark.run' },
+]
 
 const ACCOUNT: Group = {
   title: 'Account',
@@ -114,7 +129,7 @@ const NAV: Record<View, Group[]> = {
       title: 'Reviewer Dashboard',
       items: [
         { href: '/dashboard/reviewer', label: 'Review Overview', icon: LayoutDashboard, exact: true },
-        { href: '/dashboard/review', label: 'Review Queue', icon: Inbox, exact: true },
+        { href: '/dashboard/review', label: 'Review Queue', icon: Inbox, exact: true, permission: 'review.queue' },
         { href: '/dashboard/reviewer#disagreement', label: 'AI vs Python Comparison', icon: GitCompare },
         { href: '/dashboard/complaints', label: 'Complaint Details', icon: FileSearch, exact: true },
         { href: '/dashboard/reviewer#policy', label: 'Policy Conflicts', icon: ScrollText },
@@ -122,7 +137,7 @@ const NAV: Record<View, Group[]> = {
         { href: '/dashboard/reviewer#adversarial', label: 'Adversarial Cases', icon: ShieldAlert },
         { href: '/dashboard/reviewer#validation', label: 'Validation Failures', icon: TriangleAlert },
         { href: '/dashboard/reviewer#history', label: 'Review History', icon: History },
-        { href: '/dashboard/audit', label: 'Audit Trail', icon: FileText },
+        { href: '/dashboard/audit', label: 'Audit Trail', icon: FileText, permission: 'audit.view' },
       ],
     },
     REFERENCE,
@@ -138,15 +153,47 @@ const NAV: Record<View, Group[]> = {
         { href: '/dashboard/manager#sla', label: 'SLA Monitoring', icon: AlertTriangle },
         { href: '/dashboard/escalations', label: 'Escalations', icon: Siren },
         { href: '/dashboard/manager#critical', label: 'Critical Cases', icon: ShieldAlert },
-        { href: '/dashboard/review', label: 'Review Status', icon: UserCheck },
-        { href: '/dashboard/analytics', label: 'Complaint Analytics', icon: BarChart3 },
-        { href: '/dashboard/analytics/trends', label: 'Trends', icon: TrendingUp },
-        { href: '/dashboard/reports', label: 'Reports', icon: FileText },
+        { href: '/dashboard/review', label: 'Review Status', icon: UserCheck, permission: 'review.queue' },
+        { href: '/dashboard/analytics', label: 'Complaint Analytics', icon: BarChart3, permission: 'analytics.view' },
+        { href: '/dashboard/analytics/trends', label: 'Trends', icon: TrendingUp, permission: 'analytics.view' },
+        { href: '/dashboard/reports', label: 'Reports', icon: FileText, permission: 'analytics.view' },
         { href: '/dashboard/users', label: 'Team Management', icon: Users },
       ],
     },
     REFERENCE,
     ACCOUNT_MANAGER,
+  ],
+  // The platform owner: every company's totals, the companies themselves, and
+  // the shared template. No company's complaints, people or emails (the API
+  // refuses the role on every router that serves them).
+  platform: [
+    {
+      title: 'Platform',
+      items: [
+        { href: '/dashboard/platform', label: 'Overview', icon: LayoutDashboard, exact: true },
+        { href: '/dashboard/companies', label: 'Companies', icon: Building },
+        { href: '/dashboard/plan-requests', label: 'Plan requests', icon: Inbox },
+      ],
+    },
+    {
+      title: 'Shared template',
+      items: [
+        { href: '/dashboard/rules', label: 'Rule matrix', icon: ListChecks, exact: true },
+        { href: '/dashboard/rules/sandbox', label: 'Validation sandbox', icon: FlaskConical },
+        { href: '/dashboard/prompts', label: 'Prompt templates', icon: Sparkles },
+        { href: '/dashboard/settings?tab=config', label: 'AI & thresholds', icon: Settings },
+        { href: '/dashboard/settings?tab=lexicon', label: 'Lexicon', icon: BookOpen },
+        { href: '/dashboard/settings?tab=sla', label: 'SLA ladders', icon: Clock },
+      ],
+    },
+    {
+      title: 'System',
+      items: [
+        { href: '/dashboard/settings?tab=system', label: 'Health & versions', icon: Gauge },
+        { href: '/dashboard/audit', label: 'Platform audit log', icon: ScrollText },
+      ],
+    },
+    ACCOUNT_AGENT,
   ],
   admin: [
     {
@@ -156,22 +203,26 @@ const NAV: Record<View, Group[]> = {
         { href: '/dashboard/complaints', label: 'Complaints', icon: Inbox, exact: true },
         { href: '/dashboard/email', label: 'Email', icon: Mail },
         { href: '/dashboard/users', label: 'Users & Roles', icon: Users },
-        { href: '/dashboard/organisation#departments', label: 'Departments', icon: Building2 },
-        { href: '/dashboard/organisation#categories', label: 'Categories', icon: ListChecks },
+        { href: '/dashboard/access', label: 'Company & Access', icon: KeyRound },
+        { href: '/dashboard/subscription', label: 'Subscription', icon: CreditCard },
+        // Entries that share a page differ by query, never by #hash: the page
+        // reads ?tab= / ?type= and follows it; a hash changed nothing.
+        { href: '/dashboard/organisation', label: 'Departments', icon: Building2 },
+        { href: '/dashboard/organisation?tab=taxonomy', label: 'Categories', icon: ListChecks },
         { href: '/dashboard/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
         { href: '/dashboard/knowledge-base/upload', label: 'Policy Versions', icon: FileSearch },
-        { href: '/dashboard/rules#resolution', label: 'Resolution Rules', icon: ListChecks },
-        { href: '/dashboard/rules#routing', label: 'Routing Rules', icon: ArrowRight },
+        { href: '/dashboard/rules?type=RESOLUTION', label: 'Resolution Rules', icon: ListChecks },
+        { href: '/dashboard/rules?type=CLASSIFICATION,ROUTING', label: 'Routing Rules', icon: ArrowRight },
         { href: '/dashboard/escalations', label: 'Escalation Rules', icon: Siren },
         { href: '/dashboard/prompts', label: 'Prompt Templates', icon: Sparkles },
-        { href: '/dashboard/settings#ai', label: 'AI Configuration', icon: Sparkles },
+        { href: '/dashboard/settings?tab=config', label: 'AI Configuration', icon: Sparkles },
         { href: '/dashboard/rules/sandbox', label: 'Validation Configuration', icon: FlaskConical },
-        { href: '/dashboard/settings#sla', label: 'SLA Configuration', icon: Clock },
+        { href: '/dashboard/settings?tab=sla', label: 'SLA Configuration', icon: Clock },
         { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
         { href: '/dashboard/reports', label: 'Reports', icon: FileText },
         { href: '/dashboard/security', label: 'Security', icon: ShieldAlert },
         { href: '/dashboard/audit', label: 'Audit Logs', icon: ScrollText },
-        { href: '/dashboard/settings', label: 'System Settings', icon: Settings },
+        { href: '/dashboard/settings?tab=system', label: 'System Settings', icon: Settings },
       ],
     },
     ACCOUNT,
@@ -243,6 +294,9 @@ const PAGE_HELP: Array<[RegExp, string]> = [
   [/^\/dashboard\/reviewer$/, 'The reviewer view: cases the system will not settle alone, grouped by why a person is needed, and your own review decisions.'],
   [/^\/dashboard\/users$/, 'Every account in the database. Open one to see their details, each complaint they raised with its full history, their sign-ins and emails. New sign-ups appear here on their own.'],
   [/^\/dashboard\/users\//, 'One account: who they are, when they joined and signed in, and every complaint with each status change and when it happened.'],
+  [/^\/dashboard\/access/, 'Your company: who may do which work, and how much of the complaint register each role sees. Changes apply to everyone at once and are audited.'],
+  [/^\/dashboard\/companies/, 'Every company on the platform: who registered, how big each is, and whether it is active. Suspend a company to lock its people out; reactivating restores everything.'],
+  [/^\/dashboard\/platform/, 'The platform as a whole: every company’s totals and how well the system is doing. No company’s complaints, people or emails are shown here, by design.'],
   [/^\/dashboard$/, 'The admin view: totals, where complaints go, how urgent they are, SLA risks, AI-versus-rules mismatches and cases waiting on a person.'],
   [/^\/dashboard\/agent/, 'The agent view: your complaints with the AI recommendation, what the rules confirmed, a suggested reply and any escalation warning.'],
   [/^\/dashboard\/complaints$/, 'Every complaint in the register. Filter it, then open one to see what the AI proposed and what the rules decided.'],
@@ -282,6 +336,7 @@ export function AppShell({
   eyebrow,
   actions,
   roles,
+  permission,
   wide,
 }: {
   children: ReactNode
@@ -289,11 +344,13 @@ export function AppShell({
   eyebrow?: ReactNode
   actions?: ReactNode
   roles?: Role[]
+  /** Gate on the company's access policy instead of a role list. */
+  permission?: Permission
   wide?: boolean
 }) {
   return (
     <div className="mesh-app min-h-dvh">
-      <AuthGuard roles={roles}>
+      <AuthGuard roles={roles} permission={permission}>
         <Frame title={title} eyebrow={eyebrow} actions={actions} wide={wide}>
           {children}
         </Frame>
@@ -302,7 +359,46 @@ export function AppShell({
   )
 }
 
-function isActive(pathname: string, item: Item, all: Item[]) {
+/**
+ * A view's sidebar for this person: entries their company withholds are gone,
+ * and pages it has granted beyond the role's own are added, in their own view
+ * only (an administrator looking through a manager's eyes sees the manager's menu).
+ */
+function navFor(view: View, user: ReturnType<typeof useAuth>['user'], ownView: boolean): Group[] {
+  const groups = NAV[view].map((g) => ({
+    ...g,
+    items: g.items.filter((i) => !i.permission || can(user, i.permission)),
+  }))
+  if (!ownView || !user || view === 'admin' || view === 'customer' || view === 'platform') return groups
+  const shown = new Set(groups.flatMap((g) => g.items.map((i) => hrefParts(i.href)[0])))
+  const granted = GRANTABLE.filter((i) => i.permission && can(user, i.permission) && !shown.has(i.href))
+  if (!granted.length) return groups
+  return [groups[0], { title: 'Granted by your administrator', items: granted }, ...groups.slice(1)]
+}
+
+function hrefParts(href: string): [string, URLSearchParams | null] {
+  const [path, query] = href.split('#')[0].split('?')
+  return [path, query === undefined ? null : new URLSearchParams(query)]
+}
+
+/** Every parameter the link names has that value in the current URL. */
+function queryMatches(want: URLSearchParams, search: URLSearchParams | null) {
+  if (!search) return false
+  for (const [key, value] of want) if (search.get(key) !== value) return false
+  return true
+}
+
+function isActive(pathname: string, search: URLSearchParams | null, item: Item, all: Item[]) {
+  // In-page anchors (#section) mark a place on a page, not the page itself.
+  if (item.href.includes('#')) return false
+  const [path, want] = hrefParts(item.href)
+  if (want) return pathname === path && queryMatches(want, search)
+  // A sibling naming a state of this same page claims it: on ?tab=taxonomy it
+  // is Categories that is current, not Departments.
+  if (pathname === item.href && all.some((o) => {
+    const [p, q] = hrefParts(o.href)
+    return o !== item && q !== null && !o.href.includes('#') && p === item.href && queryMatches(q, search)
+  })) return false
   if (item.exact) return pathname === item.href
   if (pathname === item.href) return true
   if (!pathname.startsWith(item.href + '/')) return false
@@ -347,43 +443,16 @@ function Frame({ children, title, eyebrow, actions, wide }: { children: ReactNod
   }, [pathname, own, switchable.join()])
   const viewing = view !== own
 
-  const visible = NAV[view]
-  const flat = visible.flatMap((g) => g.items)
+  const visible = navFor(view, user, !viewing)
   const signOut = async () => { await logout(); router.replace('/login') }
   const help = PAGE_HELP.find(([pattern]) => pattern.test(pathname))?.[1]
 
+  // The query decides which of two links to one page is current; it is read
+  // under Suspense, and until then links are matched on the path alone.
   const nav = (
-    <nav aria-label="Application" className="flex flex-col gap-6">
-      {visible.map((g) => (
-        <div key={g.title}>
-          <p className="eyebrow mb-2 px-3 text-[10px]">{g.title}</p>
-          <ul className="flex flex-col gap-0.5">
-            {g.items.map((i) => {
-              const active = isActive(pathname, i, flat)
-              const Icon = i.icon
-              return (
-                <li key={i.href}>
-                  <Link
-                    href={i.href}
-                    aria-current={active ? 'page' : undefined}
-                    className={cn(
-                      'group/nav relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-[14px] transition-[background-color,color,box-shadow] duration-200',
-                      active
-                        ? 'bg-espresso text-ink-on-dark shadow-[0_8px_20px_-10px_rgba(42,31,23,0.6)]'
-                        : 'text-espresso-2 hover:bg-white/70 hover:text-espresso',
-                    )}
-                  >
-                    <Icon size={16} strokeWidth={1.9} className={cn('shrink-0 transition-transform duration-300 group-hover/nav:scale-110', active ? 'text-[#9cc7e6]' : 'text-taupe')} aria-hidden />
-                    <span className="truncate">{i.label}</span>
-                  </Link>
-                  {active && SECTIONS[i.href] && <SectionLinks sections={SECTIONS[i.href]} />}
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      ))}
-    </nav>
+    <Suspense fallback={<NavLinks groups={visible} pathname={pathname} search={null} />}>
+      <NavWithQuery groups={visible} pathname={pathname} />
+    </Suspense>
   )
 
   return (
@@ -392,7 +461,8 @@ function Frame({ children, title, eyebrow, actions, wide }: { children: ReactNod
         className="glass sticky top-0 hidden h-dvh flex-col rounded-none border-y-0 border-l-0 border-r border-line-soft px-4 py-5 lg:flex"
         style={{ paddingTop: 'max(20px, env(safe-area-inset-top))' }}
       >
-        <Link href="/" className="mb-7 px-3"><Wordmark /></Link>
+        <Link href="/" className="mb-3 px-3"><Wordmark /></Link>
+        <CompanyBadge user={user} />
         <div className="-mr-2 flex-1 overflow-y-auto pr-2" data-lenis-prevent>{nav}</div>
         <UserCard user={user} onLogout={signOut} />
       </aside>
@@ -422,13 +492,14 @@ function Frame({ children, title, eyebrow, actions, wide }: { children: ReactNod
                 <Headset size={13} aria-hidden /> {VIEW_LABEL[view]} view
               </Link>
             )}
-            {user && user.role !== 'customer' && <LiveIndicator oversight={oversight} />}
+            {user && user.role !== 'customer' && user.role !== 'superadmin' && <LiveIndicator oversight={oversight} />}
             {user && <UserMenu user={user} onLogout={signOut} view={view} own={own} switchable={switchable} />}
           </div>
         </header>
 
         {drawer && (
           <div className="glass border-x-0 border-t-0 px-[var(--gutter)] py-5 lg:hidden">
+            <CompanyBadge user={user} />
             {nav}
             <div className="mt-5"><UserCard user={user} onLogout={signOut} /></div>
           </div>
@@ -450,6 +521,68 @@ function Frame({ children, title, eyebrow, actions, wide }: { children: ReactNod
         </main>
       </div>
     </div>
+  )
+}
+
+/** Whose data this is: one platform, many companies, and each sees only its own. */
+function CompanyBadge({ user }: { user: ReturnType<typeof useAuth>['user'] }) {
+  const org = user?.organisation
+  if (!org) return <div className="mb-4" />
+  const body = (
+    <>
+      <Building2 size={13} className="shrink-0 text-taupe" aria-hidden />
+      <span className="min-w-0 truncate">{org.name}</span>
+      {org.is_platform && <span className="ml-auto shrink-0 rounded-full bg-sand px-1.5 text-[10px] font-medium uppercase tracking-wide text-espresso-2">Platform</span>}
+    </>
+  )
+  const style = 'mx-1 mb-5 flex items-center gap-2 rounded-xl border border-line-soft bg-white/60 px-3 py-2 text-[12.5px] text-espresso-2'
+  if (user?.role === 'superadmin') {
+    return <Link href="/dashboard/platform" className={cn(style, 'transition-colors hover:bg-white')} title="Platform overview">{body}</Link>
+  }
+  return user?.role === 'admin'
+    ? <Link href="/dashboard/access" className={cn(style, 'transition-colors hover:bg-white')} title="Company & Access">{body}</Link>
+    : <div className={style} title="Your company">{body}</div>
+}
+
+function NavWithQuery({ groups, pathname }: { groups: Group[]; pathname: string }) {
+  const search = useSearchParams()
+  return <NavLinks groups={groups} pathname={pathname} search={search} />
+}
+
+function NavLinks({ groups, pathname, search }: { groups: Group[]; pathname: string; search: URLSearchParams | null }) {
+  const flat = groups.flatMap((g) => g.items)
+  return (
+    <nav aria-label="Application" className="flex flex-col gap-6">
+      {groups.map((g) => (
+        <div key={g.title}>
+          <p className="eyebrow mb-2 px-3 text-[10px]">{g.title}</p>
+          <ul className="flex flex-col gap-0.5">
+            {g.items.map((i) => {
+              const active = isActive(pathname, search, i, flat)
+              const Icon = i.icon
+              return (
+                <li key={i.href}>
+                  <Link
+                    href={i.href}
+                    aria-current={active ? 'page' : undefined}
+                    className={cn(
+                      'group/nav relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-[14px] transition-[background-color,color,box-shadow] duration-200',
+                      active
+                        ? 'bg-espresso text-ink-on-dark shadow-[0_8px_20px_-10px_rgba(42,31,23,0.6)]'
+                        : 'text-espresso-2 hover:bg-white/70 hover:text-espresso',
+                    )}
+                  >
+                    <Icon size={16} strokeWidth={1.9} className={cn('shrink-0 transition-transform duration-300 group-hover/nav:scale-110', active ? 'text-[#9cc7e6]' : 'text-taupe')} aria-hidden />
+                    <span className="truncate">{i.label}</span>
+                  </Link>
+                  {active && SECTIONS[i.href] && <SectionLinks sections={SECTIONS[i.href]} />}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      ))}
+    </nav>
   )
 }
 
@@ -478,7 +611,7 @@ function UserCard({ user, onLogout }: { user: ReturnType<typeof useAuth>['user']
  * outside close it, and it is announced as one.
  */
 const DASH_ICON: Record<View, LucideIcon> = {
-  customer: LayoutDashboard, agent: Headset, reviewer: ClipboardCheck, manager: Briefcase, admin: LayoutDashboard,
+  customer: LayoutDashboard, agent: Headset, reviewer: ClipboardCheck, manager: Briefcase, admin: LayoutDashboard, platform: Building,
 }
 
 function UserMenu({ user, onLogout, view, own, switchable }: { user: NonNullable<ReturnType<typeof useAuth>['user']>; onLogout: () => void; view: View; own: View; switchable: View[] }) {
@@ -524,6 +657,7 @@ function UserMenu({ user, onLogout, view, own, switchable }: { user: NonNullable
               <p className="truncate text-[14px] font-medium text-espresso">{name}</p>
               <p className="truncate text-[12.5px] text-taupe-2">{user.email}</p>
               <p className="mt-0.5 text-[11.5px] capitalize text-taupe">{user.role}{user.department ? ` · ${user.department.name}` : ''}</p>
+              {user.organisation && <p className="truncate text-[11.5px] text-taupe">{user.organisation.name}</p>}
             </div>
           </div>
           <div className="flex flex-col gap-0.5 pt-2">

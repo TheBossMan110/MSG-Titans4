@@ -26,7 +26,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base, Code, Name, TimestampMixin, TZDateTime, UUIDPrimaryKey
+from src.db.base import Base, Code, Name, TenantScoped, TimestampMixin, TZDateTime, UUIDPrimaryKey
 from src.db.constraints import enum_check
 from src.db.enums import (
     ExportFormat,
@@ -37,7 +37,7 @@ from src.db.enums import (
 )
 
 
-class InjectionEvent(UUIDPrimaryKey, TimestampMixin, Base):
+class InjectionEvent(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     Every prompt-injection detection, on complaints *and* uploaded documents.
 
@@ -68,7 +68,7 @@ class InjectionEvent(UUIDPrimaryKey, TimestampMixin, Base):
     notes: Mapped[str | None] = mapped_column(Text)
 
 
-class Job(UUIDPrimaryKey, TimestampMixin, Base):
+class Job(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     Durable background-job record.
 
@@ -97,7 +97,7 @@ class Job(UUIDPrimaryKey, TimestampMixin, Base):
     finished_at: Mapped[datetime | None] = mapped_column(TZDateTime)
 
 
-class BenchmarkRun(UUIDPrimaryKey, TimestampMixin, Base):
+class BenchmarkRun(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     A batch evaluation over the labelled dataset.
 
@@ -124,7 +124,7 @@ class BenchmarkRun(UUIDPrimaryKey, TimestampMixin, Base):
     )
 
 
-class BenchmarkResult(UUIDPrimaryKey, TimestampMixin, Base):
+class BenchmarkResult(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """One field, one complaint, in one benchmark run."""
 
     __tablename__ = "benchmark_results"
@@ -151,7 +151,7 @@ class BenchmarkResult(UUIDPrimaryKey, TimestampMixin, Base):
     run = relationship("BenchmarkRun", back_populates="results")
 
 
-class ImpactAnalysis(UUIDPrimaryKey, TimestampMixin, Base):
+class ImpactAnalysis(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     SRS 1.8 #4 — when a policy is replaced, what breaks?
 
@@ -180,7 +180,7 @@ class ImpactAnalysis(UUIDPrimaryKey, TimestampMixin, Base):
     )
 
 
-class ImpactItem(UUIDPrimaryKey, TimestampMixin, Base):
+class ImpactItem(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """One affected complaint / rule / response, and whether it was regenerated."""
 
     __tablename__ = "impact_items"
@@ -199,7 +199,7 @@ class ImpactItem(UUIDPrimaryKey, TimestampMixin, Base):
     analysis = relationship("ImpactAnalysis", back_populates="items")
 
 
-class ReportExport(UUIDPrimaryKey, TimestampMixin, Base):
+class ReportExport(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """FR lxxiii — every export is recorded (who exported what, when)."""
 
     __tablename__ = "report_exports"
@@ -215,7 +215,7 @@ class ReportExport(UUIDPrimaryKey, TimestampMixin, Base):
     )
 
 
-class TrendSnapshot(UUIDPrimaryKey, TimestampMixin, Base):
+class TrendSnapshot(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     FR lxx / SRS Step 65 — Trend Detection.
 
@@ -229,8 +229,8 @@ class TrendSnapshot(UUIDPrimaryKey, TimestampMixin, Base):
     __tablename__ = "trend_snapshots"
     __table_args__ = (
         UniqueConstraint(
-            "period_type", "period_start", "metric", "dimension", "dimension_value",
-            name="uq_trend_period_metric_dim",
+            "organisation_id", "period_type", "period_start", "metric", "dimension", "dimension_value",
+            name="uq_trend_org_period_metric_dim",
         ),
         Index("ix_trend_metric_period", "metric", "period_start"),
         enum_check("direction", TrendDirection),

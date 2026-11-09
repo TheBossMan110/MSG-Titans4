@@ -402,6 +402,10 @@ def _process_one(
         complaint = db.get(Complaint, complaint_id)
         if complaint is None:
             return {"complaint_id": complaint_id, "error": "complaint not found"}
+        # Each worker scores as the dataset's organisation, against its policies.
+        from src.core import tenancy
+
+        tenancy.bind(db, complaint.organisation_id)
 
         if apply:
             from complaint_processing.intake import (

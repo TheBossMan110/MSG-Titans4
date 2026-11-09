@@ -34,20 +34,34 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.config import settings
-from src.db.base import Base, Code, Name, Ref, TimestampMixin, TZDateTime, UUIDPrimaryKey, Vector
+from src.db.base import (
+    Base,
+    Code,
+    Name,
+    Ref,
+    TenantScoped,
+    TimestampMixin,
+    TZDateTime,
+    UUIDPrimaryKey,
+    Vector,
+)
 from src.db.constraints import enum_check
 from src.db.enums import DocStatus, DocType, FileFormat, ParseStatus
 
 ACTIVE_PREDICATE = text("status = 'ACTIVE'")
 
 
-class Document(UUIDPrimaryKey, TimestampMixin, Base):
+class Document(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """A policy *family* — the logical document across all of its versions."""
 
     __tablename__ = "documents"
-    __table_args__ = (enum_check("doc_type", DocType),)
+    __table_args__ = (
+        enum_check("doc_type", DocType),
+        # Two companies may both have a "DOC-001 Refund Policy" (migration 0006).
+        UniqueConstraint("organisation_id", "family_key", name="uq_documents_org_family_key"),
+    )
 
-    family_key: Mapped[str] = mapped_column(Code, nullable=False, unique=True)  # e.g. DEL-POL
+    family_key: Mapped[str] = mapped_column(Code, nullable=False)  # e.g. DEL-POL
     title: Mapped[str] = mapped_column(Name, nullable=False)
     doc_type: Mapped[str] = mapped_column(String(32), nullable=False, default=DocType.POLICY)
     department_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -67,7 +81,7 @@ class Document(UUIDPrimaryKey, TimestampMixin, Base):
     )
 
 
-class DocumentVersion(UUIDPrimaryKey, TimestampMixin, Base):
+class DocumentVersion(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     One uploaded file = one version.
 
@@ -80,7 +94,8 @@ class DocumentVersion(UUIDPrimaryKey, TimestampMixin, Base):
     __tablename__ = "document_versions"
     __table_args__ = (
         UniqueConstraint("document_id", "version", name="uq_docver_document_version"),
-        UniqueConstraint("file_hash", name="uq_docver_file_hash"),
+        # A duplicate upload is a duplicate within one organisation's library.
+        UniqueConstraint("organisation_id", "file_hash", name="uq_docver_org_file_hash"),
         Index(
             "ux_docver_one_active",
             "document_id",
@@ -143,7 +158,7 @@ class DocumentVersion(UUIDPrimaryKey, TimestampMixin, Base):
         return f"{self.doc_ref} v{self.version}"
 
 
-class DocumentSection(UUIDPrimaryKey, TimestampMixin, Base):
+class DocumentSection(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """A numbered/headed section — the unit a policy reference points at."""
 
     __tablename__ = "document_sections"
@@ -165,7 +180,7 @@ class DocumentSection(UUIDPrimaryKey, TimestampMixin, Base):
     document_version = relationship("DocumentVersion", back_populates="sections")
 
 
-class Chunk(UUIDPrimaryKey, TimestampMixin, Base):
+class Chunk(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     Retrieval unit.  ``chunk_key`` (e.g. ``DEL-POL-04::5.2::c1``) is the token
     the GenAI pipeline must cite and the validation pipeline resolves back to

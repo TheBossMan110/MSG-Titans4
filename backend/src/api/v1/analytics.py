@@ -17,6 +17,7 @@ reports "nothing to measure", not "perfect compliance".
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Response
@@ -33,6 +34,7 @@ from schemas.analytics import (
 from src.core.deps import CurrentUser, DbSession, require_role
 from src.core.errors import NotFoundError, ValidationError
 from src.core.logging import get_logger
+from src.core.permissions import require_permission
 from src.core.response_cache import cached_endpoint
 from src.db.enums import UserRole
 from src.db.models import Complaint
@@ -44,6 +46,10 @@ router = APIRouter(prefix="/analytics", tags=["Analytics & Reports"])
 
 VIEWERS = (UserRole.MANAGER, UserRole.ADMIN, UserRole.EVALUATOR)
 EXPORTERS = (UserRole.MANAGER, UserRole.ADMIN)
+_NEWEST_IN_QUEUE = 15   # places in an agent's queue kept for the newest complaints
+# Configurable per organisation (src/core/permissions.py); the defaults are VIEWERS and EXPORTERS above.
+AnalyticsAccess = Depends(require_permission("analytics.view"))
+ExportAccess = Depends(require_permission("reports.export"))
 
 
 # ══════════════════════════════════════════════════════════════
@@ -52,7 +58,7 @@ EXPORTERS = (UserRole.MANAGER, UserRole.ADMIN)
 @router.get(
     "/dashboard",
     response_model=DashboardOut,
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="The administrator dashboard, in one call",
 )
 @cached_endpoint(ttl=60)
@@ -72,7 +78,7 @@ def dashboard(
 
 @router.get(
     "/volume",
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="Complaint volume by status",
 )
 @cached_endpoint(ttl=60)
@@ -82,7 +88,7 @@ def volume(db: DbSession, days: int | None = Query(30, ge=1, le=365)) -> dict[st
 
 @router.get(
     "/categories",
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="Category distribution",
 )
 @cached_endpoint(ttl=60)
@@ -101,7 +107,7 @@ def categories(
 
 @router.get(
     "/departments",
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="Department load and open backlog",
 )
 @cached_endpoint(ttl=60)
@@ -113,7 +119,7 @@ def departments(
 
 @router.get(
     "/products",
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="Product and service breakdown",
 )
 @cached_endpoint(ttl=60)
@@ -125,7 +131,7 @@ def products(
 
 @router.get(
     "/urgency",
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="Urgency level distribution",
 )
 @cached_endpoint(ttl=60)
@@ -137,7 +143,7 @@ def urgency(
 
 @router.get(
     "/sentiment",
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="Customer sentiment distribution",
 )
 @cached_endpoint(ttl=60)
@@ -149,7 +155,7 @@ def sentiment(
 
 @router.get(
     "/resolution-time",
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="Resolution time metrics",
 )
 @cached_endpoint(ttl=60)
@@ -161,7 +167,7 @@ def resolution_time(
 
 @router.get(
     "/repeat-complaints",
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="Repeat complaints breakdown",
 )
 @cached_endpoint(ttl=60)
@@ -173,7 +179,7 @@ def repeat_complaints(
 
 @router.get(
     "/pipelines",
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="How often the model matched the rule engine",
 )
 @cached_endpoint(ttl=60)
@@ -196,7 +202,7 @@ def pipelines(
 @router.get(
     "/trends",
     response_model=list[TrendOut],
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="What is rising and matters",
 )
 @cached_endpoint(ttl=120)
@@ -236,7 +242,7 @@ def snapshot_trends(
 @router.get(
     "/trends/history",
     response_model=list[TrendSnapshotOut],
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="Stored history for one metric",
 )
 @cached_endpoint(ttl=120)
@@ -260,7 +266,7 @@ def trend_history(
 @router.get(
     "/reports",
     response_model=list[ReportTypeOut],
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="What can be reported on",
 )
 def list_reports() -> list[ReportTypeOut]:
@@ -270,7 +276,7 @@ def list_reports() -> list[ReportTypeOut]:
 @router.get(
     "/reports/{report_type}",
     response_model=ReportOut,
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="Read a report as JSON",
 )
 @cached_endpoint(ttl=60)
@@ -314,7 +320,7 @@ def read_report(
 
 @router.get(
     "/reports/{report_type}/export",
-    dependencies=[Depends(require_role(*EXPORTERS))],
+    dependencies=[ExportAccess],
     summary="Download a report as CSV, XLSX or PDF",
     response_class=Response,
 )
@@ -367,7 +373,7 @@ def export_report(
 @router.get(
     "/exports",
     response_model=list[ExportHistoryOut],
-    dependencies=[Depends(require_role(*VIEWERS))],
+    dependencies=[AnalyticsAccess],
     summary="Recent exports",
 )
 def export_history(db: DbSession, limit: int = Query(50, ge=1, le=200)):
@@ -456,11 +462,17 @@ def agent_workspace(
     open_only = Complaint.status.not_in(("RESOLVED", "CLOSED"))
     query = select(Complaint).options(joinedload(Complaint.customer)).where(open_only, Complaint.analyzed_at.is_not(None))
     team = None
-    if user.role in (UserRole.AGENT, UserRole.REVIEWER) and user.department_id:
+    from src.core.permissions import complaint_scope
+
+    if user.role in (UserRole.AGENT, UserRole.REVIEWER) and complaint_scope(user) == "assigned":
+        # The organisation keeps this role to its own cases: no team queue.
+        query = query.where(Complaint.assigned_to == user.id)
+    elif user.role in (UserRole.AGENT, UserRole.REVIEWER) and user.department_id:
         team = db.get(Department, user.department_id)
         query = query.where(or_(
             Complaint.assigned_to == user.id,
             (Complaint.department_id == user.department_id) & Complaint.assigned_to.is_(None),
+            (Complaint.support_department_id == user.department_id) & Complaint.assigned_to.is_(None),
         ))
     elif user.role in (UserRole.AGENT, UserRole.REVIEWER):
         query = query.where(Complaint.assigned_to == user.id)
@@ -468,10 +480,20 @@ def agent_workspace(
         team = db.execute(select(Department).where(Department.code == department.strip().upper())).scalars().first()
         if team is not None:
             query = query.where(Complaint.department_id == team.id)
-    rows = db.execute(
-        query.order_by(Complaint.priority_code.asc().nulls_last(), Complaint.created_at.asc()).limit(limit)
+    # The newest first, then the most urgent of the rest. Ordered by urgency
+    # alone, a team with forty older open cases never saw a new complaint at all.
+    newest = db.execute(
+        query.order_by(Complaint.created_at.desc()).limit(min(limit, _NEWEST_IN_QUEUE))
     ).scalars().all()
+    remaining = limit - len(newest)
+    urgent = db.execute(
+        query.where(Complaint.id.not_in([c.id for c in newest]))
+        .order_by(Complaint.priority_code.asc().nulls_last(), Complaint.created_at.asc())
+        .limit(remaining)
+    ).scalars().all() if newest and remaining > 0 else []
+    rows = [*newest, *urgent]
     ids = [c.id for c in rows]
+    fresh_since = datetime.now(UTC) - timedelta(hours=24)
 
     # One query per kind of detail, not one per complaint.
     runs: dict[Any, dict[str, Any]] = {}
@@ -524,6 +546,7 @@ def agent_workspace(
             "title": c.title,
             "status": c.status,
             "assigned_to_me": c.assigned_to == user.id,
+            "is_new": bool(c.created_at and (c.created_at if c.created_at.tzinfo else c.created_at.replace(tzinfo=UTC)) >= fresh_since),
             "customer_name": cust_name,
             "customer_email": cust_email,
             "category": c.category.name if c.category else None,
@@ -540,7 +563,8 @@ def agent_workspace(
             } if ai else None,
             "validation": {
                 "outcome": c.verification_outcome,
-                "agreement_pct": float(decision.agreement_score) * 100 if decision is not None and decision.agreement_score is not None else None,
+                # Stored as a percentage already (comparison_engine/decision.py).
+                "agreement_pct": float(decision.agreement_score) if decision is not None and decision.agreement_score is not None else None,
                 "requires_review": bool(decision.requires_review) if decision is not None else False,
             },
             "suggested_response": {
@@ -580,6 +604,7 @@ def agent_workspace(
 @cached_endpoint(ttl=30)
 def manager_overview(
     db: DbSession,
+    user: CurrentUser,
     department: str | None = Query(None, max_length=64, description="One team's view, or the whole operation when empty."),
 ) -> dict[str, Any]:
     """
@@ -587,4 +612,4 @@ def manager_overview(
     SLA, see which agent holds what, and step in on critical cases and
     escalations. They do not configure the platform (FR ii).
     """
-    return role_views.manager_overview(db, department_code=department)
+    return role_views.manager_overview(db, department_code=department, user=user)

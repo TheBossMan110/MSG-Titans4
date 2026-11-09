@@ -309,6 +309,7 @@ def severity_for(code: ValidationIssueCode) -> Severity:
         ValidationIssueCode.NO_TEXT_LAYER,
         ValidationIssueCode.EXPIRED_DOCUMENT,
         ValidationIssueCode.MISSING_DOCUMENT_ID,
+        ValidationIssueCode.OFF_TOPIC_CONTENT,
     }
     if code in critical:
         return Severity.CRITICAL

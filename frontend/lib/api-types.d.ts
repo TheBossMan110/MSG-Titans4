@@ -130,7 +130,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Revoke a refresh token */
+        /** Sign out this session */
         post: operations["logout_api_auth_logout_post"];
         delete?: never;
         options?: never;
@@ -318,6 +318,675 @@ export interface paths {
         };
         /** Recent sign-ins and security changes */
         get: operations["activity_api_auth_activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/company/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a company and its first administrator (super administrators only)
+         * @description Companies do not sign themselves up: the platform decides who joins it, so
+         *     a stranger cannot open a workspace and fill it with whatever they like.
+         *     The super administrator creates the company here and hands its first
+         *     administrator their sign-in details; nobody is signed in by this call.
+         *
+         *     The administrator administers only the new, empty company: no complaints,
+         *     no policies, no other people, and the shared taxonomy, rule matrix and
+         *     prompts read-only. Staff are added from Users & Roles; customers join with
+         *     the company's sign-up link.
+         */
+        post: operations["create_company_api_company_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/company/public/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The name behind a company's customer sign-up link
+         * @description Only what the sign-up page shows -- the name and industry -- and only for an active company.
+         */
+        get: operations["public_profile_api_company_public__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/company": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your company: profile, counts and who may do what */
+        get: operations["get_company_api_company_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Rename your company or change its industry */
+        patch: operations["update_company_api_company_patch"];
+        trace?: never;
+    };
+    "/api/company/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every company on the platform (super administrators only) */
+        get: operations["all_companies_api_company_all_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/company/{organisation_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Suspend or reactivate a company (super administrators only)
+         * @description A suspended company's people are refused from their very next request, and
+         *     cannot sign in or refresh a session, until it is reactivated. Nothing is
+         *     deleted: reactivating restores everything as it was. Audited with the reason.
+         */
+        patch: operations["set_company_status_api_company__organisation_id__status_patch"];
+        trace?: never;
+    };
+    "/api/company/{organisation_id}/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set a company's plan after payment is arranged (super administrators only)
+         * @description Payment happens outside the application for now; this records the result. Audited with the reason.
+         */
+        put: operations["set_subscription_api_company__organisation_id__subscription_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/company/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set which work each role may do, and how much of the register it sees
+         * @description Takes effect on the next request of everyone in the company: permissions
+         *     are read from this policy on every check, not baked into tokens. Every
+         *     change is audited with the policy before and after. Administrators always
+         *     keep every permission, so a company can never lock itself out.
+         */
+        put: operations["set_access_api_company_access_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your company's plan and what it has used this month */
+        get: operations["my_subscription_api_billing_subscription_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Requests from the pricing page */
+        get: operations["list_requests_api_billing_requests_get"];
+        put?: never;
+        /**
+         * Ask to join a plan or change plan
+         * @description Open to anyone, so it is rate-limited and stores plain text only. A filled
+         *     honeypot gets the same answer as a real request and is not kept, so a bot
+         *     learns nothing from the response.
+         */
+        post: operations["request_plan_api_billing_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/requests/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update a request's status */
+        patch: operations["update_request_api_billing_requests__request_id__patch"];
+        trace?: never;
+    };
+    "/api/platform/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Totals across every company, and how the system is doing (super administrators only) */
+        get: operations["overview_api_platform_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every runtime configuration value
+         * @description Thresholds, comparison weights, policy precedence, guard behaviour.
+         *
+         *     ``editable: false`` marks the rows that are derived rather than
+         *     configured — the ruleset version is stamped onto stored results, so
+         *     hand-editing it would detach them from what produced them.
+         */
+        get: operations["list_config_api_admin_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/config/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace one configuration value
+         * @description Change a threshold or a weight, live.
+         *
+         *     The new value must keep the existing shape. A list where an object was
+         *     expected does not fail here — it fails deep inside the rule engine on the
+         *     next complaint, which is a far worse place to discover it.
+         */
+        put: operations["update_config_api_admin_config__key__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/taxonomy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every vocabulary the rules are written against
+         * @description Read-only on purpose.
+         *
+         *     A category code appears in rule outcomes, in SLA policies, in stored
+         *     complaints and in the ground-truth labels. Renaming one from a form would
+         *     silently orphan all four.
+         */
+        get: operations["get_taxonomy_api_admin_taxonomy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The rule matrix */
+        get: operations["list_rules_api_admin_rules_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/rules/{rule_ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One rule, with its conditions */
+        get: operations["get_rule_api_admin_rules__rule_ref__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit one rule
+         * @description Change a rule and have it take effect on the next complaint.
+         *
+         *     Refused with 422 and every specific problem when a condition is malformed,
+         *     when it references a signal no active lexicon term raises, or when an
+         *     outcome names a code that does not exist. Saving such a rule would let it
+         *     sit in the matrix looking like coverage while never firing.
+         *
+         *     A rule that sets a mandatory escalation may have its level **raised** but
+         *     not lowered, and cannot be deactivated at all.
+         */
+        patch: operations["update_rule_api_admin_rules__rule_ref__patch"];
+        trace?: never;
+    };
+    "/api/admin/rules/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run the rule engine over a piece of text without storing anything
+         * @description What Pipeline 2 alone concludes about this text, right now.
+         *
+         *     The endpoint that makes the Live Modification Challenge legible: edit a
+         *     rule, post the same text again, and the difference is visible in one
+         *     response. Deterministic and free — no provider is called and no complaint
+         *     row is created, so it can be run as often as an evaluator likes without
+         *     spending the free-tier quota or filling the register with test rows.
+         */
+        post: operations["test_rules_api_admin_rules_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/rules/reload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore the rule matrix and its vocabulary from their committed source
+         * @description The undo for a live demonstration, and the way a deployed configuration
+         *     change reaches the database.
+         *
+         *     Whatever was changed on stage goes back to the committed YAML in one call,
+         *     so the next demonstration starts from a known state rather than from
+         *     whatever the last one left behind. The vocabulary the rules read
+         *     (signals.yaml, topics.yaml) is reloaded with them: a rule naming a signal
+         *     whose terms are not loaded can never fire. Terms are added or updated,
+         *     never deleted, so vocabulary an administrator added live survives.
+         */
+        post: operations["reload_rules_api_admin_rules_reload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/lexicon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Terms that raise signals */
+        get: operations["list_lexicon_api_admin_lexicon_get"];
+        put?: never;
+        /**
+         * Add a term
+         * @description Teach the rule engine a new word, live.
+         *
+         *     A REGEX term that will not compile is refused here rather than accepted:
+         *     an uncompilable term disables one signal silently, and a signal that stops
+         *     firing looks exactly like a complaint that did not mention the thing.
+         */
+        post: operations["add_term_api_admin_lexicon_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/lexicon/{term_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Withdraw a term
+         * @description Deactivated, not deleted.
+         *
+         *     A term that once raised a signal is part of the explanation for every
+         *     complaint decided while it was active. Removing the row would make those
+         *     stored decisions unexplainable.
+         */
+        delete: operations["remove_term_api_admin_lexicon__term_id__delete"];
+        options?: never;
+        head?: never;
+        /** Edit a term */
+        patch: operations["edit_term_api_admin_lexicon__term_id__patch"];
+        trace?: never;
+    };
+    "/api/admin/sla": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** SLA targets */
+        get: operations["list_sla_api_admin_sla_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/sla/{policy_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Retune an SLA target
+         * @description Move a deadline, live.
+         *
+         *     Follow-up due dates are a fraction of the first-response window rather
+         *     than a separate constant, so retuning a target moves the follow-up
+         *     schedule with it instead of leaving two numbers to drift apart.
+         */
+        patch: operations["update_sla_api_admin_sla__policy_id__patch"];
+        trace?: never;
+    };
+    "/api/admin/prompts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Registered prompt templates
+         * @description Every template version with a live on-disk integrity check.
+         *
+         *     ``checksum_matches: false`` means the file changed without a version bump,
+         *     which is the one thing a version registry exists to detect.
+         */
+        get: operations["list_prompts_api_admin_prompts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/prompts/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Switch which version of a prompt is used
+         * @description Promote a prompt version without a deploy.
+         *
+         *     Deliberately explicit: dropping a new template into the repository must
+         *     not silently redirect traffic away from a version an administrator pinned.
+         */
+        patch: operations["activate_prompt_api_admin_prompts__name__patch"];
+        trace?: never;
+    };
+    "/api/admin/defects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The deliberate defects and what should catch each one
+         * @description Documented before they are demonstrated (SRS 1.8 #15).
+         *
+         *     Each entry states what it breaks, which detector should catch it, and why
+         *     that detector exists — so a judge reading a result can tell a genuine
+         *     safeguard from a coincidence.
+         */
+        get: operations["list_defects_api_admin_defects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/defects/demonstrate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run every deliberate defect through its real detector
+         * @description Produce each documented defect and report what the production detector
+         *     said about it.
+         *
+         *     A safety check nobody has ever seen fire is a safety check nobody has
+         *     reason to believe in. Nothing is persisted and nothing outside this request
+         *     is affected: each faulty artefact exists for the duration of the call and
+         *     is then discarded.
+         */
+        post: operations["demonstrate_defects_api_admin_defects_demonstrate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/defects/{code}/demonstrate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run one deliberate defect through its real detector */
+        post: operations["demonstrate_defect_api_admin_defects__code__demonstrate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The organisation-wide audit trail, newest first
+         * @description Every recorded act, filterable by what was touched, what was done and who
+         *     did it.
+         *
+         *     ``before`` and ``after`` are returned as stored: two snapshots, not a diff.
+         *     SRS Step 59 wants the original recommendation and the reviewer's decision
+         *     both on the record, and a diff would keep only what changed.
+         */
+        get: operations["list_audit_api_audit_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every action that has been recorded, with a count
+         * @description What the trail contains, for a filter control and for the dashboard's
+         *     "what changed" figure. Read from the rows, so an action that has never
+         *     happened is absent rather than listed at zero.
+         */
+        get: operations["audit_actions_api_audit_actions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/audit/{entity_type}/{entity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One entity's full trail, oldest first
+         * @description How one thing got to its current state.
+         *
+         *     Oldest first, because a trail is read forwards. Capped, because an entity
+         *     with more than five hundred recorded acts is a bug report rather than a
+         *     page.
+         */
+        get: operations["entity_trail_api_audit__entity_type___entity_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -853,7 +1522,9 @@ export interface paths {
          * Read a complaint letter (PDF, DOCX or text) into a draft to check and file
          * @description The "uploaded complaint" channel. Nothing is filed: the draft goes back to
          *     the form, the customer checks it, and it is submitted with channel UPLOAD
-         *     through the same intake and pipelines as any other complaint.
+         *     through the same intake and pipelines as any other complaint. A file that
+         *     is not about a complaint at all (song lyrics, a recipe) is refused with the
+         *     reason, and the form is left as it was.
          */
         post: operations["complaint_from_file_api_complaints_from_file_post"];
         delete?: never;
@@ -943,6 +1614,23 @@ export interface paths {
         get: operations["complaint_follow_ups_api_complaints__ref__follow_ups_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/complaints/{ref}/confirm-resolution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Customer confirms resolution and closes their complaint */
+        post: operations["customer_confirm_resolution_api_complaints__ref__confirm_resolution_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1075,8 +1763,10 @@ export interface paths {
          * The manual review queue
          * @description What is waiting for a human (FR lxi; SRS Step 57).
          *
-         *     Ordered by priority then age, so the most severe waiting longest is at the
-         *     top. A P0 filed an hour ago outranks a P3 filed yesterday.
+         *     Ordered by priority then age by default, so the most severe waiting longest
+         *     is at the top: a P0 filed an hour ago outranks a P3 filed yesterday.
+         *     ``sort=newest`` is what the dashboard's first screen asks for, so a case
+         *     that has just arrived is not on page five.
          */
         get: operations["list_queue_api_review_queue_get"];
         put?: never;
@@ -1341,6 +2031,91 @@ export interface paths {
         };
         /** Department load and open backlog */
         get: operations["departments_api_analytics_departments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/analytics/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Product and service breakdown */
+        get: operations["products_api_analytics_products_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/analytics/urgency": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Urgency level distribution */
+        get: operations["urgency_api_analytics_urgency_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/analytics/sentiment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Customer sentiment distribution */
+        get: operations["sentiment_api_analytics_sentiment_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/analytics/resolution-time": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolution time metrics */
+        get: operations["resolution_time_api_analytics_resolution_time_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/analytics/repeat-complaints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Repeat complaints breakdown */
+        get: operations["repeat_complaints_api_analytics_repeat_complaints_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1730,449 +2505,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/config": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Every runtime configuration value
-         * @description Thresholds, comparison weights, policy precedence, guard behaviour.
-         *
-         *     ``editable: false`` marks the rows that are derived rather than
-         *     configured — the ruleset version is stamped onto stored results, so
-         *     hand-editing it would detach them from what produced them.
-         */
-        get: operations["list_config_api_admin_config_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/config/{key}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Replace one configuration value
-         * @description Change a threshold or a weight, live.
-         *
-         *     The new value must keep the existing shape. A list where an object was
-         *     expected does not fail here — it fails deep inside the rule engine on the
-         *     next complaint, which is a far worse place to discover it.
-         */
-        put: operations["update_config_api_admin_config__key__put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/taxonomy": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Every vocabulary the rules are written against
-         * @description Read-only on purpose.
-         *
-         *     A category code appears in rule outcomes, in SLA policies, in stored
-         *     complaints and in the ground-truth labels. Renaming one from a form would
-         *     silently orphan all four.
-         */
-        get: operations["get_taxonomy_api_admin_taxonomy_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/rules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The rule matrix */
-        get: operations["list_rules_api_admin_rules_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/rules/{rule_ref}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** One rule, with its conditions */
-        get: operations["get_rule_api_admin_rules__rule_ref__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Edit one rule
-         * @description Change a rule and have it take effect on the next complaint.
-         *
-         *     Refused with 422 and every specific problem when a condition is malformed,
-         *     when it references a signal no active lexicon term raises, or when an
-         *     outcome names a code that does not exist. Saving such a rule would let it
-         *     sit in the matrix looking like coverage while never firing.
-         *
-         *     A rule that sets a mandatory escalation may have its level **raised** but
-         *     not lowered, and cannot be deactivated at all.
-         */
-        patch: operations["update_rule_api_admin_rules__rule_ref__patch"];
-        trace?: never;
-    };
-    "/api/admin/rules/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Run the rule engine over a piece of text without storing anything
-         * @description What Pipeline 2 alone concludes about this text, right now.
-         *
-         *     The endpoint that makes the Live Modification Challenge legible: edit a
-         *     rule, post the same text again, and the difference is visible in one
-         *     response. Deterministic and free — no provider is called and no complaint
-         *     row is created, so it can be run as often as an evaluator likes without
-         *     spending the free-tier quota or filling the register with test rows.
-         */
-        post: operations["test_rules_api_admin_rules_test_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/rules/reload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Restore the rule matrix from its committed source
-         * @description The undo for a live demonstration.
-         *
-         *     Whatever was changed on stage goes back to the committed YAML in one call,
-         *     so the next demonstration starts from a known state rather than from
-         *     whatever the last one left behind.
-         */
-        post: operations["reload_rules_api_admin_rules_reload_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/lexicon": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Terms that raise signals */
-        get: operations["list_lexicon_api_admin_lexicon_get"];
-        put?: never;
-        /**
-         * Add a term
-         * @description Teach the rule engine a new word, live.
-         *
-         *     A REGEX term that will not compile is refused here rather than accepted:
-         *     an uncompilable term disables one signal silently, and a signal that stops
-         *     firing looks exactly like a complaint that did not mention the thing.
-         */
-        post: operations["add_term_api_admin_lexicon_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/lexicon/{term_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Withdraw a term
-         * @description Deactivated, not deleted.
-         *
-         *     A term that once raised a signal is part of the explanation for every
-         *     complaint decided while it was active. Removing the row would make those
-         *     stored decisions unexplainable.
-         */
-        delete: operations["remove_term_api_admin_lexicon__term_id__delete"];
-        options?: never;
-        head?: never;
-        /** Edit a term */
-        patch: operations["edit_term_api_admin_lexicon__term_id__patch"];
-        trace?: never;
-    };
-    "/api/admin/sla": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** SLA targets */
-        get: operations["list_sla_api_admin_sla_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/sla/{policy_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Retune an SLA target
-         * @description Move a deadline, live.
-         *
-         *     Follow-up due dates are a fraction of the first-response window rather
-         *     than a separate constant, so retuning a target moves the follow-up
-         *     schedule with it instead of leaving two numbers to drift apart.
-         */
-        patch: operations["update_sla_api_admin_sla__policy_id__patch"];
-        trace?: never;
-    };
-    "/api/admin/prompts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Registered prompt templates
-         * @description Every template version with a live on-disk integrity check.
-         *
-         *     ``checksum_matches: false`` means the file changed without a version bump,
-         *     which is the one thing a version registry exists to detect.
-         */
-        get: operations["list_prompts_api_admin_prompts_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/prompts/{name}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Switch which version of a prompt is used
-         * @description Promote a prompt version without a deploy.
-         *
-         *     Deliberately explicit: dropping a new template into the repository must
-         *     not silently redirect traffic away from a version an administrator pinned.
-         */
-        patch: operations["activate_prompt_api_admin_prompts__name__patch"];
-        trace?: never;
-    };
-    "/api/admin/defects": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The deliberate defects and what should catch each one
-         * @description Documented before they are demonstrated (SRS 1.8 #15).
-         *
-         *     Each entry states what it breaks, which detector should catch it, and why
-         *     that detector exists — so a judge reading a result can tell a genuine
-         *     safeguard from a coincidence.
-         */
-        get: operations["list_defects_api_admin_defects_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/defects/demonstrate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Run every deliberate defect through its real detector
-         * @description Produce each documented defect and report what the production detector
-         *     said about it.
-         *
-         *     A safety check nobody has ever seen fire is a safety check nobody has
-         *     reason to believe in. Nothing is persisted and nothing outside this request
-         *     is affected: each faulty artefact exists for the duration of the call and
-         *     is then discarded.
-         */
-        post: operations["demonstrate_defects_api_admin_defects_demonstrate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/defects/{code}/demonstrate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Run one deliberate defect through its real detector */
-        post: operations["demonstrate_defect_api_admin_defects__code__demonstrate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The organisation-wide audit trail, newest first
-         * @description Every recorded act, filterable by what was touched, what was done and who
-         *     did it.
-         *
-         *     ``before`` and ``after`` are returned as stored: two snapshots, not a diff.
-         *     SRS Step 59 wants the original recommendation and the reviewer's decision
-         *     both on the record, and a diff would keep only what changed.
-         */
-        get: operations["list_audit_api_audit_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audit/actions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Every action that has been recorded, with a count
-         * @description What the trail contains, for a filter control and for the dashboard's
-         *     "what changed" figure. Read from the rows, so an action that has never
-         *     happened is absent rather than listed at zero.
-         */
-        get: operations["audit_actions_api_audit_actions_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/audit/{entity_type}/{entity_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * One entity's full trail, oldest first
-         * @description How one thing got to its current state.
-         *
-         *     Oldest first, because a trail is read forwards. Capped, because an entity
-         *     with more than five hundred recorded acts is a bug report rather than a
-         *     page.
-         */
-        get: operations["entity_trail_api_audit__entity_type___entity_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/organisation": {
         parameters: {
             query?: never;
@@ -2184,6 +2516,26 @@ export interface paths {
         get: operations["organisation_api_organisation_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organisation/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a new department and optionally provision its manager
+         * @description Admin provisions a new department, and optionally creates a manager account for it.
+         */
+        post: operations["create_department_api_organisation_departments_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2322,6 +2674,9 @@ export interface paths {
         /**
          * Create an account with a role
          * @description Staff accounts are provisioned here; self-registration always creates a customer.
+         *     Administrators can provision any role; anyone else with ``users.manage``
+         *     (managers by default) provisions agents for their own department. The
+         *     account joins the creator's organisation (src/core/tenancy.py stamps it).
          */
         post: operations["create_person_api_people_post"];
         delete?: never;
@@ -2347,6 +2702,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/people/{identifier}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One account: details, complaints with history, sign-ins, emails
+         * @description An agent or reviewer opens a customer to work their complaint. Colleagues'
+         *     accounts, and anyone's sign-in history and IP addresses, are for the people
+         *     who oversee staff; to everyone else such an account does not exist.
+         */
+        get: operations["person_api_people__identifier__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/people/{user_id}": {
         parameters: {
             query?: never;
@@ -2354,8 +2731,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One account: details, complaints with history, sign-ins, emails */
-        get: operations["person_api_people__user_id__get"];
+        get?: never;
         put?: never;
         post?: never;
         delete?: never;
@@ -2409,6 +2785,22 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AccessPolicy
+         * @description Per configurable role (manager, reviewer, agent): the permissions it holds,
+         *     and how much of the complaint register it sees (assigned, team or all).
+         *     A role left out keeps its current setting.
+         */
+        AccessPolicy: {
+            /** Permissions */
+            permissions?: {
+                [key: string]: string[];
+            };
+            /** Complaint Scope */
+            complaint_scope?: {
+                [key: string]: string;
+            };
+        };
         /** ActivationResponse */
         ActivationResponse: {
             /**
@@ -2596,6 +2988,32 @@ export interface components {
             /** Finished At */
             finished_at?: string | null;
         };
+        /**
+         * BenchmarkSummary
+         * @description The latest accuracy measurement against a labelled dataset.
+         */
+        BenchmarkSummary: {
+            /** Label */
+            label?: string | null;
+            /** Dataset Tag */
+            dataset_tag?: string | null;
+            /** Finished At */
+            finished_at?: string | null;
+            /** Sample Size */
+            sample_size?: number | null;
+            /** Genai Accuracy Pct */
+            genai_accuracy_pct?: number | null;
+            /** Python Accuracy Pct */
+            python_accuracy_pct?: number | null;
+            /** Agreement Pct */
+            agreement_pct?: number | null;
+            /** Escalation Recall Pct */
+            escalation_recall_pct?: number | null;
+            /** By Field */
+            by_field?: {
+                [key: string]: unknown;
+            }[];
+        };
         /** Body_attach_evidence_api_complaints__ref__evidence_post */
         Body_attach_evidence_api_complaints__ref__evidence_post: {
             /** File */
@@ -2665,6 +3083,8 @@ export interface components {
             role: "user" | "assistant";
             /** Content */
             content: string;
+            /** Signature */
+            signature?: string | null;
         };
         /** ChatOut */
         ChatOut: {
@@ -2688,6 +3108,8 @@ export interface components {
              * @default false
              */
             degraded: boolean;
+            /** Signature */
+            signature: string;
         };
         /** ChecklistOut */
         ChecklistOut: {
@@ -2794,6 +3216,202 @@ export interface components {
             /** Rank */
             rank?: number | null;
         };
+        /** CompanyCounts */
+        CompanyCounts: {
+            /** Staff */
+            staff: number;
+            /** Customers */
+            customers: number;
+            /** Complaints */
+            complaints: number;
+            /** Open Complaints */
+            open_complaints: number;
+            /** Documents */
+            documents: number;
+        };
+        /**
+         * CompanyCreate
+         * @description A company the super administrator adds to the platform, with its first
+         *     administrator, whose sign-in details the super administrator then shares.
+         *
+         *     The administrator role is granted only inside the new company: nothing in
+         *     this body reaches another organisation's data, and taxonomy, rules and
+         *     prompts stay the shared platform template.
+         */
+        CompanyCreate: {
+            /** Company Name */
+            company_name: string;
+            /** Industry */
+            industry?: string | null;
+            /** Admin Full Name */
+            admin_full_name: string;
+            /**
+             * Admin Email
+             * Format: email
+             */
+            admin_email: string;
+            /** Admin Password */
+            admin_password: string;
+            /**
+             * Plan
+             * @default growth
+             */
+            plan: string;
+            /**
+             * Trial Days
+             * @description 0 starts the plan as paid.
+             * @default 14
+             */
+            trial_days: number;
+        };
+        /**
+         * CompanyCreated
+         * @description What the super administrator shares with the new company. The password is
+         *     not echoed back: the super administrator typed or generated it, and it
+         *     lives in one place only, their screen, until it is handed over.
+         */
+        CompanyCreated: {
+            company: components["schemas"]["CompanyRow"];
+            /** Admin Email */
+            admin_email: string;
+            /** Admin Full Name */
+            admin_full_name: string;
+            /** Sign In Path */
+            sign_in_path: string;
+            /** Customer Signup Path */
+            customer_signup_path: string;
+        };
+        /** CompanyList */
+        CompanyList: {
+            /** Total */
+            total: number;
+            /** Active */
+            active: number;
+            /** Suspended */
+            suspended: number;
+            /** Items */
+            items: components["schemas"]["CompanyRow"][];
+        };
+        /** CompanyOut */
+        CompanyOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Industry */
+            industry?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Owns Template */
+            owns_template: boolean;
+            counts: components["schemas"]["CompanyCounts"];
+            access: components["schemas"]["AccessPolicy"];
+            defaults: components["schemas"]["AccessPolicy"];
+            /** Catalogue */
+            catalogue: components["schemas"]["PermissionOut"][];
+            /** Roles */
+            roles: string[];
+            /** Scopes */
+            scopes: string[];
+            /** Customer Signup Path */
+            customer_signup_path: string;
+        };
+        /**
+         * CompanyPublicOut
+         * @description What a customer sees on the company's sign-up link before they have an account.
+         */
+        CompanyPublicOut: {
+            /** Name */
+            name: string;
+            /** Industry */
+            industry?: string | null;
+            /** Slug */
+            slug: string;
+        };
+        /**
+         * CompanyRow
+         * @description One company as the super administrators see it in the list of every company.
+         */
+        CompanyRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Industry */
+            industry?: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Is Reference */
+            is_reference: boolean;
+            /** Created At */
+            created_at?: string | null;
+            /** Administrator */
+            administrator?: string | null;
+            /** Administrators */
+            administrators: number;
+            /** Staff */
+            staff: number;
+            /** Customers */
+            customers: number;
+            /** Complaints */
+            complaints: number;
+            /** Open Complaints */
+            open_complaints: number;
+            /** Documents */
+            documents: number;
+            /** Last Complaint At */
+            last_complaint_at?: string | null;
+            /** Plan */
+            plan?: string | null;
+            /** Subscription Status */
+            subscription_status?: string | null;
+            /** Billing Cycle */
+            billing_cycle?: string | null;
+            /** Trial Ends At */
+            trial_ends_at?: string | null;
+            /** Current Period End */
+            current_period_end?: string | null;
+        };
+        /**
+         * CompanyStatusIn
+         * @description Suspend a company (its people are signed out and refused) or reactivate it.
+         */
+        CompanyStatusIn: {
+            /** Is Active */
+            is_active: boolean;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** CompanyUpdate */
+        CompanyUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Industry */
+            industry?: string | null;
+        };
+        /** CompanyVolume */
+        CompanyVolume: {
+            /** Name */
+            name: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Is Reference */
+            is_reference: boolean;
+            /** Complaints */
+            complaints: number;
+            /** Open Complaints */
+            open_complaints: number;
+        };
         /**
          * ComparisonOut
          * @description One field, both pipelines' readings, and why they differ.
@@ -2879,6 +3497,8 @@ export interface components {
             status: string;
             /** Category */
             category?: string | null;
+            /** Subcategory */
+            subcategory?: string | null;
             /** Department */
             department?: string | null;
             /** Urgency */
@@ -2912,12 +3532,12 @@ export interface components {
             dataset_tag?: string | null;
             /** Channel */
             channel?: string | null;
+            /** Agreement Score */
+            agreement_score?: number | null;
             /** Description Raw */
             description_raw: string;
             /** Description Clean */
             description_clean: string;
-            /** Subcategory */
-            subcategory?: string | null;
             /** Support Department */
             support_department?: string | null;
             /** Sentiment */
@@ -3083,6 +3703,8 @@ export interface components {
             dataset_tag?: string | null;
             /** Channel */
             channel?: string | null;
+            /** Agreement Score */
+            agreement_score?: number | null;
         };
         /**
          * ConfigEntryOut
@@ -3189,9 +3811,7 @@ export interface components {
             };
             /** Products */
             products?: {
-                product: string;
-                count: number;
-                pct?: number | null;
+                [key: string]: unknown;
             }[];
             /** Urgency */
             urgency?: {
@@ -3203,11 +3823,11 @@ export interface components {
             };
             /** Resolution Time */
             resolution_time?: {
-                [key: string]: any;
+                [key: string]: unknown;
             };
             /** Repeat Complaints */
             repeat_complaints?: {
-                [key: string]: any;
+                [key: string]: unknown;
             };
             /** Sla Risks */
             sla_risks?: {
@@ -3353,6 +3973,23 @@ export interface components {
             email?: string | null;
             /** Support Hours */
             support_hours?: string | null;
+        };
+        /** DepartmentCreate */
+        DepartmentCreate: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Manager Name */
+            manager_name?: string | null;
+            /** Manager Email */
+            manager_email?: string | null;
+            /** Manager Password */
+            manager_password?: string | null;
         };
         /** DepartmentLoadOut */
         DepartmentLoadOut: {
@@ -4173,6 +4810,31 @@ export interface components {
             /** At */
             at?: string | null;
         };
+        /**
+         * OrganisationBrief
+         * @description What a signed-in user's own record says about their company.
+         */
+        OrganisationBrief: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Is Platform
+             * @default false
+             */
+            is_platform: boolean;
+            /**
+             * Owns Template
+             * @default false
+             */
+            owns_template: boolean;
+        };
         /** OrganisationOut */
         OrganisationOut: {
             profile: components["schemas"]["OrganisationProfileOut"];
@@ -4388,6 +5050,19 @@ export interface components {
             /** Recent Signins */
             recent_signins: components["schemas"]["SignInOut"][];
         };
+        /** PermissionOut */
+        PermissionOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description: string;
+            /** Defaults */
+            defaults: string[];
+            /** Evaluator */
+            evaluator: boolean;
+        };
         /** PersonActivity */
         PersonActivity: {
             /**
@@ -4587,6 +5262,168 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /** PlanRequestAccepted */
+        PlanRequestAccepted: {
+            /**
+             * Received
+             * @default true
+             */
+            received: boolean;
+        };
+        /** PlanRequestIn */
+        PlanRequestIn: {
+            /** Company Name */
+            company_name: string;
+            /** Contact Name */
+            contact_name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Phone */
+            phone?: string | null;
+            /** Plan Code */
+            plan_code: string;
+            /**
+             * Billing Cycle
+             * @default monthly
+             * @enum {string}
+             */
+            billing_cycle: "monthly" | "annual";
+            /** Team Size */
+            team_size?: number | null;
+            /** Monthly Complaints */
+            monthly_complaints?: number | null;
+            /** Message */
+            message?: string | null;
+            /** Website */
+            website?: string | null;
+        };
+        /** PlanRequestList */
+        PlanRequestList: {
+            /** New */
+            new: number;
+            /** Items */
+            items: components["schemas"]["PlanRequestOut"][];
+        };
+        /** PlanRequestOut */
+        PlanRequestOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Company Name */
+            company_name: string;
+            /** Contact Name */
+            contact_name: string;
+            /** Email */
+            email: string;
+            /** Phone */
+            phone?: string | null;
+            /** Plan Code */
+            plan_code: string;
+            /** Billing Cycle */
+            billing_cycle: string;
+            /** Team Size */
+            team_size?: number | null;
+            /** Monthly Complaints */
+            monthly_complaints?: number | null;
+            /** Message */
+            message?: string | null;
+            /** Status */
+            status: string;
+            /** Existing Customer */
+            existing_customer: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** PlanRequestStatusIn */
+        PlanRequestStatusIn: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "NEW" | "CONTACTED" | "WON" | "LOST";
+        };
+        /** PlatformCompanies */
+        PlatformCompanies: {
+            /** Total */
+            total: number;
+            /** Active */
+            active: number;
+            /** Suspended */
+            suspended: number;
+            /** New In Window */
+            new_in_window: number;
+        };
+        /**
+         * PlatformOverview
+         * @description The aggregate blocks are the same dictionaries each company's own analytics
+         *     return, computed across every company, so a company's figures and the
+         *     platform's are always measured the same way.
+         */
+        PlatformOverview: {
+            /** Window Days */
+            window_days?: number | null;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            companies: components["schemas"]["PlatformCompanies"];
+            people: components["schemas"]["PlatformPeople"];
+            /** By Company */
+            by_company: components["schemas"]["CompanyVolume"][];
+            /** Complaints */
+            complaints: {
+                [key: string]: unknown;
+            };
+            /** Priorities */
+            priorities: {
+                [key: string]: number;
+            };
+            /** Escalation */
+            escalation: {
+                [key: string]: unknown;
+            };
+            /** Sla */
+            sla: {
+                [key: string]: unknown;
+            };
+            /** Resolution Time */
+            resolution_time: {
+                [key: string]: unknown;
+            };
+            /** Agreement */
+            agreement: {
+                [key: string]: unknown;
+            };
+            /** Traceability */
+            traceability: {
+                [key: string]: unknown;
+            };
+            /** Safety */
+            safety: {
+                [key: string]: unknown;
+            };
+            /** Ai */
+            ai: {
+                [key: string]: unknown;
+            };
+            benchmark?: components["schemas"]["BenchmarkSummary"] | null;
+        };
+        /** PlatformPeople */
+        PlatformPeople: {
+            /** Staff */
+            staff: number;
+            /** Customers */
+            customers: number;
+        };
         /**
          * PolicyConflictOut
          * @description One policy that was overruled by another (SRS 1.8 #10).
@@ -4776,6 +5613,11 @@ export interface components {
             /** Status Changes */
             status_changes: number;
             /**
+             * Work Changes
+             * @default 0
+             */
+            work_changes: number;
+            /**
              * Checked At
              * Format: date-time
              */
@@ -4849,6 +5691,8 @@ export interface components {
             full_name: string;
             /** Password */
             password: string;
+            /** Company */
+            company?: string | null;
         };
         /**
          * ReloadOut
@@ -5759,6 +6603,63 @@ export interface components {
             name: string;
         };
         /**
+         * SubscriptionOut
+         * @description A company's plan and what it has used this month. ``plan`` is empty for an unmetered company.
+         */
+        SubscriptionOut: {
+            /** Plan */
+            plan?: {
+                [key: string]: unknown;
+            } | null;
+            /** Status */
+            status: string;
+            /** Billing Cycle */
+            billing_cycle?: string | null;
+            /** Trial Ends At */
+            trial_ends_at?: string | null;
+            /** Current Period End */
+            current_period_end?: string | null;
+            /** Seats Used */
+            seats_used: number;
+            /** Seats Limit */
+            seats_limit?: number | null;
+            /** Ai Used */
+            ai_used: number;
+            /** Ai Limit */
+            ai_limit?: number | null;
+            /** Ai Active */
+            ai_active: boolean;
+            /** Notice */
+            notice?: string | null;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+        };
+        /** SubscriptionUpdate */
+        SubscriptionUpdate: {
+            /** Plan */
+            plan: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "trialing" | "active" | "past_due" | "cancelled";
+            /**
+             * Billing Cycle
+             * @default monthly
+             * @enum {string}
+             */
+            billing_cycle: "monthly" | "annual";
+            /** Trial Ends At */
+            trial_ends_at?: string | null;
+            /** Current Period End */
+            current_period_end?: string | null;
+            /** Reason */
+            reason?: string | null;
+        };
+        /**
          * TaxonomyOut
          * @description Every vocabulary the rules are written against.
          *
@@ -6048,6 +6949,11 @@ export interface components {
              * @default false
              */
             mfa_enabled: boolean;
+            organisation?: components["schemas"]["OrganisationBrief"] | null;
+            /** Permissions */
+            permissions?: string[];
+            /** Complaint Scope */
+            complaint_scope?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -6791,6 +7697,1027 @@ export interface operations {
             };
         };
     };
+    create_company_api_company_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompanyCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_profile_api_company_public__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyPublicOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_company_api_company_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyOut"];
+                };
+            };
+        };
+    };
+    update_company_api_company_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompanyUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    all_companies_api_company_all_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyList"];
+                };
+            };
+        };
+    };
+    set_company_status_api_company__organisation_id__status_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organisation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompanyStatusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_subscription_api_company__organisation_id__subscription_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organisation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_access_api_company_access_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessPolicy"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_subscription_api_billing_subscription_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionOut"];
+                };
+            };
+        };
+    };
+    list_requests_api_billing_requests_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanRequestList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_plan_api_billing_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanRequestAccepted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_request_api_billing_requests__request_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanRequestStatusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    overview_api_platform_overview_get: {
+        parameters: {
+            query?: {
+                /** @description Window in days; omit for all time. */
+                days?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformOverview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_config_api_admin_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigEntryOut"][];
+                };
+            };
+        };
+    };
+    update_config_api_admin_config__key__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigEntryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_taxonomy_api_admin_taxonomy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyOut"];
+                };
+            };
+        };
+    };
+    list_rules_api_admin_rules_get: {
+        parameters: {
+            query?: {
+                /** @description One rule type, or several separated by commas. */
+                rule_type?: string | null;
+                active?: boolean | null;
+                /** @description Mandatory escalation rules only. */
+                mandatory?: boolean | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleSummaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rule_api_admin_rules__rule_ref__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_rule_api_admin_rules__rule_ref__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuleUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleChangeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_rules_api_admin_rules_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuleTestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleTestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reload_rules_api_admin_rules_reload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReloadOut"];
+                };
+            };
+        };
+    };
+    list_lexicon_api_admin_lexicon_get: {
+        parameters: {
+            query?: {
+                signal_key?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LexiconTermOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_term_api_admin_lexicon_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LexiconTermIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LexiconTermOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_term_api_admin_lexicon__term_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LexiconTermOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_term_api_admin_lexicon__term_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LexiconTermUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LexiconTermOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sla_api_admin_sla_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SLAPolicyOut"][];
+                };
+            };
+        };
+    };
+    update_sla_api_admin_sla__policy_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                policy_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SLAPolicyUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SLAPolicyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_prompts_api_admin_prompts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptVersionOut"][];
+                };
+            };
+        };
+    };
+    activate_prompt_api_admin_prompts__name__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptActivateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptVersionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_defects_api_admin_defects_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DefectSpecOut"][];
+                };
+            };
+        };
+    };
+    demonstrate_defects_api_admin_defects_demonstrate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DefectResultOut"][];
+                };
+            };
+        };
+    };
+    demonstrate_defect_api_admin_defects__code__demonstrate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DefectResultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_audit_api_audit_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                entity_type?: string | null;
+                action?: string | null;
+                /** @description Actor email. */
+                actor?: string | null;
+                entity_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_AuditEntryOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    audit_actions_api_audit_actions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditActionCountOut"][];
+                };
+            };
+        };
+    };
+    entity_trail_api_audit__entity_type___entity_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity_type: string;
+                entity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditEntryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_documents_api_documents_get: {
         parameters: {
             query?: {
@@ -7225,6 +9152,8 @@ export interface operations {
                 /** @description Received on or before this date. */
                 date_to?: string | null;
                 search?: string | null;
+                assigned_to?: string | null;
+                sla_at_risk?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -7778,6 +9707,37 @@ export interface operations {
             };
         };
     };
+    customer_confirm_resolution_api_complaints__ref__confirm_resolution_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComplaintStatusOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     complete_follow_up_api_complaints__ref__follow_ups__follow_up_id__complete_post: {
         parameters: {
             query?: never;
@@ -7949,7 +9909,13 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                } | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -7981,6 +9947,7 @@ export interface operations {
                 status?: string | null;
                 assigned_to_me?: boolean;
                 breached_only?: boolean;
+                sort?: "urgent" | "newest";
             };
             header?: never;
             path?: never;
@@ -8358,6 +10325,171 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    products_api_analytics_products_get: {
+        parameters: {
+            query?: {
+                days?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    urgency_api_analytics_urgency_get: {
+        parameters: {
+            query?: {
+                days?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sentiment_api_analytics_sentiment_get: {
+        parameters: {
+            query?: {
+                days?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolution_time_api_analytics_resolution_time_get: {
+        parameters: {
+            query?: {
+                days?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    repeat_complaints_api_analytics_repeat_complaints_get: {
+        parameters: {
+            query?: {
+                days?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -8944,635 +11076,6 @@ export interface operations {
             };
         };
     };
-    list_config_api_admin_config_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConfigEntryOut"][];
-                };
-            };
-        };
-    };
-    update_config_api_admin_config__key__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                key: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConfigUpdateIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConfigEntryOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_taxonomy_api_admin_taxonomy_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaxonomyOut"];
-                };
-            };
-        };
-    };
-    list_rules_api_admin_rules_get: {
-        parameters: {
-            query?: {
-                rule_type?: string | null;
-                active?: boolean | null;
-                /** @description Mandatory escalation rules only. */
-                mandatory?: boolean | null;
-                search?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RuleSummaryOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_rule_api_admin_rules__rule_ref__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                rule_ref: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RuleDetailOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_rule_api_admin_rules__rule_ref__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                rule_ref: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RuleUpdateIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RuleChangeOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    test_rules_api_admin_rules_test_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RuleTestIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RuleTestOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reload_rules_api_admin_rules_reload_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReloadOut"];
-                };
-            };
-        };
-    };
-    list_lexicon_api_admin_lexicon_get: {
-        parameters: {
-            query?: {
-                signal_key?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LexiconTermOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_term_api_admin_lexicon_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LexiconTermIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LexiconTermOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_term_api_admin_lexicon__term_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                term_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LexiconTermOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    edit_term_api_admin_lexicon__term_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                term_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LexiconTermUpdateIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LexiconTermOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_sla_api_admin_sla_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SLAPolicyOut"][];
-                };
-            };
-        };
-    };
-    update_sla_api_admin_sla__policy_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                policy_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SLAPolicyUpdateIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SLAPolicyOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_prompts_api_admin_prompts_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromptVersionOut"][];
-                };
-            };
-        };
-    };
-    activate_prompt_api_admin_prompts__name__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PromptActivateIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromptVersionOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_defects_api_admin_defects_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DefectSpecOut"][];
-                };
-            };
-        };
-    };
-    demonstrate_defects_api_admin_defects_demonstrate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DefectResultOut"][];
-                };
-            };
-        };
-    };
-    demonstrate_defect_api_admin_defects__code__demonstrate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DefectResultOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_audit_api_audit_get: {
-        parameters: {
-            query?: {
-                page?: number;
-                size?: number;
-                entity_type?: string | null;
-                action?: string | null;
-                /** @description Actor email. */
-                actor?: string | null;
-                entity_id?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Page_AuditEntryOut_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audit_actions_api_audit_actions_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditActionCountOut"][];
-                };
-            };
-        };
-    };
-    entity_trail_api_audit__entity_type___entity_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entity_type: string;
-                entity_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditEntryOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     organisation_api_organisation_get: {
         parameters: {
             query?: never;
@@ -9589,6 +11092,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrganisationOut"];
+                };
+            };
+        };
+    };
+    create_department_api_organisation_departments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -9878,12 +11414,12 @@ export interface operations {
             };
         };
     };
-    person_api_people__user_id__get: {
+    person_api_people__identifier__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                user_id: string;
+                identifier: string;
             };
             cookie?: never;
         };

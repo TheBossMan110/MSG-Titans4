@@ -28,7 +28,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base, Code, Name, TimestampMixin, TZDateTime, UUIDPrimaryKey
+from src.db.base import Base, Code, Name, TenantScoped, TimestampMixin, TZDateTime, UUIDPrimaryKey
 from src.db.constraints import enum_check
 from src.db.enums import (
     EscalationTrigger,
@@ -41,7 +41,7 @@ from src.db.enums import (
 )
 
 
-class Response(UUIDPrimaryKey, TimestampMixin, Base):
+class Response(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     A customer-facing reply draft.
 
@@ -87,7 +87,7 @@ class Response(UUIDPrimaryKey, TimestampMixin, Base):
     flags = relationship("ResponseFlag", back_populates="response", cascade="all, delete-orphan")
 
 
-class ResponseFlag(UUIDPrimaryKey, TimestampMixin, Base):
+class ResponseFlag(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     One guard finding.  ``span_start``/``span_end`` drive the inline red
     highlight in the reply editor; ``explanation`` is the hover text
@@ -117,7 +117,7 @@ class ResponseFlag(UUIDPrimaryKey, TimestampMixin, Base):
     response = relationship("Response", back_populates="flags")
 
 
-class Escalation(UUIDPrimaryKey, TimestampMixin, Base):
+class Escalation(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     SRS Step 38/39.
 
@@ -150,7 +150,7 @@ class Escalation(UUIDPrimaryKey, TimestampMixin, Base):
     acknowledged_at: Mapped[datetime | None] = mapped_column(TZDateTime)
 
 
-class FollowUp(UUIDPrimaryKey, TimestampMixin, Base):
+class FollowUp(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """SRS Steps 40-41."""
 
     __tablename__ = "follow_ups"
@@ -168,7 +168,7 @@ class FollowUp(UUIDPrimaryKey, TimestampMixin, Base):
     )
 
 
-class ReviewQueueItem(UUIDPrimaryKey, TimestampMixin, Base):
+class ReviewQueueItem(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """SRS Step 57 — entry conditions are recorded in ``reasons``."""
 
     __tablename__ = "review_queue"
@@ -196,7 +196,7 @@ class ReviewQueueItem(UUIDPrimaryKey, TimestampMixin, Base):
     )
 
 
-class ReviewAction(UUIDPrimaryKey, TimestampMixin, Base):
+class ReviewAction(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """
     SRS Step 59 — "The original recommendation and reviewer decision must both
     remain in the audit trail."
@@ -229,7 +229,7 @@ class ReviewAction(UUIDPrimaryKey, TimestampMixin, Base):
     queue_item = relationship("ReviewQueueItem", back_populates="actions")
 
 
-class SLAEvent(UUIDPrimaryKey, TimestampMixin, Base):
+class SLAEvent(UUIDPrimaryKey, TimestampMixin, TenantScoped, Base):
     """SRS Steps 55-56."""
 
     __tablename__ = "sla_events"

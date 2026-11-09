@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { AppShell } from '@/components/layout/app-shell'
 import { useAuth } from '@/lib/auth-context'
+import { can } from '@/lib/roles'
 import { analytics, type ReportFilters } from '@/lib/api'
 import { plainValue } from '@/components/app/complaint-bits'
 import { useApi, useAction, fmtDate } from '@/lib/use-api'
@@ -15,7 +16,7 @@ import { cn } from '@/lib/utils'
 
 export default function ReportsPage() {
   return (
-    <AppShell eyebrow="Reports" roles={['manager', 'admin', 'evaluator']} wide>
+    <AppShell eyebrow="Reports" permission="analytics.view" wide>
       <Reports />
     </AppShell>
   )
@@ -34,7 +35,8 @@ function Reports() {
   const [f, setF] = useState<ReportFilters>({ limit: 200 })
   const report = useApi(() => analytics.report(type!, f), [type, JSON.stringify(f)], Boolean(type))
   const exp = useAction((fmt: 'csv' | 'xlsx' | 'pdf' | 'json') => analytics.exportReport(type!, fmt, f))
-  const canExport = user && ['manager', 'admin'].includes(user.role)
+  // Managers by default; each company's administrator decides (Company & Access).
+  const canExport = can(user, 'reports.export')
   const set = <K extends keyof ReportFilters>(k: K, v: ReportFilters[K]) => setF((s) => ({ ...s, [k]: v }))
   // Drawing a thousand rows of a wide report at once froze the page; it is
   // shown fifty at a time. Downloads still contain every row.
